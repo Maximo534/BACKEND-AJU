@@ -1,0 +1,11 @@
+stages:
+  - build
+  - test
+  - deploy
+
+job:
+  stage: test
+  script:
+    - echo "Running tests"
+  except:
+    - develop

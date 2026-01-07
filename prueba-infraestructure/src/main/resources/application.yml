@@ -1,0 +1,43 @@
+spring:
+  config:
+    import: "classpath:prueba-api.yml"
+  jpa:
+    properties:
+      hibernate:
+        dialect: org.hibernate.dialect.PostgreSQLDialect
+        "[transaction.coordinator_class]": jta
+        "[jta.platform]": org.hibernate.service.jta.platform.internal.JBossAppServerJtaPlatform
+    open-in-view: false
+
+
+springdoc:
+  api-docs:
+    enabled: true
+    path: /v3/api-docs
+  swagger-ui:
+    enabled: true
+    path: /swagger-ui.html
+    url: /v3/api-docs
+  paths-to-match: /**
+
+
+logging:
+  level:
+    "[org.springframework.web]": ERROR
+    "[org.springdoc]": ERROR
+    "[org.springframework.security]": ERROR
+    "[org.springframework.data]": ERROR
+    "[org.hibernate.SQL]": ERROR
+    "[org.hibernate.type.descriptor.sql]": ERROR
+
+seguridad:
+  auditoria:
+    requerida: N
+
+
+ftp:
+  ip: "127.0.0.1"        # IP Local
+  puerto: 21
+  usuario: "ftp_user"       # Usuario cualquiera para que no falle al iniciar
+  clave: "1924"      # Clave cualquiera
+  ruta-base: "/evidencias"

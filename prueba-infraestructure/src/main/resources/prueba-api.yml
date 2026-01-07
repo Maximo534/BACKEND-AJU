@@ -1,0 +1,50 @@
+# SEGURIDAD
+seguridad:
+  dominios:
+    permitidos: "*"
+  key: "a96139ff7ca39aa896c6dfccddb44d2c494adc62cb8ccdd9a8e37e46adc89bc3fa6c244c853d7ee2262187e8389572e44fbf162db9007c6a7649d005e9547767a4"
+  aplicativo:
+    identificador: 79
+    nombre: "prueba-api-rest"
+  authenticate:
+    token:
+      expira: 300
+      refresh: 180
+  auditoria:
+    requerida: "S"
+
+# TIMEOUT
+timeout:
+  database:
+    transaction: 120
+  client:
+    api:
+      conection: 60
+      read: 60
+
+# ALFRESCO
+alfresco:
+  pbase:
+    host: "172.34.0.102"
+    puerto: 8080
+    usuario: "usrProyectoBase"
+    clave: "123456"
+    path: "/app:company_home/cm:PBASE"
+    version: "4.2"
+
+# CAPTCHA
+captcha:
+  url: "https://www.google.com/recaptcha/api/siteverify"
+  token: "6LeqbAAnAAAAAHY-9B0p4qHhudrrz0QN1c3Z8Pe8"
+  aplica: "N"
+
+# CONSULTA-SIGA-WS-REST
+consultasigawsrest:
+  url: "http://172.18.13.173:8193/consulta-siga-ws"
+  usuario: "bGI3/JvsEwEqcImM5Rr/cQ=="
+  clave: "52MGks0LHJM="
+  rol: "CCSWS01"
+  cliente: "CLCSO"
+  endpoints:
+    authenticate: "/api/authenticate"
+    consultaestadousuario: "/consulta/usuario-estado"

@@ -1,0 +1,29 @@
+package pe.gob.pj.prueba.infraestructure.db.negocio.entities.masters;
+
+import jakarta.persistence.*;
+import lombok.Data;
+import java.io.Serializable;
+
+@Entity
+@Table(name = "mae_aju_departamentos")
+@Data
+public class MaeDepartamentoEntity implements Serializable {
+
+    private static final long serialVersionUID = 1L;
+
+    @Id
+    @Column(name = "c_depa_id", length = 2)
+    private String id;
+
+    @Column(name = "x_nombre", length = 45, nullable = false)
+    private String nombre;
+
+    @Column(name = "x_lati_geog", columnDefinition = "TEXT")
+    private String latitud;
+
+    @Column(name = "x_long_geog", columnDefinition = "TEXT")
+    private String longitud;
+
+    @Column(name = "c_distrito_jud_id", length = 2, nullable = false)
+    private String distritoJudicialId;
+}

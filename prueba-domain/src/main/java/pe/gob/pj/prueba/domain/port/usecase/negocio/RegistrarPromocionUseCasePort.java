@@ -1,0 +1,36 @@
+package pe.gob.pj.prueba.domain.port.usecase.negocio;
+
+import org.springframework.web.multipart.MultipartFile;
+import pe.gob.pj.prueba.domain.model.common.Pagina;
+import pe.gob.pj.prueba.domain.model.common.RecursoArchivo;
+import pe.gob.pj.prueba.domain.model.negocio.PromocionCultura;
+
+import java.util.List;
+
+public interface RegistrarPromocionUseCasePort {
+
+    Pagina<PromocionCultura> listarPromocion(String usuario, PromocionCultura filtros, int pagina, int tamanio) throws Exception;
+
+    PromocionCultura registrar(PromocionCultura dominio, String usuarioOperacion) throws Exception;
+
+    PromocionCultura registrarConEvidencias(
+            PromocionCultura dominio,
+            MultipartFile anexo,
+            List<MultipartFile> videos,
+            List<MultipartFile> fotos,
+            String usuarioOperacion
+    ) throws Exception;
+
+    PromocionCultura actualizar(PromocionCultura dominio, String usuarioOperacion) throws Exception;
+
+    PromocionCultura buscarPorId(String id) throws Exception;
+
+    // Métodos de Archivos
+    void eliminarArchivo(String nombreArchivo) throws Exception; // Solo recibe nombre
+
+    void subirArchivoAdicional(String idEvento, MultipartFile archivo, String tipoArchivo, String usuarioOperacion) throws Exception;
+
+    RecursoArchivo descargarAnexo(String idEvento, String usuario) throws Exception;
+    byte[] generarFichaPdf(String idEvento) throws Exception;
+
+}
