@@ -1,5 +1,8 @@
 package pe.gob.pj.prueba.infraestructure.rest.requests;
 
+import jakarta.validation.Valid;
+import jakarta.validation.constraints.NotBlank;
+import jakarta.validation.constraints.NotNull;
 import lombok.Data;
 import org.springframework.format.annotation.DateTimeFormat;
 import java.io.Serializable;
@@ -9,8 +12,12 @@ import java.util.List;
 @Data
 public class RegistrarLlapanchikpaqRequest implements Serializable {
 
+    private String id;
+
+    @NotBlank(message = "Distrito Judicial obligatorio")
     private String distritoJudicialId;
 
+    @NotNull(message = "Fecha inicio obligatoria")
     @DateTimeFormat(pattern = "yyyy-MM-dd")
     private LocalDate fechaInicio;
 
@@ -34,10 +41,13 @@ public class RegistrarLlapanchikpaqRequest implements Serializable {
     private String impactoActividad;
     private String observacion;
 
-    // --- LISTAS DETALLE (Deben coincidir con el JSON del Front) ---
+    @Valid
     private List<BeneficiadaRequest> beneficiadas;
+    @Valid
     private List<AtendidaRequest> atendidas;
+    @Valid
     private List<CasoRequest> casos;
+    @Valid
     private List<TareaRequest> tareas;
 
     // --- DTOs Internos ---
@@ -49,31 +59,8 @@ public class RegistrarLlapanchikpaqRequest implements Serializable {
         private Integer cantMasculino;
         private Integer cantLgtbiq;
     }
-
-    @Data
-    public static class AtendidaRequest {
-        private Integer tipoVulnerabilidadId;
-        private String rangoEdad;
-        private Integer cantidadFemenino;
-        private Integer cantidadMasculino;
-        private Integer cantidadLgtbiq;
-    }
-
-    @Data
-    public static class CasoRequest {
-        private Integer materiaId;
-        private Integer cantidadDemandas;
-        private Integer cantidadAudiencias;
-        private Integer cantidadSentencias;
-        private Integer cantidadProcesos;
-        private Integer cantidadNotificaciones;
-        private Integer cantidadOrientaciones;
-    }
-
-    @Data
-    public static class TareaRequest {
-        private String tareaId;
-        @DateTimeFormat(pattern = "yyyy-MM-dd")
-        private LocalDate fechaInicio;
-    }
+    // ... otros DTOs internos (sin cambios) ...
+    @Data public static class AtendidaRequest { Integer tipoVulnerabilidadId; String rangoEdad; Integer cantidadFemenino; Integer cantidadMasculino; Integer cantidadLgtbiq; }
+    @Data public static class CasoRequest { Integer materiaId; Integer cantidadDemandas; Integer cantidadAudiencias; Integer cantidadSentencias; Integer cantidadProcesos; Integer cantidadNotificaciones; Integer cantidadOrientaciones; }
+    @Data public static class TareaRequest { String tareaId; LocalDate fechaInicio; }
 }

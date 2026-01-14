@@ -5,15 +5,14 @@ import java.io.Serializable;
 import java.time.LocalDate;
 
 @Data
-public class ListarPromocionRequest implements Serializable {
+public class ListarOrientadoraRequest implements Serializable {
 
-    // ✅ BUSCADOR GENERAL (ID, Descripción, Corte)
-    private String search;
+    private String search; // Buscador por ID, Nombre o DNI
 
-    // ✅ FILTRO COMBO
+    // Filtros
     private String distritoJudicialId;
 
-    // ✅ FILTRO RANGO DE FECHAS (Sobre fecha de inicio)
+    // Rango de fechas (Atención)
     private LocalDate fechaInicio;
     private LocalDate fechaFin;
 }

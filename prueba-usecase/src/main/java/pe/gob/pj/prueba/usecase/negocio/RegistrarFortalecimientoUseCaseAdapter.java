@@ -11,15 +11,16 @@ import pe.gob.pj.prueba.domain.model.common.RecursoArchivo;
 import pe.gob.pj.prueba.domain.model.negocio.Archivo;
 import pe.gob.pj.prueba.domain.model.negocio.FortalecimientoCapacidades;
 import pe.gob.pj.prueba.domain.port.files.FtpPort;
-import pe.gob.pj.prueba.domain.port.persistence.negocio.GestionArchivosPersistencePort;
+import pe.gob.pj.prueba.domain.port.output.GenerarReportePort;
 import pe.gob.pj.prueba.domain.port.persistence.negocio.FortalecimientoPersistencePort;
+import pe.gob.pj.prueba.domain.port.persistence.negocio.GestionArchivosPersistencePort;
 import pe.gob.pj.prueba.domain.port.usecase.negocio.RegistrarFortalecimientoUseCasePort;
 
 import java.io.InputStream;
 import java.time.LocalDate;
 import java.util.List;
 import java.util.UUID;
-import pe.gob.pj.prueba.domain.port.output.GenerarReportePort;
+
 @Service
 @RequiredArgsConstructor
 @Slf4j
@@ -43,80 +44,63 @@ public class RegistrarFortalecimientoUseCaseAdapter implements RegistrarFortalec
     }
 
     @Override
-    @Transactional
-    public FortalecimientoCapacidades registrar(FortalecimientoCapacidades dominio, String usuarioOperacion) throws Exception {
-        validarDatos(dominio);
-
-        if (dominio.getResolucionAdminPlan() == null) {
-            dominio.setResolucionAdminPlan("NINGUNO");
-        }
-        if (dominio.getInstitucionesAliadas() == null || dominio.getInstitucionesAliadas().isBlank()) {
-            dominio.setInstitucionesAliadas("NINGUNA");
-        }
-        if ("NO".equalsIgnoreCase(dominio.getSeDictoLenguaNativa())) {
-            dominio.setLenguaNativaDesc("CASTELLANO");
-        } else if (dominio.getLenguaNativaDesc() == null || dominio.getLenguaNativaDesc().isBlank()) {
-            throw new Exception("Debe especificar la lengua nativa.");
-        }
-
-        String ultimoId = persistencePort.obtenerUltimoId();
-        long siguiente = 1;
-
-        if (ultimoId != null && !ultimoId.isBlank()) {
-            try {
-                // Formato esperado: 000001-11-2025-FC
-                String parteNumerica = ultimoId.substring(0, 6);
-                siguiente = Long.parseLong(parteNumerica) + 1;
-            } catch (Exception e) {
-                log.warn("Último ID '{}' no tiene formato estándar. Iniciando en 1.", ultimoId);
-                siguiente = 1;
-            }
-        }
-
-        String numeroStr = String.format("%06d", siguiente);
-        String anio = String.valueOf(LocalDate.now().getYear());
-        String corte = dominio.getDistritoJudicialId();
-
-        // Armamos ID: 000001-11-2025-FC (Usamos sufijo FC para Fortalecimiento)
-        String idGenerado = String.format("%s-%s-%s-FC", numeroStr, corte, anio);
-
-        if (idGenerado.length() > 17) idGenerado = idGenerado.substring(0, 17);
-
-        dominio.setId(idGenerado);
-
-        dominio.setUsuarioRegistro(usuarioOperacion);
-        dominio.setFechaRegistro(LocalDate.now());
-        dominio.setActivo("1");
-
-        return persistencePort.guardar(dominio);
+    @Transactional(readOnly = true)
+    public FortalecimientoCapacidades buscarPorId(String id) throws Exception {
+        if (id == null || id.isBlank()) throw new Exception("El ID es obligatorio");
+        return persistencePort.obtenerPorId(id);
     }
 
     @Override
     @Transactional(rollbackFor = Exception.class)
-    public FortalecimientoCapacidades registrarConEvidencias(FortalecimientoCapacidades dominio, MultipartFile anexo, List<MultipartFile> videos, List<MultipartFile> fotos, String usuarioOperacion) throws Exception {
-        FortalecimientoCapacidades registrado = this.registrar(dominio, usuarioOperacion);
+    public FortalecimientoCapacidades registrar(FortalecimientoCapacidades dominio, MultipartFile anexo, List<MultipartFile> videos, List<MultipartFile> fotos, String usuario) throws Exception {
 
-        try {
-            ftpPort.iniciarSesion(usuarioOperacion, ftpIp, ftpPuerto, ftpUsuario, ftpClave);
+        // 1. Validaciones y Defaults
+        validarDatos(dominio);
+        if (dominio.getResolucionAdminPlan() == null) dominio.setResolucionAdminPlan("NINGUNO");
 
-            String id = registrado.getId();
-            String distrito = registrado.getDistritoJudicialId();
-            LocalDate fecha = registrado.getFechaInicio();
+        // 2. Generar ID
+        String ultimoId = persistencePort.obtenerUltimoId();
+        long siguiente = 1;
+        if (ultimoId != null && !ultimoId.isBlank()) {
+            try { siguiente = Long.parseLong(ultimoId.split("-")[0]) + 1; } catch (Exception e) { siguiente = 1; }
+        }
+        String anio = String.valueOf(LocalDate.now().getYear());
+        String corte = (dominio.getDistritoJudicialId() != null) ? dominio.getDistritoJudicialId() : "00";
+        dominio.setId(String.format("%06d-%s-%s-FC", siguiente, corte, anio));
 
-            if (anexo != null && !anexo.isEmpty())
-                guardarEvidencia(anexo, id, distrito, fecha, "ANEXO", usuarioOperacion);
+        // 3. Auditoría y BD
+        dominio.setUsuarioRegistro(usuario);
+        dominio.setFechaRegistro(LocalDate.now());
+        dominio.setActivo("1");
 
-            if (videos != null)
-                for (MultipartFile v : videos) if (!v.isEmpty()) guardarEvidencia(v, id, distrito, fecha, "VIDEO", usuarioOperacion);
+        FortalecimientoCapacidades registrado = persistencePort.guardar(dominio);
 
-            if (fotos != null)
-                for (MultipartFile f : fotos) if (!f.isEmpty()) guardarEvidencia(f, id, distrito, fecha, "FOTO", usuarioOperacion);
+        // 4. Subir Archivos (Con UUID)
+        boolean hayArchivos = (anexo != null && !anexo.isEmpty()) ||
+                (videos != null && !videos.isEmpty()) ||
+                (fotos != null && !fotos.isEmpty());
 
-        } catch (Exception e) {
-            log.error("Error subiendo archivos FFC. Rollback.", e);
-            throw new Exception("Error al subir evidencias: " + e.getMessage());
-        } finally {
-            ftpPort.finalizarSession(usuarioOperacion);
+        if (hayArchivos) {
+            String sessionKey = UUID.randomUUID().toString();
+            try {
+                ftpPort.iniciarSesion(sessionKey, ftpIp, ftpPuerto, ftpUsuario, ftpClave);
+
+                if (anexo != null && !anexo.isEmpty())
+                    uploadFile(anexo, registrado, "ANEXO", sessionKey);
+
+                if (videos != null)
+                    for (MultipartFile v : videos)
+                        if (!v.isEmpty()) uploadFile(v, registrado, "VIDEO", sessionKey);
+
+                if (fotos != null)
+                    for (MultipartFile f : fotos)
+                        if (!f.isEmpty()) uploadFile(f, registrado, "FOTO", sessionKey);
+
+            } catch (Exception e) {
+                log.error("Error subiendo evidencias FFC", e);
+            } finally {
+                ftpPort.finalizarSession(sessionKey);
+            }
         }
         return registrado;
     }
@@ -124,16 +108,13 @@ public class RegistrarFortalecimientoUseCaseAdapter implements RegistrarFortalec
     @Override
     @Transactional
     public FortalecimientoCapacidades actualizar(FortalecimientoCapacidades dominio, String usuarioOperacion) throws Exception {
-        log.info("Iniciando actualización de FFC ID: {} por: {}", dominio.getId(), usuarioOperacion);
+        log.info("Actualizando FFC ID: {} por: {}", dominio.getId(), usuarioOperacion);
 
         validarDatos(dominio);
 
-        if (dominio.getResolucionAdminPlan() == null || dominio.getResolucionAdminPlan().isBlank()) {
-            dominio.setResolucionAdminPlan("NINGUNO");
-        }
-        if (dominio.getInstitucionesAliadas() == null || dominio.getInstitucionesAliadas().isBlank()) {
-            dominio.setInstitucionesAliadas("NINGUNA");
-        }
+        // Defaults de negocio
+        if (dominio.getResolucionAdminPlan() == null || dominio.getResolucionAdminPlan().isBlank()) dominio.setResolucionAdminPlan("NINGUNO");
+        if (dominio.getInstitucionesAliadas() == null || dominio.getInstitucionesAliadas().isBlank()) dominio.setInstitucionesAliadas("NINGUNA");
 
         if ("NO".equalsIgnoreCase(dominio.getSeDictoLenguaNativa())) {
             dominio.setLenguaNativaDesc("CASTELLANO");
@@ -142,85 +123,125 @@ public class RegistrarFortalecimientoUseCaseAdapter implements RegistrarFortalec
         }
 
         dominio.setUsuarioRegistro(usuarioOperacion);
-        dominio.setActivo("1");
-
         return persistencePort.actualizar(dominio);
     }
 
     @Override
-    @Transactional(readOnly = true)
-    public FortalecimientoCapacidades buscarPorId(String id) throws Exception {
-        return persistencePort.obtenerPorId(id);
-    }
+    @Transactional
+    public void agregarArchivo(String idEvento, MultipartFile archivo, String tipo, String usuario) throws Exception {
+        log.info("Usuario [{}] agregando archivo [{}] al evento FFC ID [{}]", usuario, tipo, idEvento);
 
-    private void guardarEvidencia(MultipartFile archivo, String idEvento, String idDistrito, LocalDate fecha, String tipo, String usuario) throws Exception {
-        String anio = String.valueOf(fecha.getYear());
-        String mes = String.format("%02d", fecha.getMonthValue());
+        if (archivo == null || archivo.isEmpty()) throw new Exception("Archivo vacío");
 
-        String carpetaTipo = switch (tipo.toUpperCase()) {
-            case "ANEXO" -> "fichas"; // O "informes"
-            case "VIDEO" -> "videos";
-            case "FOTO" -> "fotos";
-            default -> "otros";
-        };
+        FortalecimientoCapacidades evento = persistencePort.obtenerPorId(idEvento);
+        if (evento == null) throw new Exception("No existe el evento: " + idEvento);
 
-        String rutaRelativa = String.format("%s/%s/evidencias_ffc/%s/%s/%s/%s",
-                ftpRutaBase, idDistrito, carpetaTipo, anio, mes, idEvento);
-
-        String nombreFinal = UUID.randomUUID().toString().replace("-", "") + obtenerExtension(archivo.getOriginalFilename());
-        String rutaCompletaFtp = rutaRelativa + "/" + nombreFinal;
-
-        if(!ftpPort.uploadFileFTP(usuario, rutaCompletaFtp, archivo.getInputStream(), "Evidencia FFC " + tipo)) {
-            throw new Exception("Fallo subida FTP: " + nombreFinal);
+        String sessionKey = UUID.randomUUID().toString();
+        try {
+            ftpPort.iniciarSesion(sessionKey, ftpIp, ftpPuerto, ftpUsuario, ftpClave);
+            uploadFile(archivo, evento, tipo, sessionKey);
+        } catch (Exception e) {
+            log.error("Error agregando archivo FFC", e);
+            throw new Exception("Error al subir archivo: " + e.getMessage());
+        } finally {
+            ftpPort.finalizarSession(sessionKey);
         }
-
-        Archivo archivoDomain = Archivo.builder()
-                .nombre(nombreFinal).tipo(tipo.toLowerCase())
-                .ruta(rutaRelativa).numeroIdentificacion(idEvento).build();
-
-        archivosPersistencePort.guardarReferenciaArchivo(archivoDomain);
     }
 
     @Override
+    @Transactional
     public void eliminarArchivo(String nombreArchivo) throws Exception {
         Archivo archivo = archivosPersistencePort.buscarPorNombre(nombreArchivo);
-        String rutaCompletaFtp = archivo.getRuta() + "/" + archivo.getNombre();
+        if (archivo == null) throw new Exception("Archivo no encontrado en BD.");
 
-        ftpPort.iniciarSesion("ELIMINAR", ftpIp, ftpPuerto, ftpUsuario, ftpClave);
+        String rutaCompletaFtp = archivo.getRuta() + "/" + archivo.getNombre();
+        String sessionKey = UUID.randomUUID().toString();
+
+        ftpPort.iniciarSesion(sessionKey, ftpIp, ftpPuerto, ftpUsuario, ftpClave);
         try {
             ftpPort.deleteFileFTP(rutaCompletaFtp);
+        } catch (Exception e) {
+            log.warn("Fallo borrado FTP, se borrará de BD.");
         } finally {
-            ftpPort.finalizarSession("ELIMINAR");
+            ftpPort.finalizarSession(sessionKey);
         }
         archivosPersistencePort.eliminarReferenciaArchivo(nombreArchivo);
     }
 
     @Override
-    public void subirArchivoAdicional(String idEvento, MultipartFile archivo, String tipo, String usuario) throws Exception {
-        FortalecimientoCapacidades evento = persistencePort.obtenerPorId(idEvento);
-        try {
-            ftpPort.iniciarSesion(usuario, ftpIp, ftpPuerto, ftpUsuario, ftpClave);
-            guardarEvidencia(archivo, evento.getId(), evento.getDistritoJudicialId(), evento.getFechaInicio(), tipo, usuario);
+    public RecursoArchivo descargarAnexo(String idEvento, String usuario) throws Exception {
+        if (idEvento == null || idEvento.isEmpty()) throw new Exception("ID obligatorio");
+
+        List<Archivo> archivos = archivosPersistencePort.listarArchivosPorEvento(idEvento);
+        Archivo anexo = archivos.stream()
+                .filter(a -> "ANEXO".equalsIgnoreCase(a.getTipo()))
+                .findFirst()
+                .orElseThrow(() -> new Exception("Sin anexo PDF para este evento."));
+
+        java.nio.file.Path tempFile = java.nio.file.Files.createTempFile("ffc_anexo_" + idEvento, ".tmp");
+        String sessionKey = UUID.randomUUID().toString();
+
+        ftpPort.iniciarSesion(sessionKey, ftpIp, ftpPuerto, ftpUsuario, ftpClave);
+        try (InputStream ftpStream = ftpPort.descargarArchivo(anexo.getRuta() + "/" + anexo.getNombre());
+             java.io.OutputStream tempStream = java.nio.file.Files.newOutputStream(tempFile)) {
+            ftpStream.transferTo(tempStream);
+        } catch (Exception e) {
+            java.nio.file.Files.deleteIfExists(tempFile);
+            throw e;
         } finally {
-            ftpPort.finalizarSession(usuario);
+            ftpPort.finalizarSession(sessionKey);
         }
+
+        InputStream autoDeleteStream = new java.io.FileInputStream(tempFile.toFile()) {
+            @Override public void close() throws java.io.IOException {
+                super.close();
+                java.nio.file.Files.deleteIfExists(tempFile);
+            }
+        };
+
+        return RecursoArchivo.builder()
+                .stream(autoDeleteStream)
+                .nombreFileName(anexo.getNombre())
+                .build();
     }
 
     @Override
-    public RecursoArchivo descargarAnexo(String idEvento, String usuario) throws Exception {
-        List<Archivo> archivos = archivosPersistencePort.listarArchivosPorEvento(idEvento);
-        Archivo anexo = archivos.stream().filter(a -> "ANEXO".equalsIgnoreCase(a.getTipo())).findFirst()
-                .orElseThrow(() -> new Exception("Sin anexo PDF."));
+    public byte[] generarFichaPdf(String idEvento) throws Exception {
+        if (persistencePort.obtenerPorId(idEvento) == null) throw new Exception("El evento no existe.");
+        return reportePort.generarFichaFortalecimiento(idEvento);
+    }
 
-        ftpPort.iniciarSesion(usuario, ftpIp, ftpPuerto, ftpUsuario, ftpClave);
-        try {
-            return RecursoArchivo.builder()
-                    .stream(ftpPort.descargarArchivo(anexo.getRuta() + "/" + anexo.getNombre()))
-                    .nombreFileName(anexo.getNombre()).build();
-        } catch (Exception e) {
-            ftpPort.finalizarSession(usuario);
-            throw e;
+    // =========================================================================
+    // MÉTODO PRIVADO UNIFICADO ("Cerebro" de subida FFC)
+    // =========================================================================
+    private void uploadFile(MultipartFile file, FortalecimientoCapacidades evento, String tipo, String sessionKey) throws Exception {
+
+        String carpeta = switch (tipo.toUpperCase()) {
+            case "ANEXO" -> "fichas";
+            case "VIDEO" -> "videos";
+            case "FOTO" -> "fotos";
+            default -> "otros";
+        };
+
+        String dist = evento.getDistritoJudicialId();
+        String anio = String.valueOf(evento.getFechaInicio().getYear());
+        String mes = String.format("%02d", evento.getFechaInicio().getMonthValue());
+
+        // Ruta: /evidencias/DISTRITO/evidencias_ffc/CARPETA/ANIO/MES/ID
+        String rutaRelativa = String.format("%s/%s/evidencias_ffc/%s/%s/%s/%s", ftpRutaBase, dist, carpeta, anio, mes, evento.getId());
+
+        String ext = obtenerExtension(file.getOriginalFilename());
+        // En FFC usamos UUID aleatorio para evitar colisiones
+        String nombreFinal = UUID.randomUUID().toString().replace("-", "") + ext;
+
+        if (!ftpPort.uploadFileFTP(sessionKey, rutaRelativa + "/" + nombreFinal, file.getInputStream(), "Carga " + tipo)) {
+            throw new Exception("Fallo FTP al subir " + nombreFinal);
         }
+
+        archivosPersistencePort.guardarReferenciaArchivo(Archivo.builder()
+                .nombre(nombreFinal).tipo(tipo.toLowerCase())
+                .ruta(rutaRelativa).numeroIdentificacion(evento.getId())
+                .build());
     }
 
     private void validarDatos(FortalecimientoCapacidades ffc) throws Exception {
@@ -230,13 +251,5 @@ public class RegistrarFortalecimientoUseCaseAdapter implements RegistrarFortalec
 
     private String obtenerExtension(String nombre) {
         return (nombre != null && nombre.contains(".")) ? nombre.substring(nombre.lastIndexOf(".")) : "";
-    }
-
-    public byte[] generarFichaPdf(String idEvento) throws Exception {
-        // Validamos existencia (opcional, el servicio también lo hace)
-        if (persistencePort.obtenerPorId(idEvento) == null) {
-            throw new Exception("El evento no existe.");
-        }
-        return reportePort.generarFichaFortalecimiento(idEvento);
     }
 }

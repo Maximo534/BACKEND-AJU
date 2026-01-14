@@ -1,5 +1,6 @@
 package pe.gob.pj.prueba.infraestructure.rest.controllers;
 
+import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.core.io.InputStreamResource;
@@ -31,7 +32,10 @@ public class FortalecimientoController {
     private final RegistrarFortalecimientoUseCasePort useCase;
     private final FortalecimientoMapper mapper;
 
-    @PostMapping(value = "/listar", produces = MediaType.APPLICATION_JSON_VALUE)
+    // =========================================================================
+    // 1. LISTAR
+    // =========================================================================
+    @PostMapping(produces = MediaType.APPLICATION_JSON_VALUE)
     public ResponseEntity<GlobalResponse> listar(
             @RequestParam(name = "pagina", defaultValue = "1") int pagina,
             @RequestParam(name = "tamanio", defaultValue = "10") int tamanio,
@@ -39,28 +43,21 @@ public class FortalecimientoController {
     ) {
         GlobalResponse res = new GlobalResponse();
         try {
-            FortalecimientoCapacidades filtros = FortalecimientoCapacidades.builder().build();
+            String usuario = "EMATAMOROSV";
 
+            FortalecimientoCapacidades filtros = FortalecimientoCapacidades.builder().build();
             if (request != null) {
-                filtros.setId(request.getCodigoRegistro());
-                filtros.setNombreEvento(request.getNombreEvento());
+                filtros.setSearch(request.getSearch());
                 filtros.setDistritoJudicialId(request.getDistritoJudicialId());
+                filtros.setTipoEvento(request.getTipoEvento());
                 filtros.setFechaInicio(request.getFechaInicio());
                 filtros.setFechaFin(request.getFechaFin());
             }
 
-            Pagina<FortalecimientoCapacidades> resultado = useCase.listar("EMATAMOROSV", filtros, pagina, tamanio);
+            Pagina<FortalecimientoCapacidades> resultado = useCase.listar(usuario, filtros, pagina, tamanio);
 
             List<FortalecimientoResponse> responseList = resultado.getContenido().stream()
-                    .map(d -> FortalecimientoResponse.builder()
-                            .id(d.getId())
-                            .nombreEvento(d.getNombreEvento())
-                            .tipoEvento(d.getTipoEvento())
-                            .fechaInicio(d.getFechaInicio())
-                            .lugar(d.getNombreInstitucion())
-                            .fechaRegistro(d.getFechaRegistro())
-                            .estado(d.getActivo())
-                            .build())
+                    .map(mapper::toResponse)
                     .collect(Collectors.toList());
 
             Pagina<FortalecimientoResponse> paginaRes = Pagina.<FortalecimientoResponse>builder()
@@ -72,31 +69,63 @@ public class FortalecimientoController {
                     .build();
 
             res.setCodigo("200");
-            res.setDescripcion("Listado FFC exitoso");
+            res.setDescripcion("Listado exitoso");
             res.setData(paginaRes);
             return ResponseEntity.ok(res);
+
         } catch (Exception e) {
+            log.error("Error al listar FFC", e);
             res.setCodigo("500");
             res.setDescripcion("Error: " + e.getMessage());
             return ResponseEntity.internalServerError().body(res);
         }
     }
 
-    @PostMapping(value = "/registrar-unificado", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
+    // =========================================================================
+    // 2. OBTENER POR ID
+    // =========================================================================
+    @GetMapping(value = "/{id}", produces = MediaType.APPLICATION_JSON_VALUE)
+    public ResponseEntity<GlobalResponse> obtenerPorId(@PathVariable String id) {
+        GlobalResponse res = new GlobalResponse();
+        try {
+            FortalecimientoCapacidades encontrado = useCase.buscarPorId(id);
+
+            // Mapeamos a DTO Response para ser consistente con la arquitectura
+            FortalecimientoResponse responseDto = mapper.toResponse(encontrado);
+
+            res.setCodigo("200");
+            res.setDescripcion("Consulta exitosa");
+            res.setData(responseDto);
+            return ResponseEntity.ok(res);
+        } catch (Exception e) {
+            log.error("Error al consultar por ID", e);
+            res.setCodigo("500");
+            res.setDescripcion("Error al consultar: " + e.getMessage());
+            return ResponseEntity.internalServerError().body(res);
+        }
+    }
+
+    // =========================================================================
+    // 3. REGISTRAR
+    // =========================================================================
+    @PostMapping(consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
     public ResponseEntity<GlobalResponse> registrar(
-            @RequestPart("datos") RegistrarFfcRequest request,
+            @Valid @ModelAttribute RegistrarFfcRequest request,
             @RequestPart(value = "anexo", required = false) MultipartFile anexo,
             @RequestPart(value = "videos", required = false) List<MultipartFile> videos,
             @RequestPart(value = "fotos", required = false) List<MultipartFile> fotos
     ) {
         GlobalResponse res = new GlobalResponse();
         try {
-            FortalecimientoCapacidades registrado = useCase.registrarConEvidencias(
-                    mapper.toDomain(request), anexo, videos, fotos, "EMATAMOROSV"
+            String usuario = "EMATAMOROSV";
+            FortalecimientoCapacidades registrado = useCase.registrar(
+                    mapper.toDomain(request), anexo, videos, fotos, usuario
             );
+
             res.setCodigo("200");
-            res.setDescripcion("Registro FFC exitoso. ID: " + registrado.getId());
-            res.setData(registrado);
+            res.setDescripcion("Registro exitoso. ID: " + registrado.getId());
+            // Devolvemos el DTO
+            res.setData(mapper.toResponse(registrado));
             return ResponseEntity.ok(res);
         } catch (Exception e) {
             log.error("Error FFC", e);
@@ -106,8 +135,11 @@ public class FortalecimientoController {
         }
     }
 
-    @PutMapping(value = "/actualizar", consumes = MediaType.APPLICATION_JSON_VALUE)
-    public ResponseEntity<GlobalResponse> actualizar(@RequestBody RegistrarFfcRequest request) {
+    // =========================================================================
+    // 4. ACTUALIZAR
+    // =========================================================================
+    @PutMapping(consumes = MediaType.APPLICATION_JSON_VALUE, produces = MediaType.APPLICATION_JSON_VALUE)
+    public ResponseEntity<GlobalResponse> actualizar(@Valid @RequestBody RegistrarFfcRequest request) {
         GlobalResponse res = new GlobalResponse();
         try {
             if (request.getId() == null || request.getId().isBlank()) {
@@ -117,35 +149,68 @@ public class FortalecimientoController {
             FortalecimientoCapacidades dominio = mapper.toDomain(request);
             dominio.setId(request.getId());
 
-            FortalecimientoCapacidades actualizado = useCase.actualizar(dominio, "EMATAMOROSV");
+            String usuario = "EMATAMOROSV";
+            FortalecimientoCapacidades actualizado = useCase.actualizar(dominio, usuario);
 
             res.setCodigo("200");
-            res.setDescripcion("Actualización de datos FFC exitosa.");
-            res.setData(actualizado);
+            res.setDescripcion("Actualización exitosa");
+            // Devolvemos el DTO
+            res.setData(mapper.toResponse(actualizado));
             return ResponseEntity.ok(res);
 
         } catch (Exception e) {
-            log.error("Error al actualizar FFC", e);
+            log.error("Error actualizando FFC", e);
             res.setCodigo("500");
-            res.setDescripcion("Error: " + e.getMessage());
+            res.setDescripcion("Error al actualizar: " + e.getMessage());
             return ResponseEntity.internalServerError().body(res);
         }
     }
 
-    @GetMapping("/{id}")
-    public ResponseEntity<GlobalResponse> buscar(@PathVariable String id) {
+    // =========================================================================
+    // 5. GESTIÓN DE ARCHIVOS
+    // =========================================================================
+    @PostMapping(value = "/archivos", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
+    public ResponseEntity<GlobalResponse> agregarArchivo(
+            @RequestParam("idEvento") String idEvento,
+            @RequestParam("tipo") String tipo,
+            @RequestPart("archivo") MultipartFile archivo
+    ) {
         GlobalResponse res = new GlobalResponse();
         try {
-            res.setData(useCase.buscarPorId(id));
+            String usuario = "EMATAMOROSV";
+            useCase.agregarArchivo(idEvento, archivo, tipo, usuario);
+
             res.setCodigo("200");
+            res.setDescripcion("Archivo agregado correctamente");
             return ResponseEntity.ok(res);
+
         } catch (Exception e) {
+            log.error("Error al subir archivo adicional", e);
             res.setCodigo("500");
-            res.setDescripcion(e.getMessage());
-            return ResponseEntity.internalServerError().body(res);
+            res.setDescripcion("Error al subir archivo: " + e.getMessage());
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(res);
         }
     }
 
+    @DeleteMapping(value = "/archivos/{nombre:.+}")
+    public ResponseEntity<GlobalResponse> eliminarArchivo(@PathVariable String nombre) {
+        GlobalResponse res = new GlobalResponse();
+        try {
+            useCase.eliminarArchivo(nombre);
+            res.setCodigo("200");
+            res.setDescripcion("Archivo eliminado correctamente");
+            return ResponseEntity.ok(res);
+        } catch (Exception e) {
+            log.error("Error al eliminar archivo", e);
+            res.setCodigo("500");
+            res.setDescripcion("Error al eliminar archivo: " + e.getMessage());
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(res);
+        }
+    }
+
+    // =========================================================================
+    // 6. DESCARGAS
+    // =========================================================================
     @GetMapping("/anexo/{id}")
     public ResponseEntity<InputStreamResource> descargarAnexo(@PathVariable String id) {
         try {
@@ -159,45 +224,6 @@ public class FortalecimientoController {
         }
     }
 
-    @DeleteMapping(value = "/archivos/{nombre:.+}")
-    public ResponseEntity<GlobalResponse> eliminarArchivo(@PathVariable String nombre) {
-        GlobalResponse res = new GlobalResponse();
-        try {
-            useCase.eliminarArchivo(nombre);
-
-            res.setCodigo("200");
-            res.setDescripcion("Archivo eliminado correctamente");
-            return ResponseEntity.ok(res);
-
-        } catch (Exception e) {
-            res.setCodigo("500");
-            res.setDescripcion("Error al eliminar archivo: " + e.getMessage());
-            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(res);
-        }
-    }
-
-    @PostMapping(value = "/archivos/agregar", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
-    public ResponseEntity<GlobalResponse> agregarArchivo(
-            @RequestParam("idEvento") String idEvento,
-            @RequestParam("tipo") String tipo,
-            @RequestPart("archivo") MultipartFile archivo
-    ) {
-        GlobalResponse res = new GlobalResponse();
-        try {
-            String usuario = "EMATAMOROSV";
-            useCase.subirArchivoAdicional(idEvento, archivo, tipo, usuario);
-
-            res.setCodigo("200");
-            res.setDescripcion("Archivo agregado correctamente");
-            return ResponseEntity.ok(res);
-
-        } catch (Exception e) {
-            res.setCodigo("500");
-            res.setDescripcion("Error al subir archivo: " + e.getMessage());
-            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(res);
-        }
-    }
-
     @GetMapping("/{id}/ficha")
     public ResponseEntity<byte[]> descargarFicha(@PathVariable String id) {
         try {
@@ -206,13 +232,10 @@ public class FortalecimientoController {
             headers.setContentType(MediaType.APPLICATION_PDF);
             headers.setContentDispositionFormData("inline", "Ficha_FFC_" + id + ".pdf");
             headers.setCacheControl("must-revalidate, post-check=0, pre-check=0");
-
             return new ResponseEntity<>(pdfBytes, headers, HttpStatus.OK);
-
         } catch (Exception e) {
-            log.error("Error generando ficha FFC", e);
+            log.error("Error generando ficha", e);
             return ResponseEntity.internalServerError().build();
         }
     }
-
 }

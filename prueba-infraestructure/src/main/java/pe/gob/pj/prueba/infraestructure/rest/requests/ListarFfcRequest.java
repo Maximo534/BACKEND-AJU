@@ -7,11 +7,14 @@ import java.time.LocalDate;
 @Data
 public class ListarFfcRequest implements Serializable {
 
-    private static final long serialVersionUID = 1L;
+    // ✅ BUSCADOR GENERAL (Input texto)
+    private String search;
 
-    private String codigoRegistro;      // Para filtrar por ID (num_even)
-    private String nombreEvento;        // Para filtrar por Nombre del Evento
-    private String distritoJudicialId;  // Para filtrar por Corte
-    private LocalDate fechaInicio;      // Rango Desde
-    private LocalDate fechaFin;         // Rango Hasta
+    // ✅ FILTROS ESPECÍFICOS (Combos)
+    private String distritoJudicialId;
+    private String tipoEvento; // Ahora es un combo (ID o Código del tipo)
+
+    // FECHAS
+    private LocalDate fechaInicio;
+    private LocalDate fechaFin;
 }

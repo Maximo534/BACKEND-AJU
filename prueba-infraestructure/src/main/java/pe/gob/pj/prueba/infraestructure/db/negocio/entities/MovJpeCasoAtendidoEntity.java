@@ -3,11 +3,8 @@ package pe.gob.pj.prueba.infraestructure.db.negocio.entities;
 import jakarta.persistence.*;
 import lombok.Getter;
 import lombok.Setter;
-import pe.gob.pj.prueba.domain.model.negocio.Archivo;
-
 import java.io.Serializable;
 import java.time.LocalDate;
-import java.util.List;
 
 @Getter @Setter
 @Entity
@@ -35,9 +32,21 @@ public class MovJpeCasoAtendidoEntity implements Serializable {
     @Column(name = "c_dist_id", length = 6)
     private String distritoId;
 
-    // --- RELACIÓN CON EL JUEZ ESCOLAR (FK) ---
-    @Column(name = "c_cod_reg", length = 36)
+    // =========================================================================
+    // ✅ CORRECCIÓN AQUÍ: RELACIÓN CON JUEZ ESCOLAR
+    // =========================================================================
+
+    // 1. Campo ID (Solo lectura, para consultas rápidas o mappers simples)
+    // Se pone insertable=false, updatable=false porque el dueño de la relación será el objeto de abajo
+    @Column(name = "c_cod_reg", length = 36, insertable = false, updatable = false)
     private String juezEscolarId;
+
+    // 2. Objeto Relacional (Este es el que usa el PersistenceAdapter con .setJuezEscolar)
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "c_cod_reg") // Esta columna es la FK real
+    private MaeJuezPazEscolarEntity juezEscolar;
+
+    // =========================================================================
 
     // --- ESTUDIANTE 1 (Quien reporta o víctima) ---
     @Column(name = "x_nom_comp_estud_1", length = 80)

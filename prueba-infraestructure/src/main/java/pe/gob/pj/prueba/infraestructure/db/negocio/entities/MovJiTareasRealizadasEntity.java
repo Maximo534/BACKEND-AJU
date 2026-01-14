@@ -4,6 +4,7 @@ import jakarta.persistence.*;
 import lombok.Getter;
 import lombok.Setter;
 import pe.gob.pj.prueba.infraestructure.db.negocio.entities.ids.MovJiTareasRealizadasId;
+import pe.gob.pj.prueba.infraestructure.db.negocio.entities.ids.TrimStringConverter;
 import pe.gob.pj.prueba.infraestructure.db.negocio.entities.masters.MaeTareaEntity;
 
 import java.io.Serializable;
@@ -18,10 +19,12 @@ public class MovJiTareasRealizadasEntity implements Serializable {
 
     @Id
     @Column(name = "c_just_itin_id", length = 17)
+    @Convert(converter = TrimStringConverter.class)
     private String justiciaItineranteId;
 
     @Id
     @Column(name = "c_tarea_id", length = 15)
+    @Convert(converter = TrimStringConverter.class)
     private String tareaId;
 
     @Column(name = "f_inicio")

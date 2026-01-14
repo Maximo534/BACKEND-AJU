@@ -24,7 +24,7 @@ public interface GestionJuecesEscolaresUseCasePort {
     // ==========================================
 
     // ✅ 1. Listado Paginado (Nuevo)
-    Pagina<JpeCasoAtendido> listarCasos(JpeCasoAtendido filtros, int pagina, int tamanio) throws Exception;
+    Pagina<JpeCasoAtendido> listarCasos(String usuario,JpeCasoAtendido filtros, int pagina, int tamanio) throws Exception;
 
     // ✅ 2. Registrar con Acta y Lista de Fotos (Actualizado)
     JpeCasoAtendido registrarCaso(JpeCasoAtendido caso, MultipartFile acta, List<MultipartFile> fotos, String usuario) throws Exception;
@@ -41,7 +41,7 @@ public interface GestionJuecesEscolaresUseCasePort {
     void eliminarArchivo(String nombreArchivo) throws Exception;
 
     // Para agregar archivos extra al editar (Nuevo)
-    void subirArchivoAdicional(String idCaso, MultipartFile archivo, String tipoArchivo, String usuario) throws Exception;
+    void agregarArchivoCaso(String idCaso, MultipartFile archivo, String tipo, String usuario) throws Exception;
 
     // Para descargar Acta o Resolución
     RecursoArchivo descargarArchivoPorTipo(String id, String tipoArchivo) throws Exception;

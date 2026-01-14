@@ -17,19 +17,52 @@ public interface MovPromocionCulturaRepository extends JpaRepository<MovPromocio
     @Query("SELECT MAX(e.id) FROM MovPromocionCulturaEntity e WHERE e.id LIKE '%-CJ'")
     String obtenerUltimoId();
 
-    @Query("SELECT e FROM MovPromocionCulturaEntity e " +
-            "WHERE e.usuarioRegistro = :usuario " +
-            "AND e.activo = '1' " +
-            "AND (:codigo IS NULL OR :codigo = '' OR e.id LIKE %:codigo%) " +
-            "AND (:descripcion IS NULL OR :descripcion = '' OR UPPER(e.descripcionActividad) LIKE UPPER(CONCAT('%', :descripcion, '%'))) " +
-            "AND (:distrito IS NULL OR :distrito = '' OR e.distritoJudicialId = :distrito) " +
-            "AND (cast(:fecIni as date) IS NULL OR e.fechaInicio >= :fecIni) " +
-            "AND (cast(:fecFin as date) IS NULL OR e.fechaInicio <= :fecFin) " +
-            "ORDER BY e.fechaInicio DESC")
-    Page<MovPromocionCulturaEntity> listarDinamico(
+    @Query(value = """
+        SELECT 
+            pc.c_actv_prom_cult_id AS id,
+            pc.f_inicio AS fechaInicio,
+            pc.f_fin AS fechaFin,
+            pc.t_desc_activ AS tipoActividad, -- Usamos la descripción como 'Tipo/Nombre'
+            pc.l_activo AS estado,
+            dj.x_nom_corto AS distritoJudicialNombre
+        FROM mov_aju_actv_prom_culturas pc
+        INNER JOIN mae_aju_distrito_judiciales dj ON pc.c_distrito_jud_id = dj.c_distrito_jud_id
+        WHERE pc.c_usuario_reg = :usuario
+          
+          -- FILTRO COMBO
+          AND (:distrito IS NULL OR pc.c_distrito_jud_id = :distrito)
+          
+          -- FILTRO FECHAS (Rango sobre inicio)
+          AND (CAST(:fecIni AS DATE) IS NULL OR pc.f_inicio >= :fecIni)
+          AND (CAST(:fecFin AS DATE) IS NULL OR pc.f_inicio <= :fecFin)
+
+          -- ✅ BUSCADOR GENERAL
+          -- Busca en ID, Descripción de actividad o Nombre de Corte
+          AND (
+              :search IS NULL OR :search = '' OR
+              UPPER(pc.c_actv_prom_cult_id) LIKE UPPER(CONCAT('%', :search, '%')) OR
+              UPPER(pc.t_desc_activ) LIKE UPPER(CONCAT('%', :search, '%')) OR
+              UPPER(dj.x_nom_corto) LIKE UPPER(CONCAT('%', :search, '%'))
+          )
+        ORDER BY pc.f_inicio DESC
+    """, countQuery = """
+        SELECT count(*) 
+        FROM mov_aju_actv_prom_culturas pc
+        INNER JOIN mae_aju_distrito_judiciales dj ON pc.c_distrito_jud_id = dj.c_distrito_jud_id
+        WHERE pc.c_usuario_reg = :usuario
+          AND (:distrito IS NULL OR pc.c_distrito_jud_id = :distrito)
+          AND (CAST(:fecIni AS DATE) IS NULL OR pc.f_inicio >= :fecIni)
+          AND (CAST(:fecFin AS DATE) IS NULL OR pc.f_inicio <= :fecFin)
+          AND (
+              :search IS NULL OR :search = '' OR
+              UPPER(pc.c_actv_prom_cult_id) LIKE UPPER(CONCAT('%', :search, '%')) OR
+              UPPER(pc.t_desc_activ) LIKE UPPER(CONCAT('%', :search, '%')) OR
+              UPPER(dj.x_nom_corto) LIKE UPPER(CONCAT('%', :search, '%'))
+          )
+    """, nativeQuery = true)
+    Page<PromocionCulturaProjection> listar(
             @Param("usuario") String usuario,
-            @Param("codigo") String codigo,
-            @Param("descripcion") String descripcion,
+            @Param("search") String search,
             @Param("distrito") String distrito,
             @Param("fecIni") LocalDate fecIni,
             @Param("fecFin") LocalDate fecFin,
@@ -43,4 +76,12 @@ public interface MovPromocionCulturaRepository extends JpaRepository<MovPromocio
             "GROUP BY EXTRACT(MONTH FROM e.fechaInicio)")
     List<Object[]> contarPorMes(@Param("anio") int anio, @Param("usuario") String usuario);
 
+    interface PromocionCulturaProjection {
+        String getId();
+        LocalDate getFechaInicio();
+        LocalDate getFechaFin();
+        String getTipoActividad(); // Coincide con el alias del SQL
+        String getEstado();
+        String getDistritoJudicialNombre();
+    }
 }

@@ -9,17 +9,9 @@ import java.util.List;
 
 public interface RegistrarPromocionUseCasePort {
 
-    Pagina<PromocionCultura> listarPromocion(String usuario, PromocionCultura filtros, int pagina, int tamanio) throws Exception;
+    Pagina<PromocionCultura> listar(String usuario, PromocionCultura filtros, int pagina, int tamanio) throws Exception;
 
-    PromocionCultura registrar(PromocionCultura dominio, String usuarioOperacion) throws Exception;
-
-    PromocionCultura registrarConEvidencias(
-            PromocionCultura dominio,
-            MultipartFile anexo,
-            List<MultipartFile> videos,
-            List<MultipartFile> fotos,
-            String usuarioOperacion
-    ) throws Exception;
+    PromocionCultura registrar(PromocionCultura dominio, MultipartFile anexo, List<MultipartFile> videos, List<MultipartFile> fotos, String usuarioOperacion) throws Exception;
 
     PromocionCultura actualizar(PromocionCultura dominio, String usuarioOperacion) throws Exception;
 
@@ -28,7 +20,7 @@ public interface RegistrarPromocionUseCasePort {
     // Métodos de Archivos
     void eliminarArchivo(String nombreArchivo) throws Exception; // Solo recibe nombre
 
-    void subirArchivoAdicional(String idEvento, MultipartFile archivo, String tipoArchivo, String usuarioOperacion) throws Exception;
+    void agregarArchivo(String idEvento, MultipartFile archivo, String tipo, String usuario) throws Exception;
 
     RecursoArchivo descargarAnexo(String idEvento, String usuario) throws Exception;
     byte[] generarFichaPdf(String idEvento) throws Exception;

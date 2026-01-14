@@ -15,6 +15,6 @@ public interface JusticiaItinerantePersistencePort {
     JusticiaItinerante actualizar(JusticiaItinerante justiciaItinerante) throws Exception;
 
     JusticiaItinerante obtenerPorId(String id) throws Exception;
-    Pagina<JusticiaItinerante> listarItinerante(String usuario, JusticiaItinerante filtros, int pagina, int tamanio) throws Exception;
+    Pagina<JusticiaItinerante> listar(String usuario, JusticiaItinerante filtros, int pagina, int tamanio) throws Exception;
     String obtenerUltimoId() throws Exception;
 }

@@ -20,6 +20,7 @@ import pe.gob.pj.prueba.domain.port.usecase.negocio.RegistrarBuenaPracticaUseCas
 import java.io.InputStream;
 import java.time.LocalDate;
 import java.util.List;
+import java.util.UUID;
 
 @Service
 @RequiredArgsConstructor
@@ -43,8 +44,62 @@ public class RegistrarBuenaPracticaUseCaseAdapter implements RegistrarBuenaPract
     }
 
     @Override
-    public byte[] generarFichaPdf(String id) throws Exception {
-        return generarReportePort.generarFichaBuenaPractica(id);
+    @Transactional(rollbackFor = Exception.class)
+    public BuenaPractica registrar(BuenaPractica dominio, MultipartFile anexo, MultipartFile ppt, List<MultipartFile> fotos, MultipartFile video, String usuario) throws Exception {
+
+        // 1. Generar ID
+        String ultimoId = persistencePort.obtenerUltimoId();
+        long siguiente = 1;
+        if (ultimoId != null) {
+            try { siguiente = Long.parseLong(ultimoId.split("-")[0]) + 1; } catch (Exception e) { siguiente = 1; }
+        }
+        String anio = String.valueOf(LocalDate.now().getYear());
+        String corte = (dominio.getDistritoJudicialId() != null) ? dominio.getDistritoJudicialId() : "00";
+        dominio.setId(String.format("%06d-%s-%s-BP", siguiente, corte, anio));
+
+        // 2. Guardar BD
+        dominio.setUsuarioRegistro(usuario);
+        BuenaPractica registrado = persistencePort.guardar(dominio);
+
+        // 3. Subir Archivos
+        boolean hayArchivos = (anexo != null && !anexo.isEmpty()) || (ppt != null && !ppt.isEmpty()) ||
+                (video != null && !video.isEmpty()) || (fotos != null && !fotos.isEmpty());
+
+        if (hayArchivos) {
+            // ✅ Generamos UUID para la sesión FTP de este registro
+            String sessionKey = UUID.randomUUID().toString();
+            try {
+                ftpPort.iniciarSesion(sessionKey, ftpIp, ftpPuerto, ftpUsuario, ftpClave);
+                String id = registrado.getId();
+
+                // Pasamos la sessionKey en lugar del usuario
+                if (anexo != null && !anexo.isEmpty())
+                    uploadFile(anexo, id, "ANEXO_BP", sessionKey, null); // null = nombre fijo (reemplazo)
+
+                if (ppt != null && !ppt.isEmpty())
+                    uploadFile(ppt, id, "PPT_BP", sessionKey, null);
+
+                if (video != null && !video.isEmpty())
+                    uploadFile(video, id, "VIDEO_BP", sessionKey, null);
+
+                if (fotos != null) {
+                    int i = 1;
+                    for (MultipartFile f : fotos) {
+                        if (!f.isEmpty()) {
+                            // Sufijo manual para fotos múltiples
+                            uploadFile(f, id, "FOTO_BP", sessionKey, "_foto_" + i);
+                            i++;
+                        }
+                    }
+                }
+            } catch (Exception e) {
+                log.error("Error archivos BP", e);
+                // Opcional: throw new Exception("Error al subir evidencias: " + e.getMessage());
+            } finally {
+                ftpPort.finalizarSession(sessionKey);
+            }
+        }
+        return registrado;
     }
 
     @Override
@@ -54,266 +109,153 @@ public class RegistrarBuenaPracticaUseCaseAdapter implements RegistrarBuenaPract
     }
 
     @Override
-    public List<ResumenEstadistico> obtenerResumenGrafico() throws Exception {
-        return persistencePort.obtenerResumenGrafico();
-    }
-
-    // ✅ MÉTODO REGISTRAR ACTUALIZADO
-    @Override
     @Transactional(rollbackFor = Exception.class)
-    public BuenaPractica registrar(BuenaPractica bp, MultipartFile anexo, MultipartFile ppt, List<MultipartFile> fotos, MultipartFile video, String usuario) throws Exception {
-        log.info("Iniciando registro BP por: {}", usuario);
-
-        // 1. GENERAR ID: 000001-15-2025-BP
-        String ultimoId = persistencePort.obtenerUltimoId();
-        long siguiente = 1;
-
-        if (ultimoId != null) {
-            try {
-                String parteNumerica = ultimoId.substring(0, 6);
-                siguiente = Long.parseLong(parteNumerica) + 1;
-            } catch (Exception e) { siguiente = 1; }
-        }
-
-        String numeroStr = String.format("%06d", siguiente);
-        String anio = String.valueOf(LocalDate.now().getYear());
-        String corte = (bp.getDistritoJudicialId() != null) ? bp.getDistritoJudicialId() : "00";
-        String sufijo = "BP";
-
-        String idGenerado = String.format("%s-%s-%s-%s", numeroStr, corte, anio, sufijo);
-        if(idGenerado.length() > 17) idGenerado = idGenerado.substring(0, 17);
-
-        bp.setId(idGenerado);
-        bp.setUsuarioRegistro(usuario);
-
-        // 2. GUARDAR DATOS EN BD
-        BuenaPractica registrado = persistencePort.guardar(bp);
-
-        // 3. SUBIR ARCHIVOS AL FTP
-        try {
-            ftpPort.iniciarSesion(usuario, ftpIp, ftpPuerto, ftpUsuario, ftpClave);
-
-            // A. ANEXO (PDF)
-            // (Mantenemos tu lógica original para el anexo)
-            if (anexo != null && !anexo.isEmpty()) {
-                String ruta = String.format("%s/bp/anexos/%s/%s.pdf", ftpRutaBase, anio, idGenerado);
-                ftpPort.uploadFileFTP(usuario, ruta, anexo.getInputStream(), "Anexo BP");
-                archivosPersistencePort.guardarReferenciaArchivo(Archivo.builder()
-                        .nombre(idGenerado + "_anexo.pdf").tipo("ANEXO_BP").ruta(ruta).numeroIdentificacion(idGenerado).build());
-            }
-
-            // B. PPT (PowerPoint) - ✅ NUEVO
-            if (ppt != null && !ppt.isEmpty()) {
-                String ext = obtenerExtension(ppt.getOriginalFilename());
-                if (ext.isEmpty()) ext = ".pptx"; // Default por seguridad
-
-                // Usamos el helper para mantener el código limpio
-                subirArchivoUnitario(ppt, idGenerado, anio, "PPT_BP", "ppts", ext, usuario);
-            }
-
-            // C. FOTOS (Lista)
-            if (fotos != null) {
-                int i = 1;
-                for (MultipartFile f : fotos) {
-                    if (!f.isEmpty()) {
-                        String nombre = idGenerado + "_foto_" + i + ".jpg";
-                        String ruta = String.format("%s/bp/fotos/%s/%s", ftpRutaBase, anio, nombre);
-                        ftpPort.uploadFileFTP(usuario, ruta, f.getInputStream(), "Foto BP " + i);
-                        archivosPersistencePort.guardarReferenciaArchivo(Archivo.builder()
-                                .nombre(nombre).tipo("FOTO_BP").ruta(ruta).numeroIdentificacion(idGenerado).build());
-                        i++;
-                    }
-                }
-            }
-
-            // D. VIDEO (MP4)
-            if (video != null && !video.isEmpty()) {
-                String ruta = String.format("%s/bp/videos/%s/%s.mp4", ftpRutaBase, anio, idGenerado);
-                ftpPort.uploadFileFTP(usuario, ruta, video.getInputStream(), "Video BP");
-                archivosPersistencePort.guardarReferenciaArchivo(Archivo.builder()
-                        .nombre(idGenerado + "_video.mp4").tipo("VIDEO_BP").ruta(ruta).numeroIdentificacion(idGenerado).build());
-            }
-
-        } catch (Exception e) {
-            log.error("Error archivos BP", e);
-            throw new Exception("Error subiendo evidencias: " + e.getMessage());
-        } finally {
-            ftpPort.finalizarSession(usuario);
-        }
-
-        return registrado;
+    public BuenaPractica actualizar(BuenaPractica dominio, String usuario) throws Exception {
+        if (dominio.getId() == null) throw new Exception("ID obligatorio");
+        dominio.setUsuarioRegistro(usuario);
+        return persistencePort.actualizar(dominio);
     }
 
-    @Override
-    @Transactional(rollbackFor = Exception.class)
-    public BuenaPractica actualizar(BuenaPractica bp, String usuario) throws Exception {
-        // 1. Buscamos el original
-        BuenaPractica original = persistencePort.buscarPorId(bp.getId());
-        if (original == null) throw new Exception("No existe la Buena Práctica con ID: " + bp.getId());
-
-        // 2. Mapeamos SOLO los campos que vienen del Frontend
-        original.setTitulo(bp.getTitulo());
-        original.setDistritoJudicialId(bp.getDistritoJudicialId());
-        original.setResponsable(bp.getResponsable());
-        original.setEmail(bp.getEmail());
-        original.setTelefono(bp.getTelefono());
-        original.setIntegrantes(bp.getIntegrantes());
-        original.setFechaInicio(bp.getFechaInicio());
-        original.setCategoria(bp.getCategoria());
-
-        original.setProblema(bp.getProblema());
-        original.setCausa(bp.getCausa());
-        original.setConsecuencia(bp.getConsecuencia());
-        original.setDescripcionGeneral(bp.getDescripcionGeneral());
-        original.setLogro(bp.getLogro());
-        original.setObjetivo(bp.getObjetivo());
-        original.setAliado(bp.getAliado());
-        original.setDificultad(bp.getDificultad());
-        original.setNorma(bp.getNorma());
-        original.setDesarrollo(bp.getDesarrollo());
-        original.setEjecucion(bp.getEjecucion());
-        original.setActividad(bp.getActividad());
-        original.setAporte(bp.getAporte());
-        original.setResultado(bp.getResultado());
-        original.setImpacto(bp.getImpacto());
-        original.setPublicoObjetivo(bp.getPublicoObjetivo());
-        original.setLeccionAprendida(bp.getLeccionAprendida());
-        original.setInfoAdicional(bp.getInfoAdicional());
-
-        // ❌ IMPORTANTE: NO hacemos set de 'aporteRelevante', 'situacionAnterior', etc.
-        // Al ignorarlos aquí, JPA mantiene el valor que ya estaba en la base de datos.
-
-        original.setUsuarioRegistro(usuario);
-
-        // 3. Guardar (Aquí se activará el @PreUpdate si algo quedó null)
-        return persistencePort.guardar(original);
-    }
-    // --- 2. ELIMINAR ARCHIVO (Reutilizado de JI) ---
+    // --- AGREGAR ARCHIVO ---
+    // ✅ CORRECCIÓN: Usamos el parámetro 'usuario' para Logs de Auditoría
     @Override
     @Transactional
-    public void eliminarArchivo(String nombreArchivo) throws Exception {
-        log.info("Eliminando archivo: {}", nombreArchivo);
+    public void agregarArchivo(String idEvento, MultipartFile archivo, String tipoArchivo, String usuario) throws Exception {
+        log.info("Usuario [{}] agregando archivo [{}] a la BP ID [{}]", usuario, tipoArchivo, idEvento);
 
-        // 1. Buscamos metadata en BD
-        Archivo archivo = archivosPersistencePort.buscarPorNombre(nombreArchivo);
-        if (archivo == null) throw new Exception("Archivo no encontrado en BD");
-
-        // 2. Eliminamos físico del FTP
-        String rutaCompletaFtp = archivo.getRuta(); // Ojo: verifica si tu ruta en BD incluye el nombre o es solo carpeta
-        // Si en BD guardas solo la carpeta, usa: archivo.getRuta() + "/" + archivo.getNombre();
-
-        ftpPort.iniciarSesion("ELIMINAR", ftpIp, ftpPuerto, ftpUsuario, ftpClave);
-        try {
-            ftpPort.deleteFileFTP(rutaCompletaFtp);
-        } catch (Exception e) {
-            log.warn("No se pudo borrar del FTP (quizás ya no existe), pero seguimos con BD: {}", e.getMessage());
-        } finally {
-            ftpPort.finalizarSession("ELIMINAR");
-        }
-
-        // 3. Eliminamos referencia en BD
-        archivosPersistencePort.eliminarReferenciaArchivo(nombreArchivo);
-    }
-
-    // --- 3. AGREGAR ARCHIVO ADICIONAL (Desde botón "+" o upload) ---
-    @Override
-    @Transactional
-    public void subirArchivoAdicional(String idEvento, MultipartFile archivo, String tipoArchivo, String usuario) throws Exception {
-        log.info("Subiendo archivo adicional ({}) al evento {}", tipoArchivo, idEvento);
+        if (archivo == null || archivo.isEmpty()) throw new Exception("Archivo vacío");
 
         BuenaPractica bp = persistencePort.buscarPorId(idEvento);
         if (bp == null) throw new Exception("ID no válido");
 
-        String anio = String.valueOf(LocalDate.now().getYear()); // O el año del evento: String.valueOf(bp.getFechaInicio().getYear());
-
-        // Determinamos carpeta y extensión según el tipo
-        String carpeta = "otros";
-        String ext = obtenerExtension(archivo.getOriginalFilename());
-        String tipoBD = tipoArchivo.toUpperCase(); // ANEXO_BP, PPT_BP, FOTO_BP
-
-        if (tipoBD.contains("ANEXO")) { carpeta = "anexos"; ext = ".pdf"; }
-        else if (tipoBD.contains("PPT")) { carpeta = "ppts"; if(ext.isEmpty()) ext = ".pptx"; }
-        else if (tipoBD.contains("FOTO")) { carpeta = "fotos"; if(ext.isEmpty()) ext = ".jpg"; }
-        else if (tipoBD.contains("VIDEO")) { carpeta = "videos"; if(ext.isEmpty()) ext = ".mp4"; }
-
-        // Reutilizamos el helper que creamos antes
-        ftpPort.iniciarSesion(usuario, ftpIp, ftpPuerto, ftpUsuario, ftpClave);
+        // ✅ UUID para sesión FTP aislada
+        String sessionKey = UUID.randomUUID().toString();
         try {
-            // Nota: Si es ANEXO o PPT, quizás quieras borrar el anterior primero si solo se permite 1.
-            // O el Front se encarga de llamar a "eliminar" antes de "subir".
+            ftpPort.iniciarSesion(sessionKey, ftpIp, ftpPuerto, ftpUsuario, ftpClave);
 
-            // Usamos un nombre único para fotos/videos, o fijo para Anexos si quieres reemplazar
-            String nombreFinal;
-            if (tipoBD.contains("ANEXO") || tipoBD.contains("PPT")) {
-                nombreFinal = idEvento + "_" + carpeta + ext; // Reemplaza el existente
-            } else {
-                // Para fotos/videos generamos ID único para no chancar las otras
-                nombreFinal = idEvento + "_" + System.currentTimeMillis() + ext;
-            }
+            // Si es FOTO, generamos timestamp para que no se chanque. Si es ANEXO/PPT, va null para reemplazar.
+            String sufijo = tipoArchivo.contains("FOTO") ? "_" + System.currentTimeMillis() : null;
 
-            String ruta = String.format("%s/bp/%s/%s/%s", ftpRutaBase, carpeta, anio, nombreFinal);
-
-            ftpPort.uploadFileFTP(usuario, ruta, archivo.getInputStream(), "Add " + tipoBD);
-
-            // Guardar/Actualizar en BD
-            // Si es Anexo/PPT, primero verificamos si ya existe para actualizar ruta o borrar anterior
-            // Simplificación: Guardamos referencia nueva.
-            archivosPersistencePort.guardarReferenciaArchivo(Archivo.builder()
-                    .nombre(nombreFinal) // IMPORTANTE: Este nombre se usa para borrar después
-                    .tipo(tipoBD)
-                    .ruta(ruta)
-                    .numeroIdentificacion(idEvento)
-                    .build());
+            uploadFile(archivo, idEvento, tipoArchivo, sessionKey, sufijo);
 
         } finally {
-            ftpPort.finalizarSession(usuario);
+            ftpPort.finalizarSession(sessionKey);
         }
     }
 
-    // ✅ MÉTODO PARA DESCARGAS (Usado por /documento y /ppt en el Controller)
+    // --- ELIMINAR ---
+    @Override
+    @Transactional
+    public void eliminarArchivo(String nombreArchivo) throws Exception {
+        Archivo archivo = archivosPersistencePort.buscarPorNombre(nombreArchivo);
+        if (archivo == null) throw new Exception("Archivo no encontrado");
+        String ruta = archivo.getRuta() + "/" + archivo.getNombre();
+
+        String sessionKey = UUID.randomUUID().toString();
+
+        ftpPort.iniciarSesion(sessionKey, ftpIp, ftpPuerto, ftpUsuario, ftpClave);
+        try {
+            ftpPort.deleteFileFTP(ruta);
+        } catch (Exception e) {
+            log.warn("Error borrando FTP: " + e.getMessage());
+        } finally {
+            ftpPort.finalizarSession(sessionKey);
+        }
+
+        archivosPersistencePort.eliminarReferenciaArchivo(nombreArchivo);
+    }
+
+    // --- DESCARGA GENÉRICA (Temporal File) ---
     @Override
     public RecursoArchivo descargarArchivoPorTipo(String idEvento, String tipoArchivo) throws Exception {
-        // 1. Buscamos archivos en BD
         List<Archivo> archivos = archivosPersistencePort.listarArchivosPorEvento(idEvento);
-
-        // 2. Filtramos el tipo deseado (ANEXO_BP o PPT_BP)
         Archivo encontrado = archivos.stream()
                 .filter(a -> tipoArchivo.equalsIgnoreCase(a.getTipo()))
                 .findFirst()
-                .orElseThrow(() -> new Exception("No se encontró archivo de tipo " + tipoArchivo));
+                .orElseThrow(() -> new Exception("No se encontró archivo " + tipoArchivo));
 
-        // 3. Descargamos del FTP
-        ftpPort.iniciarSesion("DESC_FILE", ftpIp, ftpPuerto, ftpUsuario, ftpClave);
-        try {
-            InputStream stream = ftpPort.descargarArchivo(encontrado.getRuta());
-            return RecursoArchivo.builder()
-                    .stream(stream)
-                    .nombreFileName(encontrado.getNombre()) // Devolvemos el nombre real del archivo
-                    .build();
+        java.nio.file.Path tempFile = java.nio.file.Files.createTempFile("bp_" + tipoArchivo + "_" + idEvento, ".tmp");
+
+        String sessionKey = UUID.randomUUID().toString();
+
+        ftpPort.iniciarSesion(sessionKey, ftpIp, ftpPuerto, ftpUsuario, ftpClave);
+        try (InputStream ftpStream = ftpPort.descargarArchivo(encontrado.getRuta() + "/" + encontrado.getNombre());
+             java.io.OutputStream tempStream = java.nio.file.Files.newOutputStream(tempFile)) {
+            ftpStream.transferTo(tempStream);
         } catch (Exception e) {
-            ftpPort.finalizarSession("DESC_FILE");
+            java.nio.file.Files.deleteIfExists(tempFile);
             throw e;
+        } finally {
+            ftpPort.finalizarSession(sessionKey);
         }
+
+        InputStream autoDeleteStream = new java.io.FileInputStream(tempFile.toFile()) {
+            @Override public void close() throws java.io.IOException {
+                super.close();
+                java.nio.file.Files.deleteIfExists(tempFile);
+            }
+        };
+
+        return RecursoArchivo.builder()
+                .stream(autoDeleteStream)
+                .nombreFileName(encontrado.getNombre())
+                .build();
     }
 
-    // --- HELPERS PRIVADOS ---
+    @Override
+    public byte[] generarFichaPdf(String id) throws Exception {
+        return generarReportePort.generarFichaBuenaPractica(id);
+    }
 
-    // Este helper lo usamos para el PPT (y podrías usarlo para el Anexo si quisieras refactorizar)
-    private void subirArchivoUnitario(MultipartFile file, String id, String anio, String tipoBD, String carpetaFtp, String ext, String usuario) throws Exception {
-        // Nombre del archivo: ID_ppts.pptx
-        String nombre = id + "_" + carpetaFtp + ext;
+    @Override
+    public List<ResumenEstadistico> obtenerResumenGrafico() throws Exception {
+        return persistencePort.obtenerResumenGrafico();
+    }
 
-        // Ruta FTP: /evidencias/bp/ppts/2025/ID_ppts.pptx
-        String ruta = String.format("%s/bp/%s/%s/%s", ftpRutaBase, carpetaFtp, anio, nombre);
+    // =========================================================================
+    // MÉTODO PRIVADO UNIFICADO ("Cerebro" de la subida BP)
+    // =========================================================================
+    // Nota: A diferencia de JI, aquí pasamos el ID y un sufijo manual
+    // porque las reglas de nombrado son distintas (Reemplazo vs Agregado).
+    private void uploadFile(MultipartFile file, String id, String tipo, String sessionKey, String sufijoManual) throws Exception {
+        String anio = String.valueOf(LocalDate.now().getYear());
+        String carpeta = "otros";
+        String extPredeterminada = "";
 
-        // Subida al FTP
-        ftpPort.uploadFileFTP(usuario, ruta, file.getInputStream(), "Carga " + tipoBD);
+        if (tipo.contains("ANEXO")) { carpeta = "anexos"; extPredeterminada = ".pdf"; }
+        else if (tipo.contains("PPT")) { carpeta = "ppts"; extPredeterminada = ".pptx"; }
+        else if (tipo.contains("FOTO")) { carpeta = "fotos"; extPredeterminada = ".jpg"; }
+        else if (tipo.contains("VIDEO")) { carpeta = "videos"; extPredeterminada = ".mp4"; }
 
-        // Guardado en BD
+        // Ruta plana: /evidencias/bp/CARPETA/AÑO
+        String rutaRelativa = String.format("%s/bp/%s/%s", ftpRutaBase, carpeta, anio);
+
+        String ext = obtenerExtension(file.getOriginalFilename());
+        if(ext.isEmpty()) ext = extPredeterminada;
+
+        String nombreFinal;
+        if (sufijoManual != null) {
+            // Nombre dinámico (ej: ID_foto_1.jpg o ID_timestamp.jpg)
+            nombreFinal = id + sufijoManual + ext;
+        } else {
+            // Nombre fijo para reemplazo (ej: ID_anexo.pdf)
+            if (tipo.contains("ANEXO")) nombreFinal = id + "_anexo" + ext;
+            else if (tipo.contains("PPT")) nombreFinal = id + "_presentacion" + ext;
+            else if (tipo.contains("VIDEO")) nombreFinal = id + "_video" + ext;
+            else nombreFinal = id + "_" + System.currentTimeMillis() + ext;
+        }
+
+        String rutaCompleta = rutaRelativa + "/" + nombreFinal;
+
+        // Usamos la sessionKey (UUID) para subir
+        if (!ftpPort.uploadFileFTP(sessionKey, rutaCompleta, file.getInputStream(), tipo)) {
+            throw new Exception("Fallo FTP al subir " + nombreFinal);
+        }
+
         archivosPersistencePort.guardarReferenciaArchivo(Archivo.builder()
-                .nombre(nombre)
-                .tipo(tipoBD)
-                .ruta(ruta)
+                .nombre(nombreFinal)
+                .tipo(tipo)
+                .ruta(rutaRelativa)
                 .numeroIdentificacion(id)
                 .build());
     }

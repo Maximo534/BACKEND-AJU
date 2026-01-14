@@ -3,6 +3,7 @@ package pe.gob.pj.prueba.infraestructure.db.negocio.entities;
 import jakarta.persistence.*;
 import lombok.Data;
 import pe.gob.pj.prueba.infraestructure.db.negocio.entities.ids.MovEventoTareaId;
+import pe.gob.pj.prueba.infraestructure.db.negocio.entities.ids.TrimStringConverter;
 import pe.gob.pj.prueba.infraestructure.db.negocio.entities.masters.MaeTareaEntity;
 
 import java.io.Serializable;
@@ -18,10 +19,12 @@ public class MovEventoTareaEntity implements Serializable {
 
     @Id
     @Column(name = "c_evento_id", length = 17)
+    @Convert(converter = TrimStringConverter.class)
     private String eventoId;
 
     @Id
     @Column(name = "c_tarea_id", length = 15)
+    @Convert(converter = TrimStringConverter.class)
     private String tareaId;
 
     @Column(name = "f_inicio")

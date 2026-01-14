@@ -31,7 +31,6 @@ public class RegistrarJusticiaItineranteUseCaseAdapter implements RegistrarJusti
     private final GestionArchivosPersistencePort archivosPersistencePort;
     private final GenerarReportePort reportePort;
 
-
     @Value("${ftp.ip}") private String ftpIp;
     @Value("${ftp.puerto}") private Integer ftpPuerto;
     @Value("${ftp.usuario}") private String ftpUsuario;
@@ -40,255 +39,217 @@ public class RegistrarJusticiaItineranteUseCaseAdapter implements RegistrarJusti
 
     @Override
     @Transactional(readOnly = true)
-    public Pagina<JusticiaItinerante> listarItinerante(String usuario, JusticiaItinerante filtros, int pagina, int tamanio) throws Exception {
-        return persistencePort.listarItinerante(usuario, filtros, pagina, tamanio);
-    }
-
-    @Override
-    @Transactional
-    public JusticiaItinerante registrar(JusticiaItinerante fji, String usuarioOperacion) throws Exception {
-        log.info("Iniciando registro simple (JSON) por: {}", usuarioOperacion);
-        validarYCompletarDatos(fji);
-
-        String ultimoId = persistencePort.obtenerUltimoId();
-
-        long siguiente = 1;
-
-        if (ultimoId != null && !ultimoId.isBlank()) {
-            try {
-
-                String parteNumerica = ultimoId.substring(0, 6);
-                siguiente = Long.parseLong(parteNumerica) + 1;
-            } catch (Exception e) {
-                log.warn("El último ID '{}' no tiene formato estándar. Se reinicia el contador en 1.", ultimoId);
-                siguiente = 1;
-            }
-        }
-
-        String numeroStr = String.format("%06d", siguiente);
-        String anio = String.valueOf(LocalDate.now().getYear());
-        String corte = fji.getDistritoJudicialId();
-
-        String idGenerado = String.format("%s-%s-%s-JI", numeroStr, corte, anio);
-
-        if (idGenerado.length() > 17) {
-            idGenerado = idGenerado.substring(0, 17);
-        }
-
-        fji.setId(idGenerado);
-
-        fji.setUsuarioRegistro(usuarioOperacion);
-        fji.setFechaRegistro(LocalDate.now());
-        fji.setActivo("1");
-
-        return persistencePort.guardar(fji);
+    public Pagina<JusticiaItinerante> listar(String usuario, JusticiaItinerante filtros, int pagina, int tamanio) throws Exception {
+        return persistencePort.listar(usuario, filtros, pagina, tamanio);
     }
 
     @Override
     @Transactional(rollbackFor = Exception.class)
-    public JusticiaItinerante registrarConEvidencias(JusticiaItinerante fji, MultipartFile anexo, List<MultipartFile> videos, List<MultipartFile> fotos, String usuarioOperacion) throws Exception {
-        log.info("Iniciando registro UNIFICADO (Datos + Archivos) por: {}", usuarioOperacion);
+    public JusticiaItinerante registrar(JusticiaItinerante dominio, MultipartFile anexo, List<MultipartFile> videos, List<MultipartFile> fotos, String usuario) throws Exception {
 
-        JusticiaItinerante registrado = this.registrar(fji, usuarioOperacion);
-        String idEvento = registrado.getId();
-        String idDistrito = registrado.getDistritoJudicialId();
-        LocalDate fechaInicio = registrado.getFechaInicio();
+        // 1. Validaciones
+        if (dominio.getFechaInicio() == null) throw new Exception("La fecha de inicio es obligatoria.");
+        if (dominio.getPublicoObjetivoDetalle() == null) dominio.setPublicoObjetivoDetalle("NINGUNO");
 
-        try {
-            ftpPort.iniciarSesion(usuarioOperacion, ftpIp, ftpPuerto, ftpUsuario, ftpClave);
+        // 2. Generar ID
+        String ultimoId = persistencePort.obtenerUltimoId();
+        long siguiente = 1;
+        if (ultimoId != null && !ultimoId.isBlank()) {
+            try { siguiente = Long.parseLong(ultimoId.split("-")[0]) + 1; } catch (Exception e) { siguiente = 1; }
+        }
+        String anio = String.valueOf(LocalDate.now().getYear());
+        String corte = (dominio.getDistritoJudicialId() != null) ? dominio.getDistritoJudicialId() : "00";
+        dominio.setId(String.format("%06d-%s-%s-JI", siguiente, corte, anio));
 
-            if (anexo != null && !anexo.isEmpty()) {
-                guardarEvidencia(anexo, idEvento, idDistrito, fechaInicio, "ANEXO", usuarioOperacion);
+        // 3. Auditoría y Guardado
+        dominio.setUsuarioRegistro(usuario);
+        dominio.setFechaRegistro(LocalDate.now());
+        dominio.setActivo("1");
+
+        JusticiaItinerante registrado = persistencePort.guardar(dominio);
+
+        // 4. Subir Archivos (Con UUID)
+        boolean hayArchivos = (anexo != null && !anexo.isEmpty()) ||
+                (videos != null && !videos.isEmpty()) ||
+                (fotos != null && !fotos.isEmpty());
+
+        if (hayArchivos) {
+            String sessionKey = UUID.randomUUID().toString();
+            try {
+                ftpPort.iniciarSesion(sessionKey, ftpIp, ftpPuerto, ftpUsuario, ftpClave);
+
+                // ✅ Llamada Limpia: uploadFile encapsula la lógica de carpetas
+                if (anexo != null && !anexo.isEmpty())
+                    uploadFile(anexo, registrado, "ANEXO", sessionKey);
+
+                if (videos != null)
+                    for (MultipartFile v : videos)
+                        if (!v.isEmpty()) uploadFile(v, registrado, "VIDEO", sessionKey);
+
+                if (fotos != null)
+                    for (MultipartFile f : fotos)
+                        if (!f.isEmpty()) uploadFile(f, registrado, "FOTO", sessionKey);
+
+            } catch (Exception e) {
+                log.error("Error subiendo evidencias JI", e);
+                // Opcional: throw e; si quieres que falle todo el registro
+            } finally {
+                ftpPort.finalizarSession(sessionKey);
             }
-            if (videos != null) {
-                for (MultipartFile v : videos) {
-                    if (!v.isEmpty()) guardarEvidencia(v, idEvento, idDistrito, fechaInicio, "VIDEO", usuarioOperacion);
-                }
-            }
-            if (fotos != null) {
-                for (MultipartFile f : fotos) {
-                    if (!f.isEmpty()) guardarEvidencia(f, idEvento, idDistrito, fechaInicio, "FOTO", usuarioOperacion);
-                }
-            }
-
-        } catch (Exception e) {
-            log.error("Error subiendo archivos. Iniciando Rollback de BD.", e);
-            throw new Exception("Error crítico al subir evidencias: " + e.getMessage());
-        } finally {
-            ftpPort.finalizarSession(usuarioOperacion);
         }
 
         return registrado;
     }
 
     @Override
-    @Transactional
-    public JusticiaItinerante actualizar(JusticiaItinerante fji, String usuarioOperacion) throws Exception {
-        log.info("Iniciando actualización de evento ID: {} por: {}", fji.getId(), usuarioOperacion);
-
-        validarYCompletarDatos(fji);
-        fji.setUsuarioRegistro(usuarioOperacion);
-        fji.setActivo("1");
-
-        return persistencePort.actualizar(fji);
-    }
-
-    @Override
     @Transactional(readOnly = true)
     public JusticiaItinerante buscarPorId(String id) throws Exception {
+        if (id == null || id.isBlank()) throw new Exception("El ID es obligatorio");
         return persistencePort.obtenerPorId(id);
     }
 
     @Override
     @Transactional
-    public void eliminarArchivo(String nombreArchivo) throws Exception {
-        log.info("Iniciando eliminación de archivo: {}", nombreArchivo);
-
-        //  Obtener la metadata del archivo desde BD para saber su ruta
-        Archivo archivo = archivosPersistencePort.buscarPorNombre(nombreArchivo);
-
-        // Construir la ruta física completa
-        // En BD se guarda: /evidencias/x/y
-        // El nombre es: uuid.jpg
-        String rutaCompletaFtp = archivo.getRuta() + "/" + archivo.getNombre();
-
-        // Conectar al FTP para borrar el físico
-        // CORREGIDO: Se usan las variables de clase ftpUsuario y ftpClave
-        ftpPort.iniciarSesion("ELIMINAR", ftpIp, ftpPuerto, ftpUsuario, ftpClave);
-
-        try {
-            boolean eliminado = ftpPort.deleteFileFTP(rutaCompletaFtp);
-            if (!eliminado) {
-                log.warn("El archivo no se encontró en FTP o falló el borrado, pero se procederá a eliminar de BD: {}", rutaCompletaFtp);
-            }
-        } catch (Exception e) {
-            log.error("Error al intentar borrar en FTP: {}", e.getMessage());
-            // Dependiendo de tu lógica, podrías lanzar excepción o dejar pasar
-            // para que al menos se borre de la BD y no quede un "enlace roto".
-        } finally {
-            ftpPort.finalizarSession("ELIMINAR");
+    public JusticiaItinerante actualizar(JusticiaItinerante dominio, String usuarioOperacion) throws Exception {
+        if (dominio.getFechaInicio() == null) throw new Exception("La fecha de inicio es obligatoria.");
+        if (dominio.getFechaFin() != null && dominio.getFechaFin().isBefore(dominio.getFechaInicio())) {
+            throw new Exception("La fecha fin no puede ser anterior a la fecha de inicio.");
         }
-
-        // Borrar el registro de la Base de Datos
-        archivosPersistencePort.eliminarReferenciaArchivo(nombreArchivo);
+        dominio.setUsuarioRegistro(usuarioOperacion);
+        return persistencePort.actualizar(dominio);
     }
 
+    // --- AGREGAR ARCHIVO ---
+    // ✅ CORRECTO: Pedimos usuarioOperacion para tener trazabilidad en los logs
+    @Override
+    @Transactional
+    public void agregarArchivo(String idEvento, MultipartFile archivo, String tipoArchivo, String usuarioOperacion) throws Exception {
+        log.info("Usuario [{}] agregando archivo [{}] al evento ID [{}]", usuarioOperacion, tipoArchivo, idEvento);
 
-    private void guardarEvidencia(MultipartFile archivo, String idEvento, String idDistrito, LocalDate fecha, String tipo, String usuario) throws Exception {
-        String anio = String.valueOf(fecha.getYear());
-        String mes = String.format("%02d", fecha.getMonthValue());
+        if (archivo == null || archivo.isEmpty()) throw new Exception("El archivo no puede estar vacío.");
 
-        String carpetaTipo = switch (tipo.toUpperCase()) {
+        JusticiaItinerante evento = persistencePort.obtenerPorId(idEvento);
+        if (evento == null) throw new Exception("No se encontró el evento con ID: " + idEvento);
+
+        String sessionKey = UUID.randomUUID().toString();
+        try {
+            ftpPort.iniciarSesion(sessionKey, ftpIp, ftpPuerto, ftpUsuario, ftpClave);
+
+            // ✅ Reutilización total: Usamos el mismo método inteligente que el registro
+            uploadFile(archivo, evento, tipoArchivo, sessionKey);
+
+        } catch (Exception e) {
+            log.error("Error al agregar archivo: {}", e.getMessage());
+            throw new Exception("Error al agregar archivo: " + e.getMessage());
+        } finally {
+            ftpPort.finalizarSession(sessionKey);
+        }
+    }
+
+    // =========================================================================
+    // MÉTODO PRIVADO UNIFICADO ("Cerebro" de la subida JI)
+    // =========================================================================
+    private void uploadFile(MultipartFile file, JusticiaItinerante evento, String tipo, String sessionKey) throws Exception {
+
+        // 1. Lógica de Carpetas (Aquí centralizamos el mapeo)
+        // Si mañana cambia la carpeta de videos, solo tocas aquí.
+        String carpeta = switch (tipo.toUpperCase()) {
             case "ANEXO" -> "fichas";
             case "VIDEO" -> "videos";
             case "FOTO" -> "fotos";
             default -> "otros";
         };
 
-        String rutaRelativa = String.format("%s/%s/evidencias_fji/%s/%s/%s/%s",
-                ftpRutaBase, idDistrito, carpetaTipo, anio, mes, idEvento);
+        // 2. Datos de Ruta Jerárquica (Regla de Negocio JI)
+        String dist = evento.getDistritoJudicialId();
+        String anio = String.valueOf(evento.getFechaInicio().getYear());
+        String mes = String.format("%02d", evento.getFechaInicio().getMonthValue());
 
-        String extension = obtenerExtension(archivo.getOriginalFilename());
-        String nombreFinal = UUID.randomUUID().toString().replace("-", "") + extension;
-        String rutaCompletaFtp = rutaRelativa + "/" + nombreFinal;
+        // Ruta: /evidencias/DISTRITO/evidencias_fji/CARPETA/ANIO/MES/ID_EVENTO
+        String rutaRelativa = String.format("%s/%s/evidencias_fji/%s/%s/%s/%s", ftpRutaBase, dist, carpeta, anio, mes, evento.getId());
 
-        boolean exito = ftpPort.uploadFileFTP(usuario, rutaCompletaFtp, archivo.getInputStream(), "Carga Evidencia " + tipo);
-        if (!exito) throw new Exception("Fallo en uploadFileFTP para: " + nombreFinal);
+        // 3. Nombre del Archivo (Regla de Negocio JI: Siempre UUID)
+        String ext = obtenerExtension(file.getOriginalFilename());
+        String nombreFinal = UUID.randomUUID().toString().replace("-", "") + ext;
 
-        Archivo archivoDomain = Archivo.builder()
+        // 4. Subida FTP
+        if (!ftpPort.uploadFileFTP(sessionKey, rutaRelativa + "/" + nombreFinal, file.getInputStream(), "Carga " + tipo)) {
+            throw new Exception("Error FTP al subir " + nombreFinal);
+        }
+
+        // 5. Guardar Referencia en BD
+        archivosPersistencePort.guardarReferenciaArchivo(Archivo.builder()
                 .nombre(nombreFinal)
-                .tipo(tipo.toLowerCase())
+                .tipo(tipo.toUpperCase()) // Guardamos "FOTO", "VIDEO", "ANEXO"
                 .ruta(rutaRelativa)
-                .numeroIdentificacion(idEvento)
-                .build();
-
-        archivosPersistencePort.guardarReferenciaArchivo(archivoDomain);
+                .numeroIdentificacion(evento.getId())
+                .build());
     }
 
-    private void validarYCompletarDatos(JusticiaItinerante fji) throws Exception {
-        if (fji.getFechaInicio() == null) throw new Exception("La fecha de inicio es obligatoria.");
-        if (fji.getFechaFin() != null && fji.getFechaFin().isBefore(fji.getFechaInicio())) throw new Exception("La fecha fin no puede ser anterior a la fecha de inicio.");
-
-        if (fji.getPublicoObjetivoDetalle() == null) fji.setPublicoObjetivoDetalle("NINGUNO");
-        if (fji.getTambo() == null) fji.setTambo("NINGUNO");
-        if (fji.getLenguaNativa() == null) fji.setLenguaNativa("NINGUNO");
-        if (fji.getCodigoAdcPueblosIndigenas() == null) fji.setCodigoAdcPueblosIndigenas("00");
-        if (fji.getCodigoSaeLenguaNativa() == null) fji.setCodigoSaeLenguaNativa("00");
-
-        if (fji.getNumMujeresIndigenas() == null) fji.setNumMujeresIndigenas(0);
-        if (fji.getNumPersonasNoIdiomaNacional() == null) fji.setNumPersonasNoIdiomaNacional(0);
-        if (fji.getNumJovenesQuechuaAymara() == null) fji.setNumJovenesQuechuaAymara(0);
-
-        if (fji.getDescripcionActividad() == null) fji.setDescripcionActividad("");
-        if (fji.getInstitucionesAliadas() == null) fji.setInstitucionesAliadas("");
-        if (fji.getObservaciones() == null) fji.setObservaciones("");
-    }
-
-    @Override
-    @Transactional
-    public void subirArchivoAdicional(String idEvento, MultipartFile archivo, String tipoArchivo, String usuarioOperacion) throws Exception {
-        log.info("Subiendo archivo adicional ({}) al evento {}", tipoArchivo, idEvento);
-
-        if (archivo == null || archivo.isEmpty()) {
-            throw new Exception("El archivo no puede estar vacío.");
-        }
-
-        JusticiaItinerante evento = persistencePort.obtenerPorId(idEvento);
-        if (evento == null) {
-            throw new Exception("No se encontró el evento con ID: " + idEvento);
-        }
-
-        try {
-            ftpPort.iniciarSesion(usuarioOperacion, ftpIp, ftpPuerto, ftpUsuario, ftpClave);
-
-            guardarEvidencia(archivo, evento.getId(), evento.getDistritoJudicialId(), evento.getFechaInicio(), tipoArchivo, usuarioOperacion);
-
-        } catch (Exception e) {
-            log.error("Error al subir archivo adicional: {}", e.getMessage());
-            throw new Exception("Error al subir archivo: " + e.getMessage());
-        } finally {
-            ftpPort.finalizarSession(usuarioOperacion);
-        }
-    }
     private String obtenerExtension(String nombre) {
         return (nombre != null && nombre.contains(".")) ? nombre.substring(nombre.lastIndexOf(".")) : "";
     }
 
     @Override
-    public RecursoArchivo descargarAnexo(String idEvento, String usuario) throws Exception {
-        if (idEvento == null || idEvento.isEmpty()) {
-            throw new Exception("El ID del evento es obligatorio");
-        }
+    @Transactional
+    public void eliminarArchivo(String nombreArchivo) throws Exception {
+        Archivo archivo = archivosPersistencePort.buscarPorNombre(nombreArchivo);
+        if (archivo == null) throw new Exception("Archivo no encontrado en BD.");
 
-        List<Archivo> todosLosArchivos = archivosPersistencePort.listarArchivosPorEvento(idEvento);
+        String rutaCompletaFtp = archivo.getRuta() + "/" + archivo.getNombre();
+        String sessionKey = UUID.randomUUID().toString();
 
-        Archivo archivoAnexo = todosLosArchivos.stream()
-                .filter(a -> "ANEXO".equalsIgnoreCase(a.getTipo()))
-                .findFirst()
-                .orElseThrow(() -> new Exception("Este evento no tiene un Anexo PDF registrado."));
-
-        ftpPort.iniciarSesion(usuario, ftpIp, ftpPuerto, ftpUsuario, ftpClave);
-
-        String rutaCompleta = archivoAnexo.getRuta() + "/" + archivoAnexo.getNombre();
-
+        ftpPort.iniciarSesion(sessionKey, ftpIp, ftpPuerto, ftpUsuario, ftpClave);
         try {
-            InputStream stream = ftpPort.descargarArchivo(rutaCompleta);
-
-            return RecursoArchivo.builder()
-                    .stream(stream)
-                    .nombreFileName(archivoAnexo.getNombre())
-                    .build();
-
+            ftpPort.deleteFileFTP(rutaCompletaFtp);
         } catch (Exception e) {
-            ftpPort.finalizarSession(usuario);
-            throw new Exception("Error al descargar del FTP: " + e.getMessage());
+            log.warn("Fallo borrado FTP, se borrará de BD.");
+        } finally {
+            ftpPort.finalizarSession(sessionKey);
         }
+        archivosPersistencePort.eliminarReferenciaArchivo(nombreArchivo);
     }
 
+    @Override
+    public RecursoArchivo descargarAnexo(String idEvento, String usuario) throws Exception {
+        if (idEvento == null || idEvento.isEmpty()) throw new Exception("El ID del evento es obligatorio");
+
+        List<Archivo> archivos = archivosPersistencePort.listarArchivosPorEvento(idEvento);
+        Archivo archivoAnexo = archivos.stream()
+                .filter(a -> "ANEXO".equalsIgnoreCase(a.getTipo()))
+                .findFirst()
+                .orElseThrow(() -> new Exception("No existe anexo para este evento."));
+
+        java.nio.file.Path tempFile = java.nio.file.Files.createTempFile("ji_anexo_" + idEvento, ".tmp");
+        String sessionKey = UUID.randomUUID().toString();
+
+        ftpPort.iniciarSesion(sessionKey, ftpIp, ftpPuerto, ftpUsuario, ftpClave);
+        try (InputStream ftpStream = ftpPort.descargarArchivo(archivoAnexo.getRuta() + "/" + archivoAnexo.getNombre());
+             java.io.OutputStream tempFileStream = java.nio.file.Files.newOutputStream(tempFile)) {
+            ftpStream.transferTo(tempFileStream);
+        } catch (Exception e) {
+            java.nio.file.Files.deleteIfExists(tempFile);
+            throw new Exception("Error descargando del FTP: " + e.getMessage());
+        } finally {
+            ftpPort.finalizarSession(sessionKey);
+        }
+
+        InputStream autoDeleteStream = new java.io.FileInputStream(tempFile.toFile()) {
+            @Override public void close() throws java.io.IOException {
+                super.close();
+                java.nio.file.Files.deleteIfExists(tempFile);
+            }
+        };
+
+        return RecursoArchivo.builder()
+                .stream(autoDeleteStream)
+                .nombreFileName(archivoAnexo.getNombre())
+                .build();
+    }
 
     @Override
     public byte[] generarFichaPdf(String idEvento) throws Exception {
+        if(persistencePort.obtenerPorId(idEvento) == null) throw new Exception("Evento no existe");
         return reportePort.generarFichaItinerante(idEvento);
     }
-
 }

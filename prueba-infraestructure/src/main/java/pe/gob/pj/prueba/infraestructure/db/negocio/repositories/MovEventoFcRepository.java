@@ -17,20 +17,58 @@ public interface MovEventoFcRepository extends JpaRepository<MovEventoFcEntity, 
     @Query("SELECT MAX(e.id) FROM MovEventoFcEntity e WHERE e.id LIKE '%-FC'")
     String obtenerUltimoId();
 
-    @Query("SELECT e FROM MovEventoFcEntity e " +
-            "WHERE e.usuarioRegistro = :usuario " +
-            "AND e.activo = '1' " +
-            "AND (:codigo IS NULL OR :codigo = '' OR e.id LIKE %:codigo%) " +
-            "AND (:nombre IS NULL OR :nombre = '' OR e.nombreEvento LIKE %:nombre%) " +
-            "AND (:distrito IS NULL OR :distrito = '' OR e.distritoJudicialId = :distrito) " +
-            "AND (cast(:fecIni as date) IS NULL OR e.fechaInicio >= :fecIni) " +
-            "AND (cast(:fecFin as date) IS NULL OR e.fechaInicio <= :fecFin) " +
-            "ORDER BY e.fechaInicio DESC")
-    Page<MovEventoFcEntity> listarDinamico(
+    @Query(value = """
+        SELECT 
+            fc.c_evento_id AS id,
+            fc.f_inicio AS fechaInicio,
+            fc.f_fin AS fechaFin,
+            fc.c_tipo_evento AS tipoEvento,
+            fc.l_activo AS estado,
+            dj.x_nom_corto AS distritoJudicialNombre
+        FROM mov_aju_eventos fc
+        INNER JOIN mae_aju_distrito_judiciales dj ON fc.c_distrito_jud_id = dj.c_distrito_jud_id
+        WHERE fc.c_usuario_reg = :usuario
+          AND fc.l_activo = '1' -- ✅ Solo activos
+          
+          -- FILTROS DE COMBOS (Exactos)
+          AND (:distrito IS NULL OR fc.c_distrito_jud_id = :distrito)
+          AND (:tipo IS NULL OR fc.c_tipo_evento = :tipo) -- ✅ Combo Tipo Evento
+          
+          -- FILTRO FECHAS
+          AND (CAST(:fecIni AS DATE) IS NULL OR fc.f_inicio >= :fecIni)
+          AND (CAST(:fecFin AS DATE) IS NULL OR fc.f_inicio <= :fecFin)
+
+          -- BUSCADOR GENERAL (Search)
+          -- Busca en ID, Nombre del Evento o Nombre de la Corte
+          AND (
+              :search IS NULL OR :search = '' OR
+              UPPER(fc.c_evento_id) LIKE UPPER(CONCAT('%', :search, '%')) OR
+              UPPER(fc.x_nombre_evento) LIKE UPPER(CONCAT('%', :search, '%')) OR
+              UPPER(dj.x_nom_corto) LIKE UPPER(CONCAT('%', :search, '%'))
+          )
+        ORDER BY fc.f_inicio DESC
+    """, countQuery = """
+        SELECT count(*) 
+        FROM mov_aju_eventos fc
+        INNER JOIN mae_aju_distrito_judiciales dj ON fc.c_distrito_jud_id = dj.c_distrito_jud_id
+        WHERE fc.c_usuario_reg = :usuario
+          AND fc.l_activo = '1'
+          AND (:distrito IS NULL OR fc.c_distrito_jud_id = :distrito)
+          AND (:tipo IS NULL OR fc.c_tipo_evento = :tipo)
+          AND (CAST(:fecIni AS DATE) IS NULL OR fc.f_inicio >= :fecIni)
+          AND (CAST(:fecFin AS DATE) IS NULL OR fc.f_inicio <= :fecFin)
+          AND (
+              :search IS NULL OR :search = '' OR
+              UPPER(fc.c_evento_id) LIKE UPPER(CONCAT('%', :search, '%')) OR
+              UPPER(fc.x_nombre_evento) LIKE UPPER(CONCAT('%', :search, '%')) OR
+              UPPER(dj.x_nom_corto) LIKE UPPER(CONCAT('%', :search, '%'))
+          )
+    """, nativeQuery = true)
+    Page<FortalecimientoProjection> listar(
             @Param("usuario") String usuario,
-            @Param("codigo") String codigo,
-            @Param("nombre") String nombre,
+            @Param("search") String search,
             @Param("distrito") String distrito,
+            @Param("tipo") String tipoEvento,
             @Param("fecIni") LocalDate fecIni,
             @Param("fecFin") LocalDate fecFin,
             Pageable pageable);
@@ -42,4 +80,13 @@ public interface MovEventoFcRepository extends JpaRepository<MovEventoFcEntity, 
             "AND e.usuarioRegistro = :usuario " +
             "GROUP BY EXTRACT(MONTH FROM e.fechaInicio)")
     List<Object[]> contarPorMes(@Param("anio") int anio, @Param("usuario") String usuario);
+
+    interface FortalecimientoProjection {
+        String getId();
+        LocalDate getFechaInicio();
+        LocalDate getFechaFin();
+        String getTipoEvento();
+        String getEstado();
+        String getDistritoJudicialNombre();
+    }
 }

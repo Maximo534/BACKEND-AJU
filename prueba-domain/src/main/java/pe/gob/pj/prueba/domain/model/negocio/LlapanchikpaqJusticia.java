@@ -13,7 +13,9 @@ public class LlapanchikpaqJusticia implements Serializable {
 
     private String id;
     private String distritoJudicialId;
+    private String distritoJudicialNombre;
     private LocalDate fechaInicio;
+    private LocalDate fechaFin;
     private String resolucionPlanAnual;
     private String resolucionAdminPlan;
     private String documentoAutoriza;
@@ -46,7 +48,8 @@ public class LlapanchikpaqJusticia implements Serializable {
     private List<DetalleAtendida> atendidas;
     private List<DetalleCaso> casos;
     private List<DetalleTarea> tareas;
-
+    private String search;
+    private List<Archivo> archivosGuardados;
     // --- CLASES INTERNAS PARA DETALLES ---
 
     @Data @Builder @NoArgsConstructor @AllArgsConstructor

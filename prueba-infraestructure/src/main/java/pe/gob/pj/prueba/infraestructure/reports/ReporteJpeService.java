@@ -15,6 +15,7 @@ import pe.gob.pj.prueba.infraestructure.db.negocio.repositories.masters.*;
 
 import java.awt.Color;
 import java.io.ByteArrayOutputStream;
+import java.time.format.DateTimeFormatter;
 
 @Slf4j
 @Service
@@ -23,7 +24,7 @@ public class ReporteJpeService {
 
     private final MovJpeCasoAtendidoRepository repository;
 
-    // Repositorios Maestros
+    // --- REPOSITORIOS MAESTROS ---
     private final MaeJuezPazEscolarRepository repoJuez;
     private final MaeDistritoJudicialRepository repoCorte;
     private final MaeInstitucionEducativaRepository repoColegio;
@@ -32,16 +33,16 @@ public class ReporteJpeService {
     private final MaeProvinciaRepository repoProv;
     private final MaeDistritoRepository repoDist;
 
-    @Value("${app.frontend.url:http://localhost:8080}")
+    @Value("${app.frontend.url:http://localhost:4200}")
     private String baseUrl;
 
-    // Estilos
+    // --- FUENTES ESTILO PHP ---
     private static final Font FONT_TITULO = FontFactory.getFont(FontFactory.HELVETICA_BOLD, 12);
     private static final Font FONT_SUBTITULO = FontFactory.getFont(FontFactory.HELVETICA_BOLD, 10);
     private static final Font FONT_BOLD_8 = FontFactory.getFont(FontFactory.HELVETICA_BOLD, 8);
     private static final Font FONT_NORMAL_8 = FontFactory.getFont(FontFactory.HELVETICA, 8);
-    private static final Font FONT_LINK = FontFactory.getFont(FontFactory.HELVETICA, 8, Font.UNDERLINE, Color.BLUE);
-    private static final Color COLOR_HEADER_BG = new Color(240, 240, 240);
+    private static final Font FONT_NORMAL_7 = FontFactory.getFont(FontFactory.HELVETICA, 7); // Para footer
+    private static final Font FONT_LINK = FontFactory.getFont(FontFactory.HELVETICA, 8, Font.UNDERLINE, new Color(5, 64, 209));
 
     @Transactional(readOnly = true)
     public byte[] generarFichaJpe(String id) throws Exception {
@@ -49,22 +50,22 @@ public class ReporteJpeService {
         MovJpeCasoAtendidoEntity entity = repository.findById(id)
                 .orElseThrow(() -> new Exception("Caso JPE no encontrado con ID: " + id));
 
-        // ... (Lógica de Juez, Colegio y UGEL se mantiene igual) ...
-        String nombreJuez = "";
-        String gradoSeccionJuez = "";
-        String nombreColegio = "";
+        // --- PREPARACIÓN DE DATOS MAESTROS ---
         String nombreUgel = "";
+        String nombreColegio = "";
 
-        if(entity.getJuezEscolarId() != null) {
+        // Recuperamos datos a través del Juez Escolar relacionado
+        if (entity.getJuezEscolarId() != null) {
             MaeJuezPazEscolarEntity juez = repoJuez.findById(entity.getJuezEscolarId()).orElse(null);
-            if(juez != null) {
-                nombreJuez = juez.getNombres() + " " + juez.getApePaterno() + " " + juez.getApeMaterno();
-                gradoSeccionJuez = juez.getGrado() + " - " + juez.getSeccion();
+            if (juez != null) {
+                // Colegio
                 nombreColegio = repoColegio.findById(juez.getInstitucionEducativaId())
                         .map(c -> c.getNombre()).orElse("-");
+
+                // UGEL (via Colegio)
                 String ugelId = repoColegio.findById(juez.getInstitucionEducativaId())
                         .map(c -> c.getUgelId()).orElse(null);
-                if(ugelId != null) {
+                if (ugelId != null) {
                     nombreUgel = repoUgel.findById(ugelId).map(u -> u.getNombre()).orElse("-");
                 }
             }
@@ -77,179 +78,228 @@ public class ReporteJpeService {
 
             document.open();
 
-            // Título Corte
+            // --- TÍTULO CORTE (Centrado) ---
             String nombreCorte = obtenerNombreCorte(entity.getDistritoJudicialId());
             Paragraph pCorte = new Paragraph(nombreCorte, FONT_TITULO);
             pCorte.setAlignment(Element.ALIGN_CENTER);
-            pCorte.setSpacingAfter(10);
             document.add(pCorte);
 
-            // Tabla ID Caso
-            PdfPTable tableId = new PdfPTable(2);
-            tableId.setWidthPercentage(100);
-            tableId.setWidths(new float[]{80, 20});
-            PdfPCell cellEmpty = new PdfPCell(new Phrase("")); cellEmpty.setBorder(Rectangle.NO_BORDER);
-            PdfPCell cellId = new PdfPCell(new Phrase("N° CASO: " + entity.getId(), FONT_BOLD_8));
-            cellId.setHorizontalAlignment(Element.ALIGN_CENTER); cellId.setBorderWidth(1);
-            tableId.addCell(cellEmpty); tableId.addCell(cellId);
-            document.add(tableId);
-            document.add(Chunk.NEWLINE);
+            // --- NÚMERO DE FICHA (Derecha) ---
+            PdfPTable tableNum = new PdfPTable(2);
+            tableNum.setWidthPercentage(100);
+            tableNum.setWidths(new float[]{85, 15});
 
-            // I. DATOS GENERALES
-            addSectionTitle(document, "I. DATOS GENERALES");
-            agregarFila(document, "Fecha de Registro", ": " + entity.getFechaRegistro());
+            PdfPCell cVacia = new PdfPCell(new Phrase(""));
+            cVacia.setBorder(Rectangle.NO_BORDER);
+
+            // Recuadro con ID
+            PdfPCell cNum = new PdfPCell(new Phrase(entity.getId(), FONT_BOLD_8));
+            cNum.setHorizontalAlignment(Element.ALIGN_CENTER);
+            cNum.setBorder(Rectangle.BOX);
+
+            // Etiqueta "N°: "
+            PdfPTable tRight = new PdfPTable(2);
+            tRight.setWidths(new float[]{30, 70});
+            PdfPCell cLbl = new PdfPCell(new Phrase("N°: ", FONT_BOLD_8));
+            cLbl.setBorder(Rectangle.NO_BORDER);
+            cLbl.setHorizontalAlignment(Element.ALIGN_RIGHT);
+
+            tRight.addCell(cLbl);
+            tRight.addCell(cNum);
+
+            PdfPCell cWrapper = new PdfPCell(tRight);
+            cWrapper.setBorder(Rectangle.NO_BORDER);
+
+            tableNum.addCell(cVacia);
+            tableNum.addCell(cWrapper);
+            document.add(tableNum);
+
+            // --- DATOS INSTITUCIONALES (Sin borde en PHP) ---
             agregarFila(document, "UGEL", ": " + nombreUgel);
-            agregarFila(document, "Institución Educativa", ": " + nombreColegio);
-            agregarFila(document, "Juez Escolar", ": " + nombreJuez);
-            agregarFila(document, "Grado y Sección", ": " + gradoSeccionJuez);
-            document.add(Chunk.NEWLINE);
+            agregarFila(document, "Institución educativa", ": " + nombreColegio);
 
-            // II. LUGAR DE LA ACTIVIDAD
-            addSectionTitle(document, "II. LUGAR DE LA ACTIVIDAD");
+            DateTimeFormatter fmt = DateTimeFormatter.ofPattern("dd/MM/yyyy");
+            String fechaReg = entity.getFechaRegistro() != null ? entity.getFechaRegistro().format(fmt) : "";
+            agregarFila(document, "Fecha de Registro", ": " + fechaReg);
 
-            // ✅ AQUÍ SE USAN LOS MÉTODOS CORREGIDOS CON TRIM()
-            agregarFila(document, "Departamento", ": " + obtenerNombreDepa(entity.getDepartamentoId()));
+            agregarSeparador(document);
+
+            // --- I. LUGAR ---
+            document.add(new Paragraph("I. LUGAR DE LA ACTIVIDAD:", FONT_BOLD_8));
+            agregarFila(document, "Anexo/Localidad/Institución", ": " + val(entity.getLugarActividad()));
+
+            // Ubigeo (Usamos Helpers con Trim)
+            agregarFila(document, "Región", ": " + obtenerNombreDepa(entity.getDepartamentoId()));
             agregarFila(document, "Provincia", ": " + obtenerNombreProv(entity.getProvinciaId()));
-            agregarFila(document, "Distrito", ": " + obtenerNombreDist(entity.getDistritoId()));
-            agregarFila(document, "Lugar / Local", ": " + val(entity.getLugarActividad()));
-            document.add(Chunk.NEWLINE);
-
-            // III. ESTUDIANTES INVOLUCRADOS
-            addSectionTitle(document, "III. ESTUDIANTES INVOLUCRADOS");
-            PdfPTable tableEst = new PdfPTable(2);
-            tableEst.setWidthPercentage(100);
-
-            // Estudiante 1
-            PdfPCell c1 = new PdfPCell(); c1.setBorder(Rectangle.NO_BORDER);
-            c1.addElement(new Paragraph("ESTUDIANTE 1:", FONT_BOLD_8));
-            c1.addElement(new Paragraph("Nombre: " + val(entity.getNombreEstudiante1()), FONT_NORMAL_8));
-            c1.addElement(new Paragraph("DNI: " + val(entity.getDniEstudiante1()), FONT_NORMAL_8));
-            c1.addElement(new Paragraph("Grado/Sec: " + val(entity.getGradoEstudiante1()) + " - " + val(entity.getSeccionEstudiante1()), FONT_NORMAL_8));
-
-            // Estudiante 2
-            PdfPCell c2 = new PdfPCell(); c2.setBorder(Rectangle.NO_BORDER);
-            c2.addElement(new Paragraph("ESTUDIANTE 2:", FONT_BOLD_8));
-            c2.addElement(new Paragraph("Nombre: " + val(entity.getNombreEstudiante2()), FONT_NORMAL_8));
-            c2.addElement(new Paragraph("DNI: " + val(entity.getDniEstudiante2()), FONT_NORMAL_8));
-            c2.addElement(new Paragraph("Grado/Sec: " + val(entity.getGradoEstudiante2()) + " - " + val(entity.getSeccionEstudiante2()), FONT_NORMAL_8));
-
-            tableEst.addCell(c1); tableEst.addCell(c2);
-            document.add(tableEst);
-            document.add(Chunk.NEWLINE);
-
-            // IV. HECHOS Y ACUERDOS
-            agregarBloqueTexto(document, "IV. RESUMEN DE LOS HECHOS:", entity.getResumenHechos());
-            agregarBloqueTexto(document, "V. ACUERDOS Y COMPROMISOS:", entity.getAcuerdos());
-
-            // V. ANEXOS
-            document.add(Chunk.NEWLINE);
-            document.add(new Paragraph("VI. ANEXOS:", FONT_BOLD_8));
-            Anchor linkActa = new Anchor("Ver acta digitalizada (Haz clic aquí)", FONT_LINK);
-            linkActa.setReference(baseUrl + "/publico/v1/jueces-escolares/casos/" + id + "/acta");
-            document.add(new Paragraph(linkActa));
-            Anchor linkFotos = new Anchor("Ver fotografías (Haz clic aquí)", FONT_LINK);
-            linkFotos.setReference(baseUrl + "/visor/fotos-jpe/" + id);
-            document.add(new Paragraph(linkFotos));
+            agregarFila(document, "Distrito", ": " + obtenerNombreDist(entity.getDistritoId())); // Ojo: en entity es distritoId
 
             document.add(Chunk.NEWLINE);
-            document.add(new Paragraph("----------------------------------------------------------------------------------------------------------------------------------", FONT_NORMAL_8));
 
-            // FOOTER
-            agregarFila(document, "Fecha de registro", ": " + entity.getFechaRegistro());
+            // --- IV. DESCRIPCIÓN (Incidente) ---
+            // PHP salta de I a IV directo
+            document.add(new Paragraph("IV. DESCRIPCIÓN DE LA ACTIVIDAD REALIZADA (DETALLAR OBJETIVO Y FINALIDAD): ", FONT_BOLD_8));
+            agregarBloqueTexto(document, entity.getResumenHechos()); // Mapeado a jpe_reshech
+
+            // --- V. INSTITUCIONES ALIADAS ---
+            document.add(new Paragraph("V. INSTITUCIONES ALIADAS: ", FONT_BOLD_8));
+            // En el PHP parece que repite jpe_reshech por error o falta de columna,
+            // aquí usaremos un campo dummy o vacío si no existe en tu entidad
+            agregarBloqueTexto(document, " ");
+
+            // --- VI. OBSERVACIONES ---
+            document.add(new Paragraph("VI. OBSERVACIONES: ", FONT_BOLD_8));
+            // En PHP repite jpe_reshech, aquí ponemos vacío o acuerdos si aplica
+            agregarBloqueTexto(document, entity.getAcuerdos());
+
+            // --- VII. ACTIVIDAD OPERATIVA ---
+            document.add(new Paragraph("VII. ACTIVIDAD OPERATIVA REALIZADA: ", FONT_BOLD_8));
+            agregarBloqueTexto(document, " "); // PHP lo deja vacío o repite variable errada
+
+            document.add(Chunk.NEWLINE);
+
+            // --- VIII. ANEXOS ---
+            document.add(new Paragraph("VIII. ANEXOS: ", FONT_BOLD_8));
+
+            // Link Acta
+            agregarLink(document, "Ver formato de atención (Haz clic aquí)", baseUrl + "/publico/v1/jueces-escolares/casos/" + id + "/acta");
+
+            // Link Videos
+            agregarLink(document, "Ver videos (Haz clic aquí)", baseUrl + "/visor/jpe/casos/videos/" + id);
+
+            // Link Fotos
+            agregarLink(document, "Ver fotografías (Haz clic aquí)", baseUrl + "/visor/jpe/casos/fotos/" + id);
+
+            agregarSeparador(document);
+
+            // --- PIE DE PÁGINA ---
+            // Fecha y Usuario en una línea o dos
+            agregarFila(document, "Fecha de registro", ": " + fechaReg);
             agregarFila(document, "Registrado por", ": " + val(entity.getUsuarioRegistro()));
+
+            document.add(Chunk.NEWLINE); document.add(Chunk.NEWLINE); document.add(Chunk.NEWLINE);
+
+            // Firma centrada
+            Paragraph pLinea = new Paragraph("------------------------------------------------------------------------------------------------------------------", FONT_NORMAL_8);
+            pLinea.setAlignment(Element.ALIGN_CENTER);
+            document.add(pLinea);
+
+            // Datos del usuario que registra (mock por ahora, idealmente buscar en tabla usuario)
+            Paragraph pFirma = new Paragraph(val(entity.getUsuarioRegistro()), FONT_BOLD_8); // Nombre usuario
+            pFirma.setAlignment(Element.ALIGN_CENTER);
+            document.add(pFirma);
+
+            // Cargo y Sede (Mock según PHP)
+            Paragraph pCargo = new Paragraph("ESPECIALISTA / RESPONSABLE - " + nombreCorte, FONT_NORMAL_8);
+            pCargo.setAlignment(Element.ALIGN_CENTER);
+            document.add(pCargo);
 
             document.close();
             return out.toByteArray();
         }
     }
 
-    // ============================================
-    //        HELPERS CORREGIDOS CON TRIM()
-    // ============================================
+    // ==========================================
+    //              HELPERS VISUALES
+    // ==========================================
 
-    private String obtenerNombreCorte(String id) {
-        if (id == null) return "";
-        // El trim() asegura que si viene "11 " lo convierta a "11" para buscarlo bien
-        return repoCorte.findById(id.trim()).map(e -> e.getNombre()).orElse(id);
+    private void agregarFila(Document doc, String label, String value) throws DocumentException {
+        PdfPTable table = new PdfPTable(2);
+        table.setWidthPercentage(100);
+        table.setWidths(new float[]{35, 65});
+
+        PdfPCell c1 = new PdfPCell(new Phrase(label, FONT_NORMAL_8));
+        c1.setBorder(Rectangle.NO_BORDER);
+
+        PdfPCell c2 = new PdfPCell(new Phrase(value, FONT_NORMAL_8));
+        c2.setBorder(Rectangle.NO_BORDER);
+
+        table.addCell(c1);
+        table.addCell(c2);
+        doc.add(table);
     }
 
+    private void agregarBloqueTexto(Document doc, String texto) throws DocumentException {
+        PdfPTable table = new PdfPTable(1);
+        table.setWidthPercentage(100);
+
+        String contenido = (texto != null && !texto.trim().isEmpty()) ? texto : " ";
+        PdfPCell c = new PdfPCell(new Phrase(contenido, FONT_NORMAL_8));
+        c.setBorder(Rectangle.BOX);
+        c.setPadding(5f);
+
+        table.addCell(c);
+        doc.add(table);
+        doc.add(Chunk.NEWLINE);
+    }
+
+    private void agregarLink(Document doc, String texto, String url) throws DocumentException {
+        Anchor anchor = new Anchor(texto, FONT_LINK);
+        anchor.setReference(url);
+        doc.add(new Paragraph(anchor));
+    }
+
+    private void agregarSeparador(Document doc) throws DocumentException {
+        Paragraph p = new Paragraph("-------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------", FONT_NORMAL_8);
+        p.setSpacingBefore(2f);
+        p.setSpacingAfter(2f);
+        doc.add(p);
+    }
+
+    private String val(String s) { return s != null ? s : ""; }
+
+    // ==========================================
+    //        HELPERS MAESTROS (Con Trim)
+    // ==========================================
+    private String obtenerNombreCorte(String id) {
+        if (id == null) return "";
+        return repoCorte.findById(id.trim()).map(e -> e.getNombre()).orElse(id);
+    }
     private String obtenerNombreDepa(String id) {
         if (id == null) return "";
         return repoDepa.findById(id.trim()).map(e -> e.getNombre()).orElse(id);
     }
-
     private String obtenerNombreProv(String id) {
         if (id == null) return "";
         return repoProv.findById(id.trim()).map(e -> e.getNombre()).orElse(id);
     }
-
     private String obtenerNombreDist(String id) {
         if (id == null) return "";
         return repoDist.findById(id.trim()).map(e -> e.getNombre()).orElse(id);
     }
 
-    // ... Resto de helpers visuales (addSectionTitle, agregarFila, etc.) se mantienen igual ...
-    private void addSectionTitle(Document doc, String title) throws DocumentException {
-        PdfPTable table = new PdfPTable(1);
-        table.setWidthPercentage(100);
-        PdfPCell cell = new PdfPCell(new Phrase(title, FONT_BOLD_8));
-        cell.setBackgroundColor(COLOR_HEADER_BG);
-        cell.setBorder(Rectangle.NO_BORDER);
-        cell.setPadding(4f);
-        table.addCell(cell);
-        doc.add(table);
-    }
-
-    private void agregarFila(Document doc, String label, String value) throws DocumentException {
-        PdfPTable table = new PdfPTable(2);
-        table.setWidthPercentage(100);
-        table.setWidths(new float[]{30, 70});
-        PdfPCell c1 = new PdfPCell(new Phrase(label, FONT_NORMAL_8)); c1.setBorder(Rectangle.NO_BORDER);
-        PdfPCell c2 = new PdfPCell(new Phrase(value, FONT_NORMAL_8)); c2.setBorder(Rectangle.NO_BORDER);
-        table.addCell(c1); table.addCell(c2);
-        doc.add(table);
-    }
-
-    private void agregarBloqueTexto(Document doc, String titulo, String contenido) throws DocumentException {
-        doc.add(Chunk.NEWLINE);
-        doc.add(new Paragraph(titulo, FONT_BOLD_8));
-        PdfPTable table = new PdfPTable(1);
-        table.setWidthPercentage(100);
-        String texto = (contenido == null || contenido.trim().isEmpty()) ? "SIN REGISTROS" : contenido;
-        PdfPCell cell = new PdfPCell(new Phrase(texto, FONT_NORMAL_8));
-        cell.setPadding(6);
-        table.addCell(cell);
-        doc.add(table);
-    }
-
-    private String val(String s) { return s != null ? s : ""; }
-
-    class HeaderFooterPageEvent extends PdfPageEventHelper {
-        @Override
+    // ==========================================
+    //           HEADER & FOOTER EVENT
+    // ==========================================
+    static class HeaderFooterPageEvent extends PdfPageEventHelper {
         public void onStartPage(PdfWriter writer, Document document) {
             try {
                 try {
+                    // Logo
                     Image logo = Image.getInstance(getClass().getResource("/images/ENCABEZADO.JPG"));
-                    logo.scaleToFit(500, 50);
-                    logo.setAbsolutePosition(30, document.getPageSize().getHeight() - 70);
+                    logo.scaleToFit(300, 50); // Escala aproximada al PHP (25, 10, -300)
+                    logo.setAbsolutePosition(25, document.getPageSize().getHeight() - 50);
                     writer.getDirectContent().addImage(logo);
                 } catch (Exception e) {}
+
+                // Títulos Cabecera
                 ColumnText.showTextAligned(writer.getDirectContent(), Element.ALIGN_CENTER,
                         new Phrase("JUECES DE PAZ ESCOLAR", FONT_BOLD_8),
                         (document.right() - document.left()) / 2 + document.leftMargin(),
-                        document.top() - 60, 0);
+                        document.top() - 30, 0);
+
                 ColumnText.showTextAligned(writer.getDirectContent(), Element.ALIGN_CENTER,
                         new Phrase("(INFORME)", FONT_BOLD_8),
                         (document.right() - document.left()) / 2 + document.leftMargin(),
-                        document.top() - 72, 0);
+                        document.top() - 42, 0);
+
             } catch (Exception e) {}
         }
-        @Override
+
         public void onEndPage(PdfWriter writer, Document document) {
             ColumnText.showTextAligned(writer.getDirectContent(), Element.ALIGN_CENTER,
-                    new Phrase("Página " + writer.getPageNumber(), FONT_NORMAL_8),
+                    new Phrase("Página " + writer.getPageNumber(), FONT_NORMAL_7),
                     (document.right() - document.left()) / 2 + document.leftMargin(),
-                    document.bottom() - 20, 0);
+                    document.bottom() - 15, 0);
         }
     }
 }

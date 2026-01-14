@@ -18,7 +18,9 @@ import pe.gob.pj.prueba.infraestructure.db.negocio.repositories.masters.*;
 
 import java.awt.Color;
 import java.io.ByteArrayOutputStream;
+import java.time.format.DateTimeFormatter;
 import java.util.List;
+import java.util.Map;
 import java.util.Objects;
 import java.util.stream.Collectors;
 
@@ -29,14 +31,14 @@ public class ReportePromocionService {
 
     private final MovPromocionCulturaRepository repository;
 
-    // ✅ INYECCIÓN DE REPOSITORIOS PARA OBTENER NOMBRES
+    // --- REPOSITORIOS MAESTROS ---
     private final MaeDistritoJudicialRepository repoDistritoJud;
     private final MaeEjeRepository repoEje;
     private final MaeDepartamentoRepository repoDepa;
     private final MaeProvinciaRepository repoProv;
     private final MaeDistritoRepository repoDist;
 
-    @Value("${app.frontend.url:http://localhost:8080}")
+    @Value("${app.frontend.url:http://localhost:4200}")
     private String baseUrl;
 
     // --- FUENTES ---
@@ -46,7 +48,7 @@ public class ReportePromocionService {
     private static final Font FONT_BOLD_7 = FontFactory.getFont(FontFactory.HELVETICA_BOLD, 7);
     private static final Font FONT_NORMAL_8 = FontFactory.getFont(FontFactory.HELVETICA, 8);
     private static final Font FONT_NORMAL_7 = FontFactory.getFont(FontFactory.HELVETICA, 7);
-    private static final Font FONT_LINK = FontFactory.getFont(FontFactory.HELVETICA, 8, Font.UNDERLINE, Color.BLUE);
+    private static final Font FONT_LINK = FontFactory.getFont(FontFactory.HELVETICA, 8, Font.UNDERLINE, new Color(5, 64, 209));
     private static final Color COLOR_CABECERA = new Color(240, 240, 240);
 
     @Transactional(readOnly = true)
@@ -64,162 +66,170 @@ public class ReportePromocionService {
 
             document.open();
 
-            // --- TÍTULO ---
-            Paragraph pTitulo = new Paragraph("ACCIONES DE PROMOCIÓN DE CULTURA JURÍDICA", FONT_TITULO);
-            pTitulo.setAlignment(Element.ALIGN_CENTER);
-            document.add(pTitulo);
-
-            // ✅ CORREGIDO: Nombre de Corte
+            // --- TÍTULO CORTE ---
             String nombreCorte = obtenerNombreCorte(entity.getDistritoJudicialId());
-            Paragraph pCorte = new Paragraph("DISTRITO JUDICIAL: " + nombreCorte, FONT_BOLD_10);
+            Paragraph pCorte = new Paragraph(nombreCorte, FONT_TITULO);
             pCorte.setAlignment(Element.ALIGN_CENTER);
             document.add(pCorte);
 
-            // --- ID ---
-            PdfPTable tableInfo = new PdfPTable(2);
-            tableInfo.setWidthPercentage(100);
-            tableInfo.setWidths(new float[]{85, 15});
-            tableInfo.addCell(crearCeldaVacia());
-
-            PdfPCell cellNum = new PdfPCell(new Phrase(entity.getId(), FONT_BOLD_8));
-            cellNum.setHorizontalAlignment(Element.ALIGN_CENTER);
-            cellNum.setBorderWidth(1);
-            tableInfo.addCell(cellNum);
-            document.add(tableInfo);
-
-            document.add(Chunk.NEWLINE);
+            // --- NÚMERO DE FICHA (Derecha) ---
+            PdfPTable tableNum = new PdfPTable(2);
+            tableNum.setWidthPercentage(100);
+            tableNum.setWidths(new float[]{85, 15});
+            PdfPCell cVacia = new PdfPCell(new Phrase("")); cVacia.setBorder(Rectangle.NO_BORDER);
+            PdfPCell cNum = new PdfPCell(new Phrase("N°: " + entity.getId(), FONT_BOLD_8));
+            cNum.setHorizontalAlignment(Element.ALIGN_CENTER);
+            tableNum.addCell(cVacia); tableNum.addCell(cNum);
+            document.add(tableNum);
 
             // --- DATOS GENERALES ---
-            agregarFila(document, "Resolución Anual Plan", ": " + val(entity.getResolucionPlanAnual()));
-            agregarFila(document, "Resolución Admin Plan", ": " + val(entity.getResolucionAdminPlan()));
-            agregarFila(document, "Doc. Autoriza Evento", ": " + val(entity.getDocumentoAutoriza()));
+            // Resoluciones
+            agregarFila(document, "Resolución Anual que Aprueba el Plan", ": N° " + val(entity.getResolucionPlanAnual()));
+            agregarFila(document, "Resolución Administrativa que Aprueba el Plan", ": N° " + val(entity.getResolucionAdminPlan()));
+            agregarFila(document, "Documento que Autoriza Actividad/Evento", ": N° " + val(entity.getDocumentoAutoriza()));
 
-            agregarFila(document, "Nombre Autoridad", ": " + val(entity.getNombreActividad()));
-            agregarFila(document, "Tipo Doc. Autoridad", ": " + val(entity.getTipoActividad()));
-            agregarFila(document, "Dato Autoridad", ": " + val(entity.getTipoActividadOtros()));
+            // Datos Actividad
+            agregarFila(document, "Nombre de la Actividad/Servicio", ": " + val(entity.getNombreActividad()));
 
-            agregarFila(document, "Fecha Inicio", ": " + entity.getFechaInicio());
-            agregarFila(document, "Fecha Fin", ": " + entity.getFechaFin());
+            DateTimeFormatter fmt = DateTimeFormatter.ofPattern("dd/MM/yyyy");
+            String fInicio = entity.getFechaInicio() != null ? entity.getFechaInicio().format(fmt) : "";
+            String fFin = entity.getFechaFin() != null ? entity.getFechaFin().format(fmt) : "";
 
-            // ✅ CORREGIDO: Nombre de Eje
-            String nombreEje = obtenerNombreEje(entity.getEjeId());
-            agregarFila(document, "Eje Temático", ": " + nombreEje);
+            agregarFila(document, "Fecha de Inicio", ": " + fInicio);
+            agregarFila(document, "Fecha de Finalización", ": " + fFin);
 
-            agregarFila(document, "Zona Intervención", ": " + val(entity.getZonaIntervencion()));
+            // Lógica Tipo Actividad (OTRO)
+            agregarFila(document, "Tipo de Actividad", ": " + val(entity.getTipoActividad()));
+            if ("OTRO(ESPECIFICAR)".equalsIgnoreCase(entity.getTipoActividad())) {
+                agregarFila(document, "Observación", ": " + val(entity.getTipoActividadOtros()));
+            }
+
+            agregarFila(document, "Detallar Zona de Intervención", ": " + val(entity.getZonaIntervencion()));
             agregarFila(document, "Modalidad", ": " + val(entity.getModalidadProyecto()));
+
+            // Lógica Público Objetivo (OTRO)
+            // Nota: En PHP usan Multicell, aquí permitimos que baje de línea si es largo
+            agregarFila(document, "Público Objetivo", ": " + val(entity.getPublicoObjetivo()));
+            if ("OTRO(ESPECIFICAR)".equalsIgnoreCase(entity.getPublicoObjetivo())) {
+                agregarFila(document, "Observación", ": " + val(entity.getPublicoObjetivoOtros()));
+            }
 
             document.add(Chunk.NEWLINE);
             document.add(new Paragraph("----------------------------------------------------------------------------------------------------------------------------------", FONT_NORMAL_8));
             document.add(Chunk.NEWLINE);
 
-            // --- I. DATOS DE LA ACTIVIDAD ---
-            document.add(new Paragraph("I. DATOS DE LA ACTIVIDAD:", FONT_BOLD_8));
-
-            agregarFila(document, "Lugar / Actividad", ": " + val(entity.getLugarActividad()));
-
-            // ✅ CORREGIDO: Ubigeo con Nombres
+            // --- I. LUGAR DE LA ACTIVIDAD ---
+            document.add(new Paragraph("I. LUGAR DE LA ACTIVIDAD:", FONT_BOLD_8));
+            agregarFila(document, "Anexo/Localidad/Institución", ": " + val(entity.getLugarActividad()));
             agregarFila(document, "Región", ": " + obtenerNombreDepa(entity.getDepartamentoId()));
             agregarFila(document, "Provincia", ": " + obtenerNombreProv(entity.getProvinciaId()));
             agregarFila(document, "Distrito", ": " + obtenerNombreDist(entity.getDistritoGeograficoId()));
 
-            agregarFila(document, "Posición Solicitante", ": " + val(entity.getPublicoObjetivo()));
-            agregarFila(document, "Desc. Posición Origen", ": " + val(entity.getPublicoObjetivoOtros()));
+            // Eje Temático
+            String nombreEje = obtenerNombreEje(entity.getEjeId());
+            agregarFila(document, "Eje de Trabajo", ": " + val(entity.getEjeId()) + " " + nombreEje);
 
-            agregarFila(document, "Sub-Área Intervención", ": " + val(entity.getSeDictoLenguaNativa()));
-            agregarFila(document, "Lengua Nativa", ": " + val(entity.getLenguaNativaDesc()));
+            // Lengua Nativa
+            boolean esLengua = "SI".equalsIgnoreCase(entity.getSeDictoLenguaNativa());
+            agregarFila(document, "¿Se atendió en Lengua Nativa?", ": " + (esLengua ? "SI" : "NO"));
+            if (esLengua) {
+                agregarFila(document, "Si es sí, Mencione la Lengua Nativa", ": " + val(entity.getLenguaNativaDesc()));
+            }
 
-            agregarFila(document, "Cod. Prog. Presupuestal", ": " + val(entity.getParticiparonDiscapacitados()));
-            String codProy = (entity.getNumeroDiscapacitados() != null) ? String.valueOf(entity.getNumeroDiscapacitados()) : "";
-            agregarFila(document, "Cod. Prog. Proyecto", ": " + codProy);
+            // Discapacidad
+            boolean esDiscap = "SI".equalsIgnoreCase(entity.getParticiparonDiscapacitados());
+            agregarFila(document, "¿Participaron Personas con Discapacidad?", ": " + (esDiscap ? "SI" : "NO"));
+            if (esDiscap) {
+                agregarFila(document, "Si es SÍ, Mencione el Número", ": " + num(entity.getNumeroDiscapacitados()));
+            }
 
-            // El campo areaRiesgo en BD parece guardar el flag de Intérprete, según tu análisis PHP
-            agregarFila(document, "¿Intérprete de Señas?", ": " + val(entity.getAreaRiesgo()));
+            // Intérprete (Mapeado a areaRiesgo según PHP 'aris')
+            agregarFila(document, "¿La Actividad Requirió Interprete de Lenguaje de Señas?", ": " + val(entity.getAreaRiesgo()));
 
             document.add(Chunk.NEWLINE);
 
             // --- II. PERSONAS BENEFICIADAS ---
             document.add(new Paragraph("II. PERSONAS BENEFICIADAS:", FONT_BOLD_8));
+            document.add(new Paragraph("Número Aproximado de Asistentes a la Actividad", FONT_NORMAL_8));
             document.add(Chunk.NEWLINE);
 
             crearTablaBeneficiarios(document, entity.getParticipantes());
 
-            // --- III. DESCRIPCIÓN Y OBSERVACIONES ---
-            agregarBloqueTexto(document, "III. DESCRIPCIÓN DE LA ACTIVIDAD:", entity.getDescripcionActividad());
-            agregarBloqueTexto(document, "IV. RECURSOS UTILIZADOS:", entity.getInstitucionesAliadas());
+            // --- TEXTOS ---
+            agregarBloqueTexto(document, "III. DESCRIPCIÓN DE LA ACTIVIDAD REALIZADA:", entity.getDescripcionActividad());
+            agregarBloqueTexto(document, "IV. INSTITUCIONES ALIADAS:", entity.getInstitucionesAliadas());
             agregarBloqueTexto(document, "V. OBSERVACIONES:", entity.getObservacion());
 
-            // --- VII. ACTIVIDAD OPERATIVA REALIZADA ---
+            // --- VII. ACTIVIDAD OPERATIVA (PHP salta a VII) ---
+            document.add(Chunk.NEWLINE);
+            document.add(new Paragraph("VII. ACTIVIDAD OPERATIVA REALIZADA:", FONT_BOLD_8));
+
             if (entity.getTareas() != null && !entity.getTareas().isEmpty()) {
-                List<MaeTareaEntity> tareasRealizadas = entity.getTareas().stream()
+                // Obtenemos objetos maestros para evitar N+1 queries manuales
+                List<MaeTareaEntity> tareas = entity.getTareas().stream()
                         .map(MovPromCulturaTareaEntity::getTareaMaestra)
                         .filter(Objects::nonNull)
                         .collect(Collectors.toList());
 
-                List<MaeActividadOperativaEntity> actividadesUnicas = tareasRealizadas.stream()
-                        .map(t -> t.getIndicador().getActividad())
-                        .distinct()
-                        .collect(Collectors.toList());
+                // 1. Actividades Únicas
+                tareas.stream().map(t -> t.getIndicador().getActividad()).distinct()
+                        .forEach(act -> {
+                            try { agregarBloqueSimple(document, act.getId() + " " + act.getDescripcion()); } catch (Exception e){}
+                        });
 
-                List<MaeIndicadorEntity> indicadoresUnicos = tareasRealizadas.stream()
-                        .map(MaeTareaEntity::getIndicador)
-                        .distinct()
-                        .collect(Collectors.toList());
-
-                document.add(Chunk.NEWLINE);
-                document.add(new Paragraph("VII. ACTIVIDAD OPERATIVA REALIZADA:", FONT_BOLD_8));
-                document.add(Chunk.NEWLINE);
-
-                for (MaeActividadOperativaEntity act : actividadesUnicas) {
-                    agregarBloqueSimple(document, act.getId() + " " + act.getDescripcion());
-                }
-
-                document.add(Chunk.NEWLINE);
+                // 2. Indicadores Únicos
                 document.add(new Paragraph("a) Indicadores de la Actividad Operativa:", FONT_NORMAL_8));
-                for (MaeIndicadorEntity ind : indicadoresUnicos) {
-                    agregarBloqueSimple(document, "     " + ind.getId() + " " + ind.getDescripcion());
-                }
+                tareas.stream().map(MaeTareaEntity::getIndicador).distinct()
+                        .forEach(ind -> {
+                            try { agregarBloqueSimple(document, "     " + ind.getId() + " " + ind.getDescripcion()); } catch (Exception e){}
+                        });
 
-                document.add(Chunk.NEWLINE);
+                // 3. Tareas
                 document.add(new Paragraph("b) Tareas Realizadas de la Actividad Operativa:", FONT_NORMAL_8));
-                for (MaeTareaEntity tar : tareasRealizadas) {
-                    agregarBloqueSimple(document, "          " + tar.getId() + " " + tar.getDescripcion());
-                }
+                tareas.forEach(t -> {
+                    try { agregarBloqueSimple(document, "          " + t.getId() + " " + t.getDescripcion()); } catch (Exception e){}
+                });
+
             } else {
                 document.add(Chunk.NEWLINE);
                 agregarBloqueSimpleCentrado(document, "SIN REGISTROS");
             }
 
-            // --- VIII. ANEXOS (CON SALTO DE LÍNEA) ---
+            // --- VIII. ANEXOS ---
             document.add(Chunk.NEWLINE);
             document.add(new Paragraph("VIII. ANEXOS:", FONT_BOLD_8));
 
-            // 1. Enlace al PDF (Directo al Backend)
+            // Links (Simulados con color azul)
             Anchor linkFicha = new Anchor("Ver formato de atención (Haz clic aquí)", FONT_LINK);
-            linkFicha.setReference(baseUrl + "/publico/v1/promocion-cultura/anexo/" + id);
-            document.add(new Paragraph(linkFicha)); // ✅ Envuelto en Paragraph para salto de línea
+            linkFicha.setReference(baseUrl + "/descargar/anexo/" + id);
+            document.add(new Paragraph(linkFicha));
 
-            // 2. Enlace a Videos (Apunta al Frontend)
-            Anchor linkVideos = new Anchor("Ver videos (Haz clic aquí)", FONT_LINK);
-            // Cuando tengas frontend, será algo como: http://mi-web.com/visor-videos/{id}
-            linkVideos.setReference(baseUrl + "/visor/videos/" + id);
-            document.add(new Paragraph(linkVideos)); // ✅ Envuelto en Paragraph
+            Anchor linkVideo = new Anchor("Ver videos (Haz clic aquí)", FONT_LINK);
+            linkVideo.setReference(baseUrl + "/visor/videos/" + id);
+            document.add(new Paragraph(linkVideo));
 
-            // 3. Enlace a Fotos (Apunta al Frontend)
-            Anchor linkFotos = new Anchor("Ver fotografías (Haz clic aquí)", FONT_LINK);
-            linkFotos.setReference(baseUrl + "/visor/fotos/" + id);
-            document.add(new Paragraph(linkFotos)); // ✅ Envuelto en Paragraph
+            Anchor linkFoto = new Anchor("Ver fotografías (Haz clic aquí)", FONT_LINK);
+            linkFoto.setReference(baseUrl + "/visor/fotos/" + id);
+            document.add(new Paragraph(linkFoto));
 
-            // --- FOOTER REGISTRO ---
             document.add(Chunk.NEWLINE);
             document.add(new Paragraph("----------------------------------------------------------------------------------------------------------------------------------", FONT_NORMAL_8));
-            agregarFila(document, "Fecha de registro", ": " + entity.getFechaRegistro());
-            agregarFila(document, "Registrado por", ": " + entity.getUsuarioRegistro());
+
+            // --- PIE Y FIRMA ---
+            agregarFila(document, "Fecha de registro", ": " + (entity.getFechaRegistro() != null ? entity.getFechaRegistro().toString() : ""));
+            agregarFila(document, "Registrado por", ": " + val(entity.getUsuarioRegistro()));
 
             document.add(Chunk.NEWLINE); document.add(Chunk.NEWLINE); document.add(Chunk.NEWLINE);
+
+            // Firma (Mock)
             Paragraph pLinea = new Paragraph("--------------------------------------------------", FONT_NORMAL_8);
-            pLinea.setAlignment(Element.ALIGN_CENTER); document.add(pLinea);
-            Paragraph pFirma = new Paragraph("JUAN PEREZ\nADMINISTRADOR DE SEDE", FONT_BOLD_8);
-            pFirma.setAlignment(Element.ALIGN_CENTER); document.add(pFirma);
+            pLinea.setAlignment(Element.ALIGN_CENTER);
+            document.add(pLinea);
+
+            // Idealmente esto viene de una consulta de usuario, aquí usamos el ID usuario como placeholder
+            Paragraph pFirma = new Paragraph(val(entity.getUsuarioRegistro()) + "\nUSUARIO RESPONSABLE", FONT_BOLD_8);
+            pFirma.setAlignment(Element.ALIGN_CENTER);
+            document.add(pFirma);
 
             document.close();
             return out.toByteArray();
@@ -227,79 +237,106 @@ public class ReportePromocionService {
     }
 
     // ============================================
-    //        HELPERS DE BÚSQUEDA DE NOMBRES
+    //            TABLA BENEFICIARIOS
     // ============================================
 
-    private String obtenerNombreCorte(String id) {
-        if (id == null) return "";
-        return repoDistritoJud.findById(id).map(e -> e.getNombre()).orElse(id);
-    }
-
-    private String obtenerNombreEje(String id) {
-        if (id == null) return "";
-        return repoEje.findById(id).map(e -> e.getDescripcion()).orElse(id);
-    }
-
-    private String obtenerNombreDepa(String id) {
-        if (id == null) return "";
-        return repoDepa.findById(id).map(e -> e.getNombre()).orElse(id);
-    }
-
-    private String obtenerNombreProv(String id) {
-        if (id == null) return "";
-        return repoProv.findById(id).map(e -> e.getNombre()).orElse(id);
-    }
-
-    private String obtenerNombreDist(String id) {
-        if (id == null) return "";
-        return repoDist.findById(id).map(e -> e.getNombre()).orElse(id);
-    }
-
-    // --- MÉTODOS AUXILIARES TABLAS ---
-
     private void crearTablaBeneficiarios(Document doc, List<MovPromCulturaDetalleEntity> lista) throws DocumentException {
-        PdfPTable table = new PdfPTable(5);
+        // Estructura idéntica al PHP: 3 grandes grupos, total 10 columnas
+        PdfPTable table = new PdfPTable(10);
         table.setWidthPercentage(100);
-        table.setWidths(new float[]{30, 10, 20, 20, 20});
+        table.setWidths(new float[]{11,11,11, 11,11,11, 11,11,11, 12});
 
-        agregarCeldaEncabezado(table, "RANGO DESCRIPCIÓN");
-        agregarCeldaEncabezado(table, "COD");
-        agregarCeldaEncabezado(table, "FEMENINO");
-        agregarCeldaEncabezado(table, "MASCULINO");
-        agregarCeldaEncabezado(table, "LGTBIQ");
+        // Cabeceras Superiores
+        agregarCeldaHeader(table, "NIÑOS Y ADOLESCENTES", 3);
+        agregarCeldaHeader(table, "JÓVENES Y ADULTOS", 3);
+        agregarCeldaHeader(table, "ADULTOS MAYORES", 3);
 
-        int tF = 0, tM = 0, tL = 0;
-
-        if (lista != null && !lista.isEmpty()) {
-            for (MovPromCulturaDetalleEntity item : lista) {
-                agregarCeldaDato(table, val(item.getDescripcionRango()));
-                agregarCeldaDato(table, val(item.getCodigoRango()));
-                agregarCeldaDato(table, String.valueOf(item.getCantidadFemenino()));
-                agregarCeldaDato(table, String.valueOf(item.getCantidadMasculino()));
-                agregarCeldaDato(table, String.valueOf(item.getCantidadLgtbiq()));
-
-                tF += (item.getCantidadFemenino() == null ? 0 : item.getCantidadFemenino());
-                tM += (item.getCantidadMasculino() == null ? 0 : item.getCantidadMasculino());
-                tL += (item.getCantidadLgtbiq() == null ? 0 : item.getCantidadLgtbiq());
-            }
-        } else {
-            PdfPCell cellVacia = new PdfPCell(new Phrase("SIN REGISTROS", FONT_NORMAL_7));
-            cellVacia.setColspan(5);
-            cellVacia.setHorizontalAlignment(Element.ALIGN_CENTER);
-            table.addCell(cellVacia);
-        }
-
+        // Celda Total Vertical
         PdfPCell cTotal = new PdfPCell(new Phrase("TOTAL", FONT_BOLD_7));
-        cTotal.setColspan(2);
-        cTotal.setHorizontalAlignment(Element.ALIGN_RIGHT);
+        cTotal.setRowspan(3);
+        cTotal.setVerticalAlignment(Element.ALIGN_MIDDLE);
+        cTotal.setHorizontalAlignment(Element.ALIGN_CENTER);
         cTotal.setBackgroundColor(COLOR_CABECERA);
         table.addCell(cTotal);
 
-        agregarCeldaDatoBold(table, String.valueOf(tF));
-        agregarCeldaDatoBold(table, String.valueOf(tM));
-        agregarCeldaDatoBold(table, String.valueOf(tL));
+        // Subcabeceras Rangos
+        agregarCeldaHeader(table, "0-17 AÑOS", 3);
+        agregarCeldaHeader(table, "18-59 AÑOS", 3);
+        agregarCeldaHeader(table, "60+ AÑOS", 3);
 
+        // Cabeceras Sexo
+        for(int i=0; i<3; i++) {
+            agregarCeldaSubHeader(table, "F");
+            agregarCeldaSubHeader(table, "M");
+            agregarCeldaSubHeader(table, "LGTBIQ");
+        }
+
+        // Datos
+        if (lista == null || lista.isEmpty()) {
+            agregarCeldaVacia(table, 10, "SIN REGISTROS");
+        } else {
+            // Mapeamos por codigoRango (01, 02, 03)
+            Map<String, MovPromCulturaDetalleEntity> map = lista.stream()
+                    .collect(Collectors.toMap(MovPromCulturaDetalleEntity::getCodigoRango, x -> x));
+
+            String[] codigos = {"01", "02", "03"};
+            int granTotal = 0;
+
+            for (String cod : codigos) {
+                MovPromCulturaDetalleEntity item = map.get(cod);
+                int f = item != null ? num(item.getCantidadFemenino()) : 0;
+                int m = item != null ? num(item.getCantidadMasculino()) : 0;
+                int l = item != null ? num(item.getCantidadLgtbiq()) : 0;
+
+                agregarCeldaDato(table, String.valueOf(f));
+                agregarCeldaDato(table, String.valueOf(m));
+                agregarCeldaDato(table, String.valueOf(l));
+                granTotal += (f + m + l);
+            }
+            // Columna Total Final
+            agregarCeldaDatoBold(table, String.valueOf(granTotal));
+        }
         doc.add(table);
+    }
+
+    // ============================================
+    //            HELPERS & UTILS
+    // ============================================
+
+    private void agregarCeldaHeader(PdfPTable table, String text, int colspan) {
+        PdfPCell cell = new PdfPCell(new Phrase(text, FONT_BOLD_7));
+        cell.setHorizontalAlignment(Element.ALIGN_CENTER);
+        cell.setVerticalAlignment(Element.ALIGN_MIDDLE);
+        cell.setBackgroundColor(COLOR_CABECERA);
+        if (colspan > 1) cell.setColspan(colspan);
+        table.addCell(cell);
+    }
+
+    private void agregarCeldaSubHeader(PdfPTable table, String text) {
+        PdfPCell cell = new PdfPCell(new Phrase(text, FONT_BOLD_7));
+        cell.setHorizontalAlignment(Element.ALIGN_CENTER);
+        cell.setBackgroundColor(COLOR_CABECERA);
+        table.addCell(cell);
+    }
+
+    private void agregarCeldaDato(PdfPTable table, String text) {
+        PdfPCell cell = new PdfPCell(new Phrase(text, FONT_NORMAL_7));
+        cell.setHorizontalAlignment(Element.ALIGN_CENTER);
+        table.addCell(cell);
+    }
+
+    private void agregarCeldaDatoBold(PdfPTable table, String text) {
+        PdfPCell cell = new PdfPCell(new Phrase(text, FONT_BOLD_7));
+        cell.setHorizontalAlignment(Element.ALIGN_CENTER);
+        table.addCell(cell);
+    }
+
+    private void agregarCeldaVacia(PdfPTable table, int colspan, String msj) {
+        PdfPCell cell = new PdfPCell(new Phrase(msj, FONT_NORMAL_7));
+        cell.setColspan(colspan);
+        cell.setHorizontalAlignment(Element.ALIGN_CENTER);
+        cell.setPadding(5);
+        table.addCell(cell);
     }
 
     private void agregarFila(Document doc, String label, String value) throws DocumentException {
@@ -315,69 +352,67 @@ public class ReportePromocionService {
     private void agregarBloqueTexto(Document doc, String titulo, String contenido) throws DocumentException {
         doc.add(Chunk.NEWLINE);
         doc.add(new Paragraph(titulo, FONT_BOLD_8));
-        PdfPTable table = new PdfPTable(1); table.setWidthPercentage(100);
-        PdfPCell cell = new PdfPCell(new Phrase(val(contenido), FONT_NORMAL_8)); cell.setPadding(6);
-        table.addCell(cell); doc.add(table);
+        PdfPTable table = new PdfPTable(1);
+        table.setWidthPercentage(100);
+        String texto = (contenido == null || contenido.trim().isEmpty()) ? "SIN REGISTROS" : contenido;
+        PdfPCell cell = new PdfPCell(new Phrase(texto, FONT_NORMAL_8));
+        cell.setPadding(6);
+        if(texto.equals("SIN REGISTROS")) cell.setHorizontalAlignment(Element.ALIGN_CENTER);
+        table.addCell(cell);
+        doc.add(table);
     }
 
     private void agregarBloqueSimple(Document doc, String contenido) throws DocumentException {
-        PdfPTable table = new PdfPTable(1);
-        table.setWidthPercentage(100);
+        PdfPTable table = new PdfPTable(1); table.setWidthPercentage(100);
         PdfPCell cell = new PdfPCell(new Phrase(val(contenido), FONT_NORMAL_8));
-        cell.setBorder(Rectangle.BOX);
-        table.addCell(cell);
-        doc.add(table);
+        cell.setBorder(Rectangle.BOX); table.addCell(cell); doc.add(table);
     }
 
     private void agregarBloqueSimpleCentrado(Document doc, String contenido) throws DocumentException {
-        PdfPTable table = new PdfPTable(1);
-        table.setWidthPercentage(100);
+        PdfPTable table = new PdfPTable(1); table.setWidthPercentage(100);
         PdfPCell cell = new PdfPCell(new Phrase(contenido, FONT_NORMAL_8));
-        cell.setBorder(Rectangle.BOX);
-        cell.setHorizontalAlignment(Element.ALIGN_CENTER);
-        table.addCell(cell);
-        doc.add(table);
+        cell.setBorder(Rectangle.BOX); cell.setHorizontalAlignment(Element.ALIGN_CENTER);
+        table.addCell(cell); doc.add(table);
     }
 
-    private void agregarCeldaEncabezado(PdfPTable table, String texto) {
-        PdfPCell cell = new PdfPCell(new Phrase(texto, FONT_BOLD_7));
-        cell.setHorizontalAlignment(Element.ALIGN_CENTER);
-        cell.setBackgroundColor(COLOR_CABECERA);
-        table.addCell(cell);
-    }
+    // Helpers Maestros
+    private String obtenerNombreCorte(String id) { return repoDistritoJud.findById(id).map(e -> e.getNombre()).orElse(id); }
+    private String obtenerNombreEje(String id) { return repoEje.findById(id).map(e -> e.getDescripcion()).orElse(id); }
+    private String obtenerNombreDepa(String id) { return repoDepa.findById(id).map(e -> e.getNombre()).orElse(id); }
+    private String obtenerNombreProv(String id) { return repoProv.findById(id).map(e -> e.getNombre()).orElse(id); }
+    private String obtenerNombreDist(String id) { return repoDist.findById(id).map(e -> e.getNombre()).orElse(id); }
 
-    private void agregarCeldaDato(PdfPTable table, String texto) {
-        PdfPCell cell = new PdfPCell(new Phrase(texto, FONT_NORMAL_7));
-        cell.setHorizontalAlignment(Element.ALIGN_CENTER);
-        table.addCell(cell);
-    }
-
-    private void agregarCeldaDatoBold(PdfPTable table, String texto) {
-        PdfPCell cell = new PdfPCell(new Phrase(texto, FONT_BOLD_7));
-        cell.setHorizontalAlignment(Element.ALIGN_CENTER);
-        table.addCell(cell);
-    }
-
-    private PdfPCell crearCeldaVacia() {
-        PdfPCell cell = new PdfPCell(new Phrase("")); cell.setBorder(Rectangle.NO_BORDER); return cell;
-    }
     private String val(String s) { return s != null ? s : ""; }
+    private int num(Integer i) { return i != null ? i : 0; }
 
+    // Cabecera y Pie
     class HeaderFooterPageEvent extends PdfPageEventHelper {
+        @Override
         public void onStartPage(PdfWriter writer, Document document) {
             try {
                 try {
                     Image logo = Image.getInstance(getClass().getResource("/images/ENCABEZADO.JPG"));
-                    logo.scaleToFit(500, 50); logo.setAbsolutePosition(30, document.getPageSize().getHeight() - 70);
+                    logo.scaleToFit(500, 50);
+                    logo.setAbsolutePosition(30, document.getPageSize().getHeight() - 70);
                     writer.getDirectContent().addImage(logo);
                 } catch (Exception e) {}
-                ColumnText.showTextAligned(writer.getDirectContent(), Element.ALIGN_CENTER, new Phrase("(INFORME)", FONT_BOLD_10),
-                        (document.right() - document.left()) / 2 + document.leftMargin(), document.top() - 72, 0);
+
+                ColumnText.showTextAligned(writer.getDirectContent(), Element.ALIGN_CENTER,
+                        new Phrase("ACCIONES DE PROMOCIÓN DE CULTURA JURÍDICA", FONT_BOLD_10),
+                        (document.right() - document.left()) / 2 + document.leftMargin(),
+                        document.top() - 60, 0);
+                ColumnText.showTextAligned(writer.getDirectContent(), Element.ALIGN_CENTER,
+                        new Phrase("(INFORME)", FONT_BOLD_10),
+                        (document.right() - document.left()) / 2 + document.leftMargin(),
+                        document.top() - 72, 0);
             } catch (Exception e) {}
         }
+        @Override
         public void onEndPage(PdfWriter writer, Document document) {
-            ColumnText.showTextAligned(writer.getDirectContent(), Element.ALIGN_CENTER, new Phrase("Página " + writer.getPageNumber(), FONT_NORMAL_8),
-                    (document.right() - document.left()) / 2 + document.leftMargin(), document.bottom() - 20, 0);
+            ColumnText.showTextAligned(writer.getDirectContent(), Element.ALIGN_CENTER,
+                    new Phrase("Página " + writer.getPageNumber(), FONT_NORMAL_8),
+                    (document.right() - document.left()) / 2 + document.leftMargin(),
+                    document.bottom() - 20, 0);
         }
     }
 }

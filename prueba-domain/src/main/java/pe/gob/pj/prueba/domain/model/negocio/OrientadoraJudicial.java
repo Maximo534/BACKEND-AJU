@@ -6,11 +6,14 @@ import lombok.Data;
 import lombok.NoArgsConstructor;
 import java.io.Serializable;
 import java.time.LocalDate;
+import java.util.List;
 
 @Data @Builder @NoArgsConstructor @AllArgsConstructor
 public class OrientadoraJudicial implements Serializable {
     private String id;
     private String distritoJudicialId;
+    private String distritoJudicialNombre;
+
     private LocalDate fechaAtencion;
 
     // Datos Persona
@@ -38,4 +41,8 @@ public class OrientadoraJudicial implements Serializable {
     private String resenaCaso;
 
     private String usuarioRegistro;
+    private String search;
+
+    private List<Archivo> archivosGuardados;
+
 }

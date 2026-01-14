@@ -8,13 +8,15 @@ import java.time.LocalDate;
 @Data
 public class RegistrarOrientadoraRequest implements Serializable {
 
+    private String id; // ✅ Agregado para Update
+
     private String distritoJudicialId;
 
     @DateTimeFormat(pattern = "yyyy-MM-dd")
     private LocalDate fechaAtencion;
 
     private String nombreCompleto;
-    private String tipoDocumento; // DNI / CARNET
+    private String tipoDocumento;
     private String numeroDocumento;
     private String nacionalidad;
     private Integer edad;

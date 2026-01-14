@@ -16,7 +16,7 @@ public class PromocionCultura implements Serializable {
 
     private String id;
     private String distritoJudicialId;
-
+    private String distritoJudicialNombre;
     // Datos Principales (frm_apcj.php)
     private String nombreActividad;       //  (Nombre de la actividad/servicio)
     private String tipoActividad;         // (Charla, Feria, etc.)
@@ -69,7 +69,7 @@ public class PromocionCultura implements Serializable {
     // Listas
     private List<DetalleParticipante> participantesPorGenero;
     private List<DetalleTarea> tareasRealizadas;
-
+    private String search;
     private List<Archivo> archivosGuardados;
 
 

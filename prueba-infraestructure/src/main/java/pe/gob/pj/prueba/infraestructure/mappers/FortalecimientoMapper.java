@@ -4,39 +4,47 @@ import org.mapstruct.*;
 import pe.gob.pj.prueba.domain.model.negocio.FortalecimientoCapacidades;
 import pe.gob.pj.prueba.infraestructure.db.negocio.entities.*;
 import pe.gob.pj.prueba.infraestructure.rest.requests.RegistrarFfcRequest;
+import pe.gob.pj.prueba.infraestructure.rest.responses.FortalecimientoResponse;
 
 @Mapper(componentModel = MappingConstants.ComponentModel.SPRING,
         unmappedTargetPolicy = ReportingPolicy.IGNORE)
 public interface FortalecimientoMapper {
 
+    // REQUEST -> DOMAIN
     @Mapping(target = "id", ignore = true)
     @Mapping(target = "archivosGuardados", ignore = true)
     @Mapping(target = "fechaRegistro", ignore = true)
     @Mapping(target = "usuarioRegistro", ignore = true)
     @Mapping(target = "activo", ignore = true)
-
-    // El Request trae "tareasRealizadas", el Dominio espera "tareas"
     @Mapping(target = "tareas", source = "tareasRealizadas")
-    // El Request trae "participantesPorGenero", el Dominio espera "participantes"
     @Mapping(target = "participantes", source = "participantesPorGenero")
     FortalecimientoCapacidades toDomain(RegistrarFfcRequest request);
 
-    //DOMAIN -> ENTITY ---
+    // DOMAIN -> ENTITY
     MovEventoFcEntity toEntity(FortalecimientoCapacidades domain);
 
-    //ENTITY -> DOMAIN---
-    @InheritInverseConfiguration
+    // ENTITY -> DOMAIN
+    @InheritInverseConfiguration(name = "toEntity")
     FortalecimientoCapacidades toDomain(MovEventoFcEntity entity);
 
-    // --- MÉTODOS AUXILIARES PARA LAS LISTAS ---
+    // -------------------------------------------------------------------------
+    // ✅ ACTUALIZAR ENTIDAD (Corrección aplicada)
+    // -------------------------------------------------------------------------
+    @Mapping(target = "id", ignore = true)
+    @Mapping(target = "usuarioRegistro", ignore = true)
+    @Mapping(target = "fechaRegistro", ignore = true)
 
-    // Detalle Participantes: Request -> Domain
+    // ⚠️ CORRECCIÓN: El campo en la entidad se llama 'activo', no 'estado'
+    @Mapping(target = "activo", ignore = true)
+
+    @Mapping(target = "participantes", ignore = true)
+    @Mapping(target = "tareas", ignore = true)
+    void updateEntityFromDomain(FortalecimientoCapacidades domain, @MappingTarget MovEventoFcEntity entity);
+
+    // --- MÉTODOS AUXILIARES ---
     FortalecimientoCapacidades.DetalleParticipante toDomainPart(RegistrarFfcRequest.DetalleParticipantesRequest request);
-
-    // Detalle Tareas: Request -> Domain
     FortalecimientoCapacidades.DetalleTarea toDomainTarea(RegistrarFfcRequest.DetalleTareaRequest request);
 
-    // Detalle Participantes: Domain -> Entity
     @Mapping(target = "eventoId", ignore = true)
     MovEventoDetalleEntity toEntityPart(FortalecimientoCapacidades.DetalleParticipante domain);
 
@@ -48,4 +56,9 @@ public interface FortalecimientoMapper {
 
     @InheritInverseConfiguration
     FortalecimientoCapacidades.DetalleTarea toDomainTarea(MovEventoTareaEntity entity);
+
+    // DOMAIN -> RESPONSE
+    @Mapping(target = "estado", source = "activo")
+    @Mapping(target = "archivos", source = "archivosGuardados")
+    FortalecimientoResponse toResponse(FortalecimientoCapacidades dominio);
 }

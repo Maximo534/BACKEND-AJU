@@ -1,13 +1,11 @@
 package pe.gob.pj.prueba.infraestructure.db.negocio.persistence;
 
 import lombok.RequiredArgsConstructor;
-import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Component;
 import org.springframework.transaction.annotation.Transactional;
 import pe.gob.pj.prueba.domain.model.common.Pagina;
-import pe.gob.pj.prueba.domain.model.common.RecursoArchivo;
 import pe.gob.pj.prueba.domain.model.negocio.Archivo;
 import pe.gob.pj.prueba.domain.model.negocio.JpeCasoAtendido;
 import pe.gob.pj.prueba.domain.model.negocio.JuezPazEscolar;
@@ -17,9 +15,9 @@ import pe.gob.pj.prueba.infraestructure.db.negocio.entities.MaeJuezPazEscolarEnt
 import pe.gob.pj.prueba.infraestructure.db.negocio.entities.MovArchivosEntity;
 import pe.gob.pj.prueba.infraestructure.db.negocio.entities.MovJpeCasoAtendidoEntity;
 import pe.gob.pj.prueba.infraestructure.db.negocio.repositories.MaeJuezPazEscolarRepository;
-import pe.gob.pj.prueba.infraestructure.db.negocio.repositories.MovArchivosRepository; // ✅ Importamos Repositorio Archivos
+import pe.gob.pj.prueba.infraestructure.db.negocio.repositories.MovArchivosRepository;
 import pe.gob.pj.prueba.infraestructure.db.negocio.repositories.MovJpeCasoAtendidoRepository;
-import pe.gob.pj.prueba.infraestructure.db.negocio.repositories.masters.*;
+import pe.gob.pj.prueba.infraestructure.db.negocio.repositories.masters.MaeDistritoJudicialRepository;
 import pe.gob.pj.prueba.infraestructure.mappers.JuezPazEscolarMapper;
 
 import java.time.LocalDate;
@@ -31,22 +29,14 @@ import java.util.stream.Collectors;
 @RequiredArgsConstructor
 public class JuezPazEscolarPersistenceAdapter implements JuezPazEscolarPersistencePort {
 
-    private final MaeJuezPazEscolarRepository repository;
-    private final JuezPazEscolarMapper mapper;
-    private final MovJpeCasoAtendidoRepository casoRepository;
-    private final MovArchivosRepository repoArchivos; // ✅ Inyección nueva (igual que en BP)
-    // REPOSITORIOS MAESTROS (Necesarios para llenar los nombres)
-    private final MaeJuezPazEscolarRepository repoJuez;
-    private final MaeInstitucionEducativaRepository repoColegio;
-    private final MaeUgelRepository repoUgel;
+    private final MaeJuezPazEscolarRepository repository; // Repo Jueces
+    private final MovJpeCasoAtendidoRepository casoRepository; // Repo Casos
+    private final MovArchivosRepository repoArchivos;
     private final MaeDistritoJudicialRepository repoCorte;
-    // Repos de Ubigeo
-    private final MaeDepartamentoRepository repoDepa;
-    private final MaeProvinciaRepository repoProv;
-    private final MaeDistritoRepository repoDist;
-    // ==========================================
-    // SECCIÓN JUECES
-    // ==========================================
+    private final MaeJuezPazEscolarRepository repoJuez;
+    private final JuezPazEscolarMapper mapper;
+
+    // --- JUECES ---
     @Override
     @Transactional
     public JuezPazEscolar guardar(JuezPazEscolar domain) throws Exception {
@@ -54,119 +44,184 @@ public class JuezPazEscolarPersistenceAdapter implements JuezPazEscolarPersisten
         MaeJuezPazEscolarEntity saved = repository.save(entity);
         return mapper.toDomain(saved);
     }
-
     @Override
     public boolean existeDniEnColegio(String dni, String colegioId) {
         return repository.existsByDniAndInstitucionEducativaIdAndActivo(dni, colegioId, "1");
     }
-
     @Override
     public List<JuezPazEscolar> listarPorColegio(String colegioId) {
         return repository.findByInstitucionEducativaIdAndActivo(colegioId, "1").stream()
-                .map(mapper::toDomain)
-                .collect(Collectors.toList());
+                .map(mapper::toDomain).collect(Collectors.toList());
     }
 
     // ==========================================
-    // SECCIÓN CASOS (INCIDENTES)
+    // SECCIÓN CASOS (CON LÓGICA INLINE)
     // ==========================================
 
     @Override
-    public String obtenerUltimoIdCaso() {
-        return casoRepository.obtenerUltimoId();
+    @Transactional(readOnly = true)
+    public Pagina<JpeCasoAtendido> listarCasos(String usuario, JpeCasoAtendido filtros, int pagina, int tamanio) throws Exception {
+        Pageable pageable = PageRequest.of(pagina - 1, tamanio);
+        if (filtros == null) filtros = JpeCasoAtendido.builder().build();
+
+        var result = casoRepository.listar(usuario, filtros.getSearch(), filtros.getDistritoJudicialId(),
+                filtros.getUgelId(), filtros.getInstitucionEducativaId(),
+                filtros.getFechaRegistro(), pageable);
+
+        List<JpeCasoAtendido> contenido = result.getContent().stream()
+                .map(p -> JpeCasoAtendido.builder()
+                        .id(p.getId())
+                        .distritoJudicialNombre(p.getDistritoJudicialNombre())
+                        .ugelNombre(p.getUgelNombre())
+                        .institucionNombre(p.getInstitucionNombre())
+                        .resumenHechos(p.getResumenHechos())
+                        .fechaRegistro(p.getFechaRegistro())
+                        .estado(p.getEstado())
+                        .build())
+                .collect(Collectors.toList());
+
+        return Pagina.<JpeCasoAtendido>builder()
+                .contenido(contenido)
+                .totalRegistros(result.getTotalElements())
+                .totalPaginas(result.getTotalPages())
+                .paginaActual(pagina)
+                .tamanioPagina(tamanio)
+                .build();
     }
 
     @Override
     @Transactional
     public JpeCasoAtendido guardarCaso(JpeCasoAtendido dominio) throws Exception {
-        // Mapeo usando Mapper (recomendado) o manual si prefieres mantenerlo así
         MovJpeCasoAtendidoEntity entity = mapper.toEntity(dominio);
-        // Si usas manual, asegúrate de setear todos los campos aquí...
+
+        if (dominio.getJuezEscolarId() != null) {
+            MaeJuezPazEscolarEntity juez = repoJuez.findById(dominio.getJuezEscolarId())
+                    .orElseThrow(() -> new Exception("Juez escolar no encontrado"));
+            entity.setJuezEscolar(juez);
+        }
 
         MovJpeCasoAtendidoEntity saved = casoRepository.save(entity);
-        return mapper.toDomain(saved);
+        JpeCasoAtendido res = mapper.toDomain(saved);
+
+        // ✅ LÓGICA INLINE: Enriquecer nombres
+        if (res.getDistritoJudicialId() != null) {
+            repoCorte.findById(res.getDistritoJudicialId())
+                    .ifPresent(c -> res.setDistritoJudicialNombre(c.getNombre()));
+        }
+        if (saved.getJuezEscolar() != null) {
+            MaeJuezPazEscolarEntity juez = saved.getJuezEscolar();
+            res.setJuezEscolarNombre(juez.getNombres() + " " + juez.getApePaterno() + " " + juez.getApeMaterno());
+            res.setJuezGradoSeccion(juez.getGrado() + " " + juez.getSeccion());
+
+            if (juez.getInstitucionEducativa() != null) {
+                res.setInstitucionNombre(juez.getInstitucionEducativa().getNombre());
+                res.setInstitucionEducativaId(juez.getInstitucionEducativa().getId());
+                if (juez.getInstitucionEducativa().getUgel() != null) {
+                    res.setUgelNombre(juez.getInstitucionEducativa().getUgel().getNombre());
+                    res.setUgelId(juez.getInstitucionEducativa().getUgel().getId());
+                }
+            }
+        }
+
+        return res;
     }
 
     @Override
+    @Transactional
+    public JpeCasoAtendido actualizarCaso(JpeCasoAtendido dominio) throws Exception {
+        MovJpeCasoAtendidoEntity entityDb = casoRepository.findById(dominio.getId())
+                .orElseThrow(() -> new Exception("Caso no encontrado: " + dominio.getId()));
+
+        mapper.updateEntityFromDomain(dominio, entityDb);
+
+        if (dominio.getJuezEscolarId() != null && !dominio.getJuezEscolarId().equals(entityDb.getJuezEscolar().getId())) {
+            MaeJuezPazEscolarEntity juez = repoJuez.findById(dominio.getJuezEscolarId())
+                    .orElseThrow(() -> new Exception("Nuevo Juez no encontrado"));
+            entityDb.setJuezEscolar(juez);
+        }
+
+        MovJpeCasoAtendidoEntity saved = casoRepository.save(entityDb);
+        JpeCasoAtendido res = mapper.toDomain(saved);
+
+        // ✅ LÓGICA INLINE: Enriquecer nombres
+        if (res.getDistritoJudicialId() != null) {
+            repoCorte.findById(res.getDistritoJudicialId())
+                    .ifPresent(c -> res.setDistritoJudicialNombre(c.getNombre()));
+        }
+        if (saved.getJuezEscolar() != null) {
+            MaeJuezPazEscolarEntity juez = saved.getJuezEscolar();
+            res.setJuezEscolarNombre(juez.getNombres() + " " + juez.getApePaterno() + " " + juez.getApeMaterno());
+            res.setJuezGradoSeccion(juez.getGrado() + " " + juez.getSeccion());
+
+            if (juez.getInstitucionEducativa() != null) {
+                res.setInstitucionNombre(juez.getInstitucionEducativa().getNombre());
+                res.setInstitucionEducativaId(juez.getInstitucionEducativa().getId());
+                if (juez.getInstitucionEducativa().getUgel() != null) {
+                    res.setUgelNombre(juez.getInstitucionEducativa().getUgel().getNombre());
+                    res.setUgelId(juez.getInstitucionEducativa().getUgel().getId());
+                }
+            }
+        }
+
+        return res;
+    }
+
+    @Override
+    @Transactional(readOnly = true)
     public JpeCasoAtendido buscarCasoPorId(String id) throws Exception {
-        // 1. Buscar entidad
         MovJpeCasoAtendidoEntity entity = casoRepository.findById(id).orElse(null);
         if (entity == null) return null;
 
-        // 2. Mapear a dominio
         JpeCasoAtendido dominio = mapper.toDomain(entity);
 
-        // 3. Buscar y adjuntar archivos
-        List<MovArchivosEntity> archivosEntities = repoArchivos.findByNumeroIdentificacion(id);
+        // ✅ LÓGICA INLINE: Enriquecer nombres
+        if (dominio.getDistritoJudicialId() != null) {
+            repoCorte.findById(dominio.getDistritoJudicialId())
+                    .ifPresent(c -> dominio.setDistritoJudicialNombre(c.getNombre()));
+        }
+        if (entity.getJuezEscolar() != null) {
+            MaeJuezPazEscolarEntity juez = entity.getJuezEscolar();
+            dominio.setJuezEscolarNombre(juez.getNombres() + " " + juez.getApePaterno() + " " + juez.getApeMaterno());
+            dominio.setJuezGradoSeccion(juez.getGrado() + " " + juez.getSeccion());
 
-        if (archivosEntities != null && !archivosEntities.isEmpty()) {
-            List<Archivo> listaArchivos = archivosEntities.stream()
-                    .map(a -> Archivo.builder()
-                            .nombre(a.getNombre())
-                            .tipo(a.getTipo())
-                            .ruta(a.getRuta())
-                            .numeroIdentificacion(a.getNumeroIdentificacion())
-                            .build())
-                    .collect(Collectors.toList());
-            dominio.setArchivosGuardados(listaArchivos);
+            if (juez.getInstitucionEducativa() != null) {
+                dominio.setInstitucionNombre(juez.getInstitucionEducativa().getNombre());
+                dominio.setInstitucionEducativaId(juez.getInstitucionEducativa().getId());
+                if (juez.getInstitucionEducativa().getUgel() != null) {
+                    dominio.setUgelNombre(juez.getInstitucionEducativa().getUgel().getNombre());
+                    dominio.setUgelId(juez.getInstitucionEducativa().getUgel().getId());
+                }
+            }
         }
 
+        // Archivos
+        List<MovArchivosEntity> archivos = repoArchivos.findByNumeroIdentificacion(id);
+        if (archivos != null && !archivos.isEmpty()) {
+            dominio.setArchivosGuardados(archivos.stream()
+                    .map(a -> Archivo.builder()
+                            .nombre(a.getNombre()).tipo(a.getTipo())
+                            .ruta(a.getRuta()).numeroIdentificacion(a.getNumeroIdentificacion())
+                            .build())
+                    .collect(Collectors.toList()));
+        }
         return dominio;
     }
 
     @Override
-    public Pagina<JpeCasoAtendido> listarCasos(JpeCasoAtendido filtros, int pagina, int tamanio) {
-        Pageable pageable = PageRequest.of(pagina - 1, tamanio);
-        Integer anio = (filtros.getFechaRegistro() != null) ? filtros.getFechaRegistro().getYear() : LocalDate.now().getYear();
-
-        Page<Object[]> pageResult = casoRepository.listarDinamico(filtros.getId(), anio, pageable);
-
-        List<JpeCasoAtendido> lista = pageResult.getContent().stream().map(row -> {
-            return JpeCasoAtendido.builder()
-                    .id((String) row[0])
-                    .distritoJudicialNombre((String) row[1])
-                    .ugelNombre((String) row[2])
-                    .institucionNombre((String) row[3])
-                    .resumenHechos((String) row[4])
-                    .fechaRegistro(((java.sql.Date) row[5]).toLocalDate())
-                    .build();
-        }).collect(Collectors.toList());
-
-        return Pagina.<JpeCasoAtendido>builder()
-                .contenido(lista)
-                .totalRegistros(pageResult.getTotalElements())
-                .totalPaginas(pageResult.getTotalPages())
-                .paginaActual(pageResult.getNumber() + 1)
-                .tamanioPagina(pageResult.getSize())
-                .build();
+    public String obtenerUltimoIdCaso() throws Exception {
+        return casoRepository.obtenerUltimoId();
     }
 
     @Override
     public List<ResumenEstadistico> obtenerResumenGrafico() throws Exception {
-        // 1. Obtener data cruda [ID_CORTE, CANTIDAD]
-        List<Object[]> rawData = casoRepository.obtenerEstadisticasPorCorte();
-
+        List<Object[]> data = casoRepository.obtenerEstadisticasPorCorte();
         List<ResumenEstadistico> lista = new ArrayList<>();
-
-        // 2. Transformar a Dominio buscando el nombre de la Corte
-        for (Object[] row : rawData) {
+        for (Object[] row : data) {
             String idCorte = (String) row[0];
-            Long cantidad = (Long) row[1];
-
-            // Buscamos el nombre (usamos repoCorte que ya tienes inyectado)
-            String nombreCorte = "DESCONOCIDO";
-            if (idCorte != null) {
-                nombreCorte = repoCorte.findById(idCorte)
-                        .map(c -> c.getNombre()) // o getNomCorto() según tu entidad maestra
-                        .orElse(idCorte);
-            }
-
-            lista.add(ResumenEstadistico.builder()
-                    .etiqueta(nombreCorte)
-                    .cantidad(cantidad)
-                    .build());
+            Long cant = (Long) row[1];
+            String nombre = repoCorte.findById(idCorte).map(c -> c.getNombre()).orElse(idCorte);
+            lista.add(ResumenEstadistico.builder().etiqueta(nombre).cantidad(cant).build());
         }
-
         return lista;
     }
 }

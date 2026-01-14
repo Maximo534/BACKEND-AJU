@@ -24,7 +24,7 @@ public interface PromocionCulturaPersistencePort {
      * @param tamanio Cantidad de registros por página.
      * @return Página de resultados.
      */
-    Pagina<PromocionCultura> listarPromocion(String usuario, PromocionCultura filtros, int pagina, int tamanio) throws Exception;
+    Pagina<PromocionCultura> listar(String usuario, PromocionCultura filtros, int pagina, int tamanio) throws Exception;
 
     String obtenerUltimoId() throws Exception;
 }

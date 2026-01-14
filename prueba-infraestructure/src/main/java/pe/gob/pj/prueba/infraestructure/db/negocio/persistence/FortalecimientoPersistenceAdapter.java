@@ -2,7 +2,6 @@ package pe.gob.pj.prueba.infraestructure.db.negocio.persistence;
 
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Component;
@@ -14,10 +13,11 @@ import pe.gob.pj.prueba.domain.port.persistence.negocio.FortalecimientoPersisten
 import pe.gob.pj.prueba.infraestructure.db.negocio.entities.MovArchivosEntity;
 import pe.gob.pj.prueba.infraestructure.db.negocio.entities.MovEventoFcEntity;
 import pe.gob.pj.prueba.infraestructure.db.negocio.repositories.*;
+import pe.gob.pj.prueba.infraestructure.db.negocio.repositories.masters.MaeDistritoJudicialRepository;
 import pe.gob.pj.prueba.infraestructure.mappers.FortalecimientoMapper;
 
+import java.time.LocalDate;
 import java.util.List;
-import java.util.UUID;
 import java.util.stream.Collectors;
 
 @Component
@@ -26,10 +26,44 @@ import java.util.stream.Collectors;
 public class FortalecimientoPersistenceAdapter implements FortalecimientoPersistencePort {
 
     private final MovEventoFcRepository repository;
-    private final MovEventoDetalleRepository repoDetalles;
-    private final MovEventoTareaRepository repoTareas;
     private final MovArchivosRepository repoArchivos;
+    private final MaeDistritoJudicialRepository repoDistrito;
     private final FortalecimientoMapper mapper;
+
+    @Override
+    @Transactional(readOnly = true)
+    public Pagina<FortalecimientoCapacidades> listar(String usuario, FortalecimientoCapacidades filtros, int pagina, int tamanio) throws Exception {
+        Pageable pageable = PageRequest.of(pagina - 1, tamanio);
+        if (filtros == null) filtros = FortalecimientoCapacidades.builder().build();
+
+        String search = filtros.getSearch();
+        String distrito = filtros.getDistritoJudicialId();
+        String tipo = filtros.getTipoEvento();
+        LocalDate fIni = filtros.getFechaInicio();
+        LocalDate fFin = filtros.getFechaFin();
+
+        // La query nativa ya trae el nombre del distrito (JOIN)
+        var result = repository.listar(usuario, search, distrito, tipo, fIni, fFin, pageable);
+
+        List<FortalecimientoCapacidades> contenido = result.getContent().stream()
+                .map(p -> FortalecimientoCapacidades.builder()
+                        .id(p.getId())
+                        .fechaInicio(p.getFechaInicio())
+                        .fechaFin(p.getFechaFin())
+                        .tipoEvento(p.getTipoEvento())
+                        .distritoJudicialNombre(p.getDistritoJudicialNombre())
+                        .activo(p.getEstado())
+                        .build())
+                .collect(Collectors.toList());
+
+        return Pagina.<FortalecimientoCapacidades>builder()
+                .contenido(contenido)
+                .totalRegistros(result.getTotalElements())
+                .totalPaginas(result.getTotalPages())
+                .paginaActual(pagina)
+                .tamanioPagina(tamanio)
+                .build();
+    }
 
     @Override
     @Transactional
@@ -37,25 +71,35 @@ public class FortalecimientoPersistenceAdapter implements FortalecimientoPersist
         try {
             MovEventoFcEntity entidad = mapper.toEntity(dominio);
 
-            if (entidad.getParticipantes() != null) {
-                entidad.getParticipantes().forEach(d -> d.setEventoId(entidad.getId()));
-            }
-            if (entidad.getTareas() != null) {
-                entidad.getTareas().forEach(d -> d.setEventoId(entidad.getId()));
+            // Asegurar integridad de IDs hijos
+            if (entidad.getId() != null) {
+                String id = entidad.getId();
+                if (entidad.getParticipantes() != null) entidad.getParticipantes().forEach(d -> d.setEventoId(id));
+                if (entidad.getTareas() != null) entidad.getTareas().forEach(d -> d.setEventoId(id));
             }
 
             MovEventoFcEntity guardado = repository.save(entidad);
-            return mapper.toDomain(guardado);
+            FortalecimientoCapacidades res = mapper.toDomain(guardado);
+
+            // ✅ Lógica Inline: Enriquecer con nombre para devolver al front
+            if (res.getDistritoJudicialId() != null) {
+                repoDistrito.findById(res.getDistritoJudicialId())
+                        .ifPresent(d -> res.setDistritoJudicialNombre(d.getNombre()));
+            }
+
+            return res;
 
         } catch (Exception e) {
             log.error("Error al guardar FFC", e);
             throw new Exception("Error BD: " + e.getMessage());
         }
     }
+
     @Override
     public String obtenerUltimoId() throws Exception {
         return repository.obtenerUltimoId();
     }
+
     @Override
     @Transactional
     public FortalecimientoCapacidades actualizar(FortalecimientoCapacidades dominio) throws Exception {
@@ -63,36 +107,11 @@ public class FortalecimientoPersistenceAdapter implements FortalecimientoPersist
             MovEventoFcEntity entidadDb = repository.findById(dominio.getId())
                     .orElseThrow(() -> new Exception("Evento no encontrado: " + dominio.getId()));
 
-            entidadDb.setDistritoJudicialId(dominio.getDistritoJudicialId());
-            entidadDb.setTipoEvento(dominio.getTipoEvento());
-            entidadDb.setNombreEvento(dominio.getNombreEvento());
-            entidadDb.setFechaInicio(dominio.getFechaInicio());
-            entidadDb.setFechaFin(dominio.getFechaFin());
-            entidadDb.setResolucionPlanAnual(dominio.getResolucionPlanAnual());
-            entidadDb.setResolucionAdminPlan(dominio.getResolucionAdminPlan());
-            entidadDb.setDocumentoAutoriza(dominio.getDocumentoAutoriza());
-            entidadDb.setEjeId(dominio.getEjeId());
-            entidadDb.setModalidad(dominio.getModalidad());
-            entidadDb.setDuracionHoras(dominio.getDuracionHoras());
-            entidadDb.setNumeroSesiones(dominio.getNumeroSesiones());
-            entidadDb.setDocenteExpositor(dominio.getDocenteExpositor());
-            entidadDb.setInterpreteSenias(dominio.getInterpreteSenias());
-            entidadDb.setNumeroDiscapacitados(dominio.getNumeroDiscapacitados());
-            entidadDb.setSeDictoLenguaNativa(dominio.getSeDictoLenguaNativa());
-            entidadDb.setLenguaNativaDesc(dominio.getLenguaNativaDesc());
-            entidadDb.setPublicoObjetivo(dominio.getPublicoObjetivo());
-            entidadDb.setNombreInstitucion(dominio.getNombreInstitucion());
-            entidadDb.setDepartamentoId(dominio.getDepartamentoId());
-            entidadDb.setProvinciaId(dominio.getProvinciaId());
-            entidadDb.setDistritoGeograficoId(dominio.getDistritoGeograficoId());
-            entidadDb.setDescripcionActividad(dominio.getDescripcionActividad());
-            entidadDb.setObservaciones(dominio.getObservaciones());
-            entidadDb.setInstitucionesAliadas(dominio.getInstitucionesAliadas());
+            // Mapper actualiza campos simples
+            mapper.updateEntityFromDomain(dominio, entidadDb);
 
-
-            entidadDb.getParticipantes().clear();
-            repository.flush();
-
+            // Actualizar Listas (Limpia e inserta - Orphan Removal manual)
+            if (entidadDb.getParticipantes() != null) entidadDb.getParticipantes().clear();
             if (dominio.getParticipantes() != null) {
                 dominio.getParticipantes().forEach(p -> {
                     var entityPart = mapper.toEntityPart(p);
@@ -101,9 +120,7 @@ public class FortalecimientoPersistenceAdapter implements FortalecimientoPersist
                 });
             }
 
-            entidadDb.getTareas().clear();
-            repository.flush();
-
+            if (entidadDb.getTareas() != null) entidadDb.getTareas().clear();
             if (dominio.getTareas() != null) {
                 dominio.getTareas().forEach(t -> {
                     var entityTarea = mapper.toEntityTarea(t);
@@ -113,8 +130,15 @@ public class FortalecimientoPersistenceAdapter implements FortalecimientoPersist
             }
 
             MovEventoFcEntity guardado = repository.save(entidadDb);
+            FortalecimientoCapacidades res = mapper.toDomain(guardado);
 
-            return mapper.toDomain(guardado);
+            // ✅ Lógica Inline: Enriquecer con nombre
+            if (res.getDistritoJudicialId() != null) {
+                repoDistrito.findById(res.getDistritoJudicialId())
+                        .ifPresent(d -> res.setDistritoJudicialNombre(d.getNombre()));
+            }
+
+            return res;
 
         } catch (Exception e) {
             log.error("Error al actualizar FFC", e);
@@ -130,6 +154,13 @@ public class FortalecimientoPersistenceAdapter implements FortalecimientoPersist
 
         FortalecimientoCapacidades dominio = mapper.toDomain(entidad);
 
+        // ✅ Lógica Inline: Enriquecer con nombre
+        if (dominio.getDistritoJudicialId() != null) {
+            repoDistrito.findById(dominio.getDistritoJudicialId())
+                    .ifPresent(d -> dominio.setDistritoJudicialNombre(d.getNombre()));
+        }
+
+        // Archivos
         List<MovArchivosEntity> archivos = repoArchivos.findByNumeroIdentificacion(id);
         if (archivos != null && !archivos.isEmpty()) {
             dominio.setArchivosGuardados(archivos.stream()
@@ -141,34 +172,4 @@ public class FortalecimientoPersistenceAdapter implements FortalecimientoPersist
         }
         return dominio;
     }
-
-    @Override
-    @Transactional(readOnly = true)
-    public Pagina<FortalecimientoCapacidades> listar(String usuario, FortalecimientoCapacidades filtros, int pagina, int tamanio) throws Exception {
-        Pageable pageable = PageRequest.of(pagina - 1, tamanio);
-        if (filtros == null) filtros = FortalecimientoCapacidades.builder().build();
-
-        Page<MovEventoFcEntity> pageResult = repository.listarDinamico(
-                usuario,
-                filtros.getId(),
-                filtros.getNombreEvento(),
-                filtros.getDistritoJudicialId(),
-                filtros.getFechaInicio(),
-                filtros.getFechaFin(),
-                pageable
-        );
-
-        List<FortalecimientoCapacidades> contenido = pageResult.getContent().stream()
-                .map(mapper::toDomain)
-                .collect(Collectors.toList());
-
-        return Pagina.<FortalecimientoCapacidades>builder()
-                .contenido(contenido)
-                .totalRegistros(pageResult.getTotalElements())
-                .totalPaginas(pageResult.getTotalPages())
-                .paginaActual(pagina)
-                .tamanioPagina(tamanio)
-                .build();
-    }
-
 }

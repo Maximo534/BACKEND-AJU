@@ -17,34 +17,61 @@ public interface MovBuenaPracticaRepository extends JpaRepository<MovBuenaPracti
     @Query("SELECT MAX(e.id) FROM MovBuenaPracticaEntity e WHERE e.id LIKE '%-BP'")
     String obtenerUltimoId();
 
-    @Query("SELECT e FROM MovBuenaPracticaEntity e " +
-            "WHERE e.usuarioRegistro = :usuario " +
-            // "AND e.activo = '1' " + // Descomentar si aplica
-            "AND (:codigo IS NULL OR :codigo = '' OR e.id LIKE %:codigo%) " +
-            "AND (:titulo IS NULL OR :titulo = '' OR e.titulo LIKE %:titulo%) " +
-            "AND (:distrito IS NULL OR :distrito = '' OR e.distritoJudicialId = :distrito) " +
+    @Query(value = """
+        SELECT 
+            bp.c_buena_pract_id AS id,
+            bp.c_distrito_jud_id AS distritoJudicialId,
+            bp.x_titulo AS titulo,
+            bp.f_inicio AS fechaInicio,
+            dj.x_nom_corto AS distritoJudicialNombre
+        FROM mov_aju_buena_practicas bp
+        INNER JOIN mae_aju_distrito_judiciales dj ON bp.c_distrito_jud_id = dj.c_distrito_jud_id
+        WHERE bp.c_usuario_reg = :usuario
+          
+          -- FILTROS
+          AND (:distrito IS NULL OR bp.c_distrito_jud_id = :distrito)
+          AND (CAST(:fecIni AS DATE) IS NULL OR bp.f_inicio >= :fecIni)
+          AND (CAST(:fecFin AS DATE) IS NULL OR bp.f_inicio <= :fecFin) -- ✅ Correcto: Filtra inicio vs rango fin
 
-            // LÓGICA DE RANGO:
-            // Buscamos registros donde su FECHA DE INICIO sea mayor o igual al filtro 'desde'
-            "AND (cast(:fecIni as date) IS NULL OR e.fechaInicio >= :fecIni) " +
-            // Y donde su FECHA DE INICIO sea menor o igual al filtro 'hasta'
-            "AND (cast(:fecFin as date) IS NULL OR e.fechaInicio <= :fecFin) " +
-
-            "ORDER BY e.fechaInicio DESC")
-    Page<MovBuenaPracticaEntity> listarDinamico(
+          -- BUSCADOR
+          AND (
+              :search IS NULL OR :search = '' OR
+              UPPER(bp.c_buena_pract_id) LIKE UPPER(CONCAT('%', :search, '%')) OR
+              UPPER(bp.x_titulo) LIKE UPPER(CONCAT('%', :search, '%')) OR
+              UPPER(dj.x_nom_corto) LIKE UPPER(CONCAT('%', :search, '%'))
+          )
+        ORDER BY bp.f_inicio DESC
+    """, countQuery = """
+        SELECT count(*) 
+        FROM mov_aju_buena_practicas bp
+        INNER JOIN mae_aju_distrito_judiciales dj ON bp.c_distrito_jud_id = dj.c_distrito_jud_id
+        WHERE bp.c_usuario_reg = :usuario
+          AND (:distrito IS NULL OR bp.c_distrito_jud_id = :distrito)
+          AND (CAST(:fecIni AS DATE) IS NULL OR bp.f_inicio >= :fecIni)
+          AND (CAST(:fecFin AS DATE) IS NULL OR bp.f_inicio <= :fecFin)
+          AND (
+              :search IS NULL OR :search = '' OR
+              UPPER(bp.c_buena_pract_id) LIKE UPPER(CONCAT('%', :search, '%')) OR
+              UPPER(bp.x_titulo) LIKE UPPER(CONCAT('%', :search, '%')) OR
+              UPPER(dj.x_nom_corto) LIKE UPPER(CONCAT('%', :search, '%'))
+          )
+    """, nativeQuery = true)
+    Page<BuenaPracticaProjection> listar(
             @Param("usuario") String usuario,
-            @Param("codigo") String codigo,
-            @Param("titulo") String titulo,
-            @Param("distrito") String distrito,
+            @Param("search") String search,
+            @Param("distrito") String distritoId,
             @Param("fecIni") LocalDate fecIni,
-            @Param("fecFin") LocalDate fecFin, // Recibimos el parámetro aunque la tabla no tenga la columna
+            @Param("fecFin") LocalDate fecFin,
             Pageable pageable);
 
-    // Gráfico Histórico (Sin WHERE YEAR...)
-    @Query("SELECT e.distritoJudicialId, COUNT(e) " +
-            "FROM MovBuenaPracticaEntity e " +
-            // "WHERE e.usuarioRegistro = :usuario " + // Descomenta si quieres que sea solo histórico DEL USUARIO
-            "GROUP BY e.distritoJudicialId")
+    @Query("SELECT e.distritoJudicialId, COUNT(e) FROM MovBuenaPracticaEntity e GROUP BY e.distritoJudicialId")
     List<Object[]> obtenerEstadisticasHistoricas();
 
+    interface BuenaPracticaProjection {
+        String getId();
+        String getDistritoJudicialId();
+        String getDistritoJudicialNombre(); // Se mapea desde x_nom_corto
+        String getTitulo();
+        LocalDate getFechaInicio();
+    }
 }

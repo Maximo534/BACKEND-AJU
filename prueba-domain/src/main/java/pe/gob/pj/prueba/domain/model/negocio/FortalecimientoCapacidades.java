@@ -16,6 +16,7 @@ public class FortalecimientoCapacidades implements Serializable {
 
     private String id;
     private String distritoJudicialId;
+    private String distritoJudicialNombre;
     private String tipoEvento;
     private String nombreEvento;
     private LocalDate fechaInicio;
@@ -55,6 +56,7 @@ public class FortalecimientoCapacidades implements Serializable {
     private List<DetalleParticipante> participantes;
     private List<DetalleTarea> tareas;
 
+    private String search;
     private List<Archivo> archivosGuardados;
 
 

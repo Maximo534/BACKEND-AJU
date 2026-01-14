@@ -14,6 +14,8 @@ public class GenerarReporteAdapter implements GenerarReportePort {
     private final ReportePromocionService servicioPromocion;
     private final ReporteBuenaPracticaService servicioBP;
     private final ReporteJpeService servicioJpe;
+    private final ReporteLljService servicioLlj;
+    private final ReporteOrientadoraJudicialService servicioOJ;
 
     @Override
     public byte[] generarFichaItinerante(String idEvento) throws Exception {
@@ -38,4 +40,14 @@ public class GenerarReporteAdapter implements GenerarReportePort {
     public byte[] generarFichaJpe(String id) throws Exception {
         return servicioJpe.generarFichaJpe(id);
     }
+
+    @Override
+    public byte[] generarFichaLlj(String id) throws Exception {
+        return servicioLlj.generarFichaPdf(id);
+    }
+    @Override
+    public byte[] generarFichaOJ(String id) throws Exception {
+        return servicioOJ.generarFichaPdf(id);
+    }
+
 }

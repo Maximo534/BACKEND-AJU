@@ -16,20 +16,58 @@ public interface MovJusticiaItineranteRepository extends JpaRepository<MovJustic
     @Query("SELECT MAX(e.id) FROM MovJusticiaItineranteEntity e WHERE e.id LIKE '%-JI'")
     String obtenerUltimoId();
 
-    @Query("SELECT e FROM MovJusticiaItineranteEntity e " +
-            "WHERE e.usuarioRegistro = :usuario " +
-            "AND e.activo = '1' " +
-            // Lógica de "Si el filtro es nulo, trae todo"
-            "AND (:codigo IS NULL OR :codigo = '' OR e.id LIKE %:codigo%) " +
-            "AND (:publico IS NULL OR :publico = '' OR e.publicoObjetivo LIKE %:publico%) " +
-            "AND (:distrito IS NULL OR :distrito = '' OR e.distritoJudicialId = :distrito) " +
-            "AND (cast(:fecIni as date) IS NULL OR e.fechaInicio >= :fecIni) " +
-            "AND (cast(:fecFin as date) IS NULL OR e.fechaInicio <= :fecFin) " +
-            "ORDER BY e.fechaInicio DESC")
-    Page<MovJusticiaItineranteEntity> listarDinamico(
+    @Query(value = """
+        SELECT 
+            ji.c_just_itin_id AS id,
+            ji.f_inicio AS fechaInicio,
+            ji.f_fin AS fechaFin,
+            ji.f_reg_activ AS fechaRegistro,     -- ✅ Para el Response
+            ji.x_lugar_activ AS lugar,           -- ✅ Para el Response
+            ji.x_publico_obj AS publicoObjetivo, -- ✅ Para el Response
+            ji.l_activo AS estado,
+            dj.x_nom_corto AS distritoJudicialNombre
+        FROM mov_aju_justicia_itinerantes ji
+        INNER JOIN mae_aju_distrito_judiciales dj ON ji.c_distrito_jud_id = dj.c_distrito_jud_id
+        WHERE ji.c_usuario_reg = :usuario
+          AND ji.l_activo = '1' -- Solo activos
+          
+          -- FILTRO COMBO
+          AND (:distrito IS NULL OR ji.c_distrito_jud_id = :distrito)
+          
+          -- FILTRO FECHAS (Rango de ejecución de la actividad)
+          AND (CAST(:fecIni AS DATE) IS NULL OR ji.f_inicio >= :fecIni)
+          AND (CAST(:fecFin AS DATE) IS NULL OR ji.f_inicio <= :fecFin)
+
+          -- ✅ BUSCADOR GENERAL
+          -- Busca en ID, Lugar, Público o Nombre de la Corte
+          AND (
+              :search IS NULL OR :search = '' OR
+              UPPER(ji.c_just_itin_id) LIKE UPPER(CONCAT('%', :search, '%')) OR
+              UPPER(ji.x_lugar_activ) LIKE UPPER(CONCAT('%', :search, '%')) OR
+              UPPER(ji.x_publico_obj) LIKE UPPER(CONCAT('%', :search, '%')) OR
+              UPPER(dj.x_nom_corto) LIKE UPPER(CONCAT('%', :search, '%'))
+          )
+        ORDER BY ji.f_inicio DESC
+    """, countQuery = """
+        SELECT count(*) 
+        FROM mov_aju_justicia_itinerantes ji
+        INNER JOIN mae_aju_distrito_judiciales dj ON ji.c_distrito_jud_id = dj.c_distrito_jud_id
+        WHERE ji.c_usuario_reg = :usuario
+          AND ji.l_activo = '1'
+          AND (:distrito IS NULL OR ji.c_distrito_jud_id = :distrito)
+          AND (CAST(:fecIni AS DATE) IS NULL OR ji.f_inicio >= :fecIni)
+          AND (CAST(:fecFin AS DATE) IS NULL OR ji.f_inicio <= :fecFin)
+          AND (
+              :search IS NULL OR :search = '' OR
+              UPPER(ji.c_just_itin_id) LIKE UPPER(CONCAT('%', :search, '%')) OR
+              UPPER(ji.x_lugar_activ) LIKE UPPER(CONCAT('%', :search, '%')) OR
+              UPPER(ji.x_publico_obj) LIKE UPPER(CONCAT('%', :search, '%')) OR
+              UPPER(dj.x_nom_corto) LIKE UPPER(CONCAT('%', :search, '%'))
+          )
+    """, nativeQuery = true)
+    Page<JusticiaItineranteResumenProjection> listar(
             @Param("usuario") String usuario,
-            @Param("codigo") String codigo,
-            @Param("publico") String publico,
+            @Param("search") String search,
             @Param("distrito") String distrito,
             @Param("fecIni") LocalDate fecIni,
             @Param("fecFin") LocalDate fecFin,
@@ -42,5 +80,16 @@ public interface MovJusticiaItineranteRepository extends JpaRepository<MovJustic
             "AND e.usuarioRegistro = :usuario " +
             "GROUP BY EXTRACT(MONTH FROM e.fechaInicio)")
     List<Object[]> contarPorMes(@Param("anio") int anio, @Param("usuario") String usuario);
+
+    interface JusticiaItineranteResumenProjection {
+        String getId();
+        LocalDate getFechaInicio();
+        LocalDate getFechaFin();
+        LocalDate getFechaRegistro();
+        String getLugar();
+        String getPublicoObjetivo();
+        String getEstado();
+        String getDistritoJudicialNombre();
+    }
 
 }

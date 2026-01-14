@@ -18,7 +18,9 @@ public class JpeCasoAtendido implements Serializable {
 
     // ✅ CAMPOS NUEVOS (Necesarios para el Listado/Tabla)
     private String distritoJudicialNombre; // Para columna "CORTE"
+    private String ugelId;
     private String ugelNombre;             // Para columna "UGEL"
+    private String institucionEducativaId;
     private String institucionNombre;      // Para columna "I.E."
     private String juezEscolarNombre;     // Nombre completo del alumno juez
     private String juezGradoSeccion;
@@ -49,7 +51,8 @@ public class JpeCasoAtendido implements Serializable {
     private String acuerdos;
 
     private String usuarioRegistro;
-
+    private String search;
+    private String estado;
     // ✅ CAMPO NUEVO (Para ver las fotos/actas al editar)
     private List<Archivo> archivosGuardados;
 }

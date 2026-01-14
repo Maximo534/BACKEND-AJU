@@ -47,5 +47,6 @@ public class BuenaPractica implements Serializable {
 
     private String usuarioRegistro;
 
+    private String search;
     private List<Archivo> archivosGuardados;
 }

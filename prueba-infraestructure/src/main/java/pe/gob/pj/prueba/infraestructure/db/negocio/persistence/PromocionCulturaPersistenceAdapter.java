@@ -2,19 +2,19 @@ package pe.gob.pj.prueba.infraestructure.db.negocio.persistence;
 
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Component;
 import org.springframework.transaction.annotation.Transactional;
 import pe.gob.pj.prueba.domain.model.common.Pagina;
+import pe.gob.pj.prueba.domain.model.negocio.Archivo;
 import pe.gob.pj.prueba.domain.model.negocio.PromocionCultura;
 import pe.gob.pj.prueba.domain.port.persistence.negocio.PromocionCulturaPersistencePort;
-import pe.gob.pj.prueba.infraestructure.db.negocio.entities.MovPromocionCulturaEntity;
-import pe.gob.pj.prueba.domain.model.negocio.Archivo;
 import pe.gob.pj.prueba.infraestructure.db.negocio.entities.MovArchivosEntity;
+import pe.gob.pj.prueba.infraestructure.db.negocio.entities.MovPromocionCulturaEntity;
 import pe.gob.pj.prueba.infraestructure.db.negocio.repositories.MovArchivosRepository;
 import pe.gob.pj.prueba.infraestructure.db.negocio.repositories.MovPromocionCulturaRepository;
+import pe.gob.pj.prueba.infraestructure.db.negocio.repositories.masters.MaeDistritoJudicialRepository;
 import pe.gob.pj.prueba.infraestructure.mappers.PromocionCulturaMapper;
 
 import java.time.LocalDate;
@@ -28,8 +28,39 @@ import java.util.stream.Collectors;
 public class PromocionCulturaPersistenceAdapter implements PromocionCulturaPersistencePort {
 
     private final MovPromocionCulturaRepository repository;
-    private final MovArchivosRepository repoArchivos; // <--- 1. INYECTAR ESTO
+    private final MovArchivosRepository repoArchivos;
+    private final MaeDistritoJudicialRepository repoCorte; // Solo inyectamos lo necesario para nombres
     private final PromocionCulturaMapper mapper;
+
+    @Override
+    @Transactional(readOnly = true)
+    public Pagina<PromocionCultura> listar(String usuario, PromocionCultura filtros, int pagina, int tamanio) throws Exception {
+        Pageable pageable = PageRequest.of(pagina - 1, tamanio);
+        if (filtros == null) filtros = PromocionCultura.builder().build();
+
+        // Query nativa ya trae nombre de corte
+        var result = repository.listar(usuario, filtros.getSearch(), filtros.getDistritoJudicialId(),
+                filtros.getFechaInicio(), filtros.getFechaFin(), pageable);
+
+        List<PromocionCultura> contenido = result.getContent().stream()
+                .map(p -> PromocionCultura.builder()
+                        .id(p.getId())
+                        .fechaInicio(p.getFechaInicio())
+                        .fechaFin(p.getFechaFin())
+                        .tipoActividad(p.getTipoActividad())
+                        .distritoJudicialNombre(p.getDistritoJudicialNombre())
+                        .activo(p.getEstado())
+                        .build())
+                .collect(Collectors.toList());
+
+        return Pagina.<PromocionCultura>builder()
+                .contenido(contenido)
+                .totalRegistros(result.getTotalElements())
+                .totalPaginas(result.getTotalPages())
+                .paginaActual(pagina)
+                .tamanioPagina(tamanio)
+                .build();
+    }
 
     @Override
     @Transactional
@@ -37,19 +68,27 @@ public class PromocionCulturaPersistenceAdapter implements PromocionCulturaPersi
         try {
             MovPromocionCulturaEntity entity = mapper.toEntity(dominio);
 
-            if (entity.getParticipantes() != null) {
-                entity.getParticipantes().forEach(p -> p.setPromocionCulturaId(entity.getId()));
+            // Asignar ID a hijos antes de guardar (si el ID ya existe, pero en insert es nuevo)
+            // Hibernate maneja las FKs si la relación está bien hecha, pero por seguridad:
+            if (entity.getId() != null) {
+                if (entity.getParticipantes() != null) entity.getParticipantes().forEach(p -> p.setPromocionCulturaId(entity.getId()));
+                if (entity.getTareas() != null) entity.getTareas().forEach(t -> t.setPromocionCulturaId(entity.getId()));
             }
 
-            if (entity.getTareas() != null) {
-                entity.getTareas().forEach(t -> t.setPromocionCulturaId(entity.getId()));
+            MovPromocionCulturaEntity saved = repository.save(entity);
+            PromocionCultura res = mapper.toDomain(saved);
+
+            // ✅ ENRIQUECIMIENTO INLINE
+            if (res.getDistritoJudicialId() != null) {
+                repoCorte.findById(res.getDistritoJudicialId())
+                        .ifPresent(c -> res.setDistritoJudicialNombre(c.getNombreCorto()));
             }
 
-            return mapper.toDomain(repository.save(entity));
+            return res;
 
         } catch (Exception e) {
-            log.error("Error guardando PromocionCultura", e);
-            throw new Exception("Error BD al guardar: " + e.getMessage());
+            log.error("Error guardando CJ", e);
+            throw new Exception("Error BD: " + e.getMessage());
         }
     }
 
@@ -58,37 +97,18 @@ public class PromocionCulturaPersistenceAdapter implements PromocionCulturaPersi
     public PromocionCultura actualizar(PromocionCultura dominio) throws Exception {
         try {
             MovPromocionCulturaEntity entidadDb = repository.findById(dominio.getId())
-                    .orElseThrow(() -> new Exception("Evento no encontrado con ID: " + dominio.getId()));
+                    .orElseThrow(() -> new Exception("Evento no encontrado: " + dominio.getId()));
 
-            entidadDb.setDistritoJudicialId(dominio.getDistritoJudicialId());
-            entidadDb.setNombreActividad(dominio.getNombreActividad());
-            entidadDb.setTipoActividad(dominio.getTipoActividad());
-            entidadDb.setTipoActividadOtros(dominio.getTipoActividadOtros());
-            entidadDb.setZonaIntervencion(dominio.getZonaIntervencion());
-            entidadDb.setModalidadProyecto(dominio.getModalidad());
-            entidadDb.setPublicoObjetivo(dominio.getPublicoObjetivo());
-            entidadDb.setPublicoObjetivoOtros(dominio.getPublicoObjetivoOtros());
-            entidadDb.setFechaInicio(dominio.getFechaInicio());
-            entidadDb.setFechaFin(dominio.getFechaFin());
-            entidadDb.setResolucionPlanAnual(dominio.getResolucionPlanAnual());
-            entidadDb.setResolucionAdminPlan(dominio.getResolucionAdminPlan());
-            entidadDb.setDocumentoAutoriza(dominio.getDocumentoAutoriza());
-            entidadDb.setLugarActividad(dominio.getLugarActividad());
-            entidadDb.setDepartamentoId(dominio.getDepartamentoId());
-            entidadDb.setProvinciaId(dominio.getProvinciaId());
-            entidadDb.setDistritoGeograficoId(dominio.getDistritoGeograficoId());
-            entidadDb.setEjeId(dominio.getEjeId());
-            entidadDb.setSeDictoLenguaNativa(dominio.getSeDictoLenguaNativa());
-            entidadDb.setLenguaNativaDesc(dominio.getLenguaNativaDesc());
-            entidadDb.setParticiparonDiscapacitados(dominio.getParticiparonDiscapacitados());
-            entidadDb.setNumeroDiscapacitados(dominio.getNumeroDiscapacitados());
-            entidadDb.setDescripcionActividad(dominio.getDescripcionActividad());
-            entidadDb.setInstitucionesAliadas(dominio.getInstitucionesAliadas());
-            entidadDb.setObservacion(dominio.getObservaciones());
+            // 1. Actualizar campos simples
+            mapper.updateEntityFromDomain(dominio, entidadDb);
 
-            if (entidadDb.getParticipantes() == null) entidadDb.setParticipantes(new ArrayList<>());
-            entidadDb.getParticipantes().clear(); // Borramos los hijos actuales de la memoria
-            repository.flush(); // 🔥 IMPORTANTE: Forzamos el DELETE en BD antes de insertar los nuevos
+            // 2. ACTUALIZACIÓN SEGURA DE LISTAS (Flush Strategy)
+
+            // Participantes
+            if (entidadDb.getParticipantes() != null) entidadDb.getParticipantes().clear();
+            else entidadDb.setParticipantes(new ArrayList<>());
+
+            repository.flush(); // 🔥 Elimina viejos de BD
 
             if (dominio.getParticipantesPorGenero() != null) {
                 dominio.getParticipantesPorGenero().forEach(p -> {
@@ -98,9 +118,11 @@ public class PromocionCulturaPersistenceAdapter implements PromocionCulturaPersi
                 });
             }
 
-            if (entidadDb.getTareas() == null) entidadDb.setTareas(new ArrayList<>());
-            entidadDb.getTareas().clear();
-            repository.flush();
+            // Tareas
+            if (entidadDb.getTareas() != null) entidadDb.getTareas().clear();
+            else entidadDb.setTareas(new ArrayList<>());
+
+            repository.flush(); // 🔥 Elimina viejos de BD
 
             if (dominio.getTareasRealizadas() != null) {
                 dominio.getTareasRealizadas().forEach(t -> {
@@ -110,11 +132,20 @@ public class PromocionCulturaPersistenceAdapter implements PromocionCulturaPersi
                 });
             }
 
-            return mapper.toDomain(repository.save(entidadDb));
+            MovPromocionCulturaEntity saved = repository.save(entidadDb);
+            PromocionCultura res = mapper.toDomain(saved);
+
+            // ✅ ENRIQUECIMIENTO INLINE
+            if (res.getDistritoJudicialId() != null) {
+                repoCorte.findById(res.getDistritoJudicialId())
+                        .ifPresent(c -> res.setDistritoJudicialNombre(c.getNombreCorto()));
+            }
+
+            return res;
 
         } catch (Exception e) {
-            log.error("Error actualizando PromocionCultura", e);
-            throw new Exception("Error BD al actualizar: " + e.getMessage());
+            log.error("Error actualizando CJ", e);
+            throw new Exception("Error BD: " + e.getMessage());
         }
     }
 
@@ -123,25 +154,24 @@ public class PromocionCulturaPersistenceAdapter implements PromocionCulturaPersi
     public PromocionCultura obtenerPorId(String id) throws Exception {
         MovPromocionCulturaEntity entidad = repository.findById(id).orElse(null);
         if (entidad == null) return null;
+
         PromocionCultura dominio = mapper.toDomain(entidad);
 
-        try {
-            List<MovArchivosEntity> archivosEntities = repoArchivos.findByNumeroIdentificacion(id);
+        // ✅ ENRIQUECIMIENTO INLINE
+        if (dominio.getDistritoJudicialId() != null) {
+            repoCorte.findById(dominio.getDistritoJudicialId())
+                    .ifPresent(c -> dominio.setDistritoJudicialNombre(c.getNombreCorto()));
+        }
 
-            if (archivosEntities != null && !archivosEntities.isEmpty()) {
-                List<Archivo> listaArchivos = archivosEntities.stream()
-                        .map(a -> Archivo.builder()
-                                .nombre(a.getNombre())
-                                .tipo(a.getTipo())
-                                .ruta(a.getRuta())
-                                .numeroIdentificacion(a.getNumeroIdentificacion())
-                                .build())
-                        .collect(Collectors.toList());
-
-                dominio.setArchivosGuardados(listaArchivos);
-            }
-        } catch (Exception e) {
-            log.warn("Error recuperando archivos para ID {}: {}", id, e.getMessage());
+        // Archivos
+        List<MovArchivosEntity> archivos = repoArchivos.findByNumeroIdentificacion(id);
+        if (archivos != null && !archivos.isEmpty()) {
+            dominio.setArchivosGuardados(archivos.stream()
+                    .map(a -> Archivo.builder()
+                            .nombre(a.getNombre()).tipo(a.getTipo())
+                            .ruta(a.getRuta()).numeroIdentificacion(a.getNumeroIdentificacion())
+                            .build())
+                    .collect(Collectors.toList()));
         }
 
         return dominio;
@@ -149,50 +179,6 @@ public class PromocionCulturaPersistenceAdapter implements PromocionCulturaPersi
 
     @Override
     public String obtenerUltimoId() throws Exception {
-        try {
-            return repository.obtenerUltimoId();
-        } catch (Exception e) {
-            log.error("Error obteniendo ultimo ID", e);
-            return null;
-        }
-    }
-
-    @Override
-    public Pagina<PromocionCultura> listarPromocion(String usuario, PromocionCultura filtros, int pagina, int tamanio) throws Exception {
-        try {
-            Pageable pageable = PageRequest.of(pagina - 1, tamanio);
-
-            String codigo = (filtros != null) ? filtros.getId() : null;
-            String descripcion = (filtros != null) ? filtros.getDescripcionActividad() : null;
-            String distrito = (filtros != null) ? filtros.getDistritoJudicialId() : null;
-            LocalDate fecIni = (filtros != null) ? filtros.getFechaInicio() : null;
-            LocalDate fecFin = (filtros != null) ? filtros.getFechaFin() : null;
-
-            Page<MovPromocionCulturaEntity> pageResult = repository.listarDinamico(
-                    usuario,
-                    codigo,
-                    descripcion,
-                    distrito,
-                    fecIni,
-                    fecFin,
-                    pageable
-            );
-
-            List<PromocionCultura> listaDominio = pageResult.getContent().stream()
-                    .map(mapper::toDomainResumen)
-                    .collect(Collectors.toList());
-
-            return Pagina.<PromocionCultura>builder()
-                    .contenido(listaDominio)
-                    .totalRegistros(pageResult.getTotalElements())
-                    .totalPaginas(pageResult.getTotalPages())
-                    .paginaActual(pagina)
-                    .tamanioPagina(tamanio)
-                    .build();
-
-        } catch (Exception e) {
-            log.error("Error listando PromocionCultura", e);
-            throw new Exception("Error BD al listar: " + e.getMessage());
-        }
+        return repository.obtenerUltimoId();
     }
 }

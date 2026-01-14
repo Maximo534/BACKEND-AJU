@@ -1,5 +1,6 @@
 package pe.gob.pj.prueba.infraestructure.rest.controllers;
 
+import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.core.io.InputStreamResource;
@@ -33,8 +34,7 @@ public class JusticiaItineranteController implements Serializable {
 
     private final RegistrarJusticiaItineranteUseCasePort useCase;
     private final JusticiaItineranteMapper mapper;
-
-    @PostMapping(value = "/listar", produces = MediaType.APPLICATION_JSON_VALUE)
+    @PostMapping(produces = MediaType.APPLICATION_JSON_VALUE) // Ojo: falta la ruta en @RequestMapping del controller o aquí
     public ResponseEntity<GlobalResponse> listar(
             @RequestParam(name = "pagina", defaultValue = "1") int pagina,
             @RequestParam(name = "tamanio", defaultValue = "10") int tamanio,
@@ -44,34 +44,27 @@ public class JusticiaItineranteController implements Serializable {
         try {
             String usuario = "EMATAMOROSV";
 
-            JusticiaItinerante filtrosDominio = JusticiaItinerante.builder().build();
+            JusticiaItinerante filtros = JusticiaItinerante.builder().build();
             if (request != null) {
-                filtrosDominio.setId(request.getCodigoRegistro());
-                filtrosDominio.setPublicoObjetivo(request.getPublicoObjetivo());
-                filtrosDominio.setDistritoJudicialId(request.getDistritoJudicialId());
-                filtrosDominio.setFechaInicio(request.getFechaInicio());
-                filtrosDominio.setFechaFin(request.getFechaFin());
+                filtros.setSearch(request.getSearch());
+                filtros.setDistritoJudicialId(request.getDistritoJudicialId());
+                filtros.setFechaInicio(request.getFechaInicio());
+                filtros.setFechaFin(request.getFechaFin());
             }
 
-            Pagina<JusticiaItinerante> resultadoDominio = useCase.listarItinerante(usuario, filtrosDominio, pagina, tamanio);
+            Pagina<JusticiaItinerante> paginaDominio = useCase.listar(usuario, filtros, pagina, tamanio);
 
-            List<JusticiaItineranteResponse> contenidoResponse = resultadoDominio.getContenido().stream()
-                    .map(d -> JusticiaItineranteResponse.builder()
-                            .id(d.getId())
-                            .publicoObjetivo(d.getPublicoObjetivo())
-                            .fechaInicio(d.getFechaInicio())
-                            .fechaFin(d.getFechaFin())
-                            .fechaRegistro(d.getFechaRegistro())
-                            .estado(d.getActivo())
-                            .build())
+            // ✅ CORRECCIÓN AQUÍ: Usamos 'toResponseListado'
+            List<JusticiaItineranteResponse> listaResponse = paginaDominio.getContenido().stream()
+                    .map(mapper::toResponseListado)
                     .collect(Collectors.toList());
 
             Pagina<JusticiaItineranteResponse> paginaResponse = Pagina.<JusticiaItineranteResponse>builder()
-                    .contenido(contenidoResponse)
-                    .totalRegistros(resultadoDominio.getTotalRegistros())
-                    .totalPaginas(resultadoDominio.getTotalPaginas())
-                    .paginaActual(resultadoDominio.getPaginaActual())
-                    .tamanioPagina(resultadoDominio.getTamanioPagina())
+                    .contenido(listaResponse)
+                    .totalRegistros(paginaDominio.getTotalRegistros())
+                    .totalPaginas(paginaDominio.getTotalPaginas())
+                    .paginaActual(paginaDominio.getPaginaActual())
+                    .tamanioPagina(paginaDominio.getTamanioPagina())
                     .build();
 
             res.setCodigo("200");
@@ -80,15 +73,16 @@ public class JusticiaItineranteController implements Serializable {
             return ResponseEntity.ok(res);
 
         } catch (Exception e) {
+            log.error("Error al listar JI", e);
             res.setCodigo("500");
-            res.setDescripcion("Error al listar: " + e.getMessage());
-            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(res);
+            res.setDescripcion("Error: " + e.getMessage());
+            return ResponseEntity.internalServerError().body(res);
         }
     }
 
-    @PostMapping(value = "/registrar-unificado", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
-    public ResponseEntity<GlobalResponse> registrarUnificado(
-            @RequestPart("datos") RegistrarFjiRequest request,
+    @PostMapping(consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
+    public ResponseEntity<GlobalResponse> registrar(
+            @Valid @ModelAttribute RegistrarFjiRequest request,
 
             @RequestPart(value = "anexo", required = false) MultipartFile anexo,
             @RequestPart(value = "videos", required = false) List<MultipartFile> videos,
@@ -98,7 +92,7 @@ public class JusticiaItineranteController implements Serializable {
         try {
             String usuario = "EMATAMOROSV";
 
-            JusticiaItinerante registrado = useCase.registrarConEvidencias(
+            JusticiaItinerante registrado = useCase.registrar(
                     mapper.toDomain(request),
                     anexo,
                     videos,
@@ -119,28 +113,57 @@ public class JusticiaItineranteController implements Serializable {
         }
     }
 
-    @PutMapping(value = "/actualizar", consumes = MediaType.APPLICATION_JSON_VALUE)
-    public ResponseEntity<GlobalResponse> actualizar(@RequestBody RegistrarFjiRequest request) {
+    // --- OBTENER POR ID (Para "Ver Detalle" o "Editar") ---
+    @GetMapping(value = "/{id}", produces = MediaType.APPLICATION_JSON_VALUE)
+    public ResponseEntity<GlobalResponse> obtenerPorId(@PathVariable String id) {
         GlobalResponse res = new GlobalResponse();
         try {
-            // 1. Validar ID obligatorio
+            // 1. Llamar al UseCase
+            JusticiaItinerante encontrado = useCase.buscarPorId(id);
+
+            // 2. Mapear a DTO Response (VERSIÓN DETALLE)
+            // IMPORTANTE: Usamos el mapper para que se aplique la estructura correcta
+            // y se incluyan los archivos.
+            JusticiaItineranteResponse responseDto = mapper.toResponseDetalle(encontrado);
+
+            res.setCodigo("200");
+            res.setDescripcion("Consulta exitosa");
+            res.setData(responseDto); // ✅ Devolvemos el DTO, no el dominio
+            return ResponseEntity.ok(res);
+
+        } catch (Exception e) {
+            log.error("Error al consultar por ID", e);
+            res.setCodigo("500");
+            res.setDescripcion("Error al consultar: " + e.getMessage());
+            return ResponseEntity.internalServerError().body(res);
+        }
+    }
+
+    // --- ACTUALIZAR ---
+    @PutMapping(consumes = MediaType.APPLICATION_JSON_VALUE, produces = MediaType.APPLICATION_JSON_VALUE)
+    public ResponseEntity<GlobalResponse> actualizar(@Valid @RequestBody RegistrarFjiRequest request) { // ✅ Agregado @Valid
+        GlobalResponse res = new GlobalResponse();
+        try {
+            // 1. Validar ID (Aunque venga en el body, es bueno asegurar que no sea nulo)
             if (request.getId() == null || request.getId().isBlank()) {
                 throw new Exception("El ID es obligatorio para actualizar.");
             }
 
             // 2. Mapear a Dominio
+            // El mapper ya se encarga de asignar el ID del request al dominio
             JusticiaItinerante dominio = mapper.toDomain(request);
 
-            // Asignamos manualmente el ID para asegurar que pase,
-            // por si el mapper lo estaba ignorando en la configuración.
-            dominio.setId(request.getId());
-
             // 3. Llamar al caso de uso
-            JusticiaItinerante actualizado = useCase.actualizar(dominio, "EMATAMOROSV");
+            String usuario = "EMATAMOROSV"; // Idealmente obtener del token/sesión
+            JusticiaItinerante actualizado = useCase.actualizar(dominio, usuario);
+
+            // 4. Mapear a DTO Response
+            // Devolvemos la versión detalle para que el front vea los cambios reflejados al instante
+            JusticiaItineranteResponse responseDto = mapper.toResponseDetalle(actualizado);
 
             res.setCodigo("200");
-            res.setDescripcion("Actualización de Justicia Itinerante exitosa.");
-            res.setData(actualizado);
+            res.setDescripcion("Actualización exitosa.");
+            res.setData(responseDto); // ✅ Devolvemos el DTO
             return ResponseEntity.ok(res);
 
         } catch (Exception e) {
@@ -151,25 +174,9 @@ public class JusticiaItineranteController implements Serializable {
         }
     }
 
-    @GetMapping(value = "/{id}", produces = MediaType.APPLICATION_JSON_VALUE)
-    public ResponseEntity<GlobalResponse> obtenerPorId(@PathVariable String id) {
-        GlobalResponse res = new GlobalResponse();
-        try {
-            JusticiaItinerante encontrado = useCase.buscarPorId(id);
-
-            res.setCodigo("200");
-            res.setDescripcion("Consulta exitosa");
-            res.setData(encontrado);
-            return ResponseEntity.ok(res);
-
-        } catch (Exception e) {
-            res.setCodigo("500");
-            res.setDescripcion("Error al consultar: " + e.getMessage());
-            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(res);
-        }
-    }
-
-    @DeleteMapping(value = "/archivos/{nombre:.+}") // El :.+ es para que acepte el punto de la extensión (.jpg)
+    // --- ELIMINAR ARCHIVO ---
+    // ✅ Está perfecto. El regex :.+ es vital para que no corte el ".jpg" o ".pdf"
+    @DeleteMapping(value = "/archivos/{nombre:.+}")
     public ResponseEntity<GlobalResponse> eliminarArchivo(@PathVariable String nombre) {
         GlobalResponse res = new GlobalResponse();
         try {
@@ -180,29 +187,33 @@ public class JusticiaItineranteController implements Serializable {
             return ResponseEntity.ok(res);
 
         } catch (Exception e) {
+            log.error("Error al eliminar archivo", e);
             res.setCodigo("500");
             res.setDescripcion("Error al eliminar archivo: " + e.getMessage());
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(res);
         }
     }
 
-    @PostMapping(value = "/archivos/agregar", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
+    // --- AGREGAR ARCHIVO ADICIONAL ---
+    @PostMapping(value = "/archivos", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
     public ResponseEntity<GlobalResponse> agregarArchivo(
             @RequestParam("idEvento") String idEvento,
-            @RequestParam("tipo") String tipo,
+            @RequestParam("tipo") String tipo, // "ANEXO", "VIDEO", "FOTO"
             @RequestPart("archivo") MultipartFile archivo
     ) {
         GlobalResponse res = new GlobalResponse();
         try {
-            String usuario = "EMATAMOROSV";
+            String usuario = "EMATAMOROSV"; // Idealmente obtener del token
 
-            useCase.subirArchivoAdicional(idEvento, archivo, tipo, usuario);
+            // ⚠️ CORRECCIÓN: Usamos el método renombrado "agregarArchivo"
+            useCase.agregarArchivo(idEvento, archivo, tipo, usuario);
 
             res.setCodigo("200");
             res.setDescripcion("Archivo agregado correctamente");
             return ResponseEntity.ok(res);
 
         } catch (Exception e) {
+            log.error("Error al subir archivo adicional", e);
             res.setCodigo("500");
             res.setDescripcion("Error al subir archivo: " + e.getMessage());
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(res);

@@ -4,6 +4,8 @@ import jakarta.persistence.*;
 import lombok.Getter;
 import lombok.Setter;
 import pe.gob.pj.prueba.infraestructure.db.negocio.entities.ids.MovJiPersonasBeneficiadasId;
+import pe.gob.pj.prueba.infraestructure.db.negocio.entities.ids.TrimStringConverter;
+
 import java.io.Serializable;
 
 @Getter
@@ -15,14 +17,17 @@ public class MovJiPersonasBeneficiadasEntity implements Serializable {
 
     @Id
     @Column(name = "c_just_itin_id", length = 17)
+    @Convert(converter = TrimStringConverter.class)
     private String justiciaItineranteId;
 
     @Id
     @Column(name = "x_desc_rango", length = 30)
+    @Convert(converter = TrimStringConverter.class)
     private String descripcionRango;
 
     @Id
     @Column(name = "c_rango", length = 5)
+    @Convert(converter = TrimStringConverter.class)
     private String codigoRango;
 
     @Column(name = "n_cant_fem", nullable = false)

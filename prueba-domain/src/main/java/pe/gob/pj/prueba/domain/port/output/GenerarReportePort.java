@@ -7,4 +7,6 @@ public interface GenerarReportePort {
 
     byte[] generarFichaBuenaPractica(String id) throws Exception;
     byte[] generarFichaJpe(String id) throws Exception;
+    byte[] generarFichaLlj(String id) throws Exception;
+    byte[] generarFichaOJ(String id) throws Exception;
 }

@@ -1,12 +1,14 @@
 package pe.gob.pj.prueba.domain.model.negocio;
+
 import lombok.AllArgsConstructor;
 import lombok.Builder;
+import lombok.Data;
 import lombok.NoArgsConstructor;
+
 import java.io.Serializable;
 import java.time.LocalDate;
 import java.util.ArrayList;
 import java.util.List;
-import lombok.Data;
 
 @Data
 @Builder
@@ -16,8 +18,10 @@ public class JusticiaItinerante implements Serializable {
 
     private static final long serialVersionUID = 1L;
 
+    // --- CABECERA ---
     private String id;
     private String distritoJudicialId;
+    private String distritoJudicialNombre;
     private LocalDate fechaInicio;
     private LocalDate fechaFin;
 
@@ -35,17 +39,16 @@ public class JusticiaItinerante implements Serializable {
     private String provinciaId;
     private String distritoGeograficoId;
 
-    // --- ESTADÍSTICAS Y DESCRIPCIÓN ---
-    // (Nombres actualizados para coincidir con Entity y Request)
+    // Estadísticas
+    private Integer numMujeresIndigenas;
+    private Integer numPersonasNoIdiomaNacional;
+    private Integer numJovenesQuechuaAymara;
+    private String codigoAdcPueblosIndigenas;
+    private String tambo;
+    private String codigoSaeLenguaNativa;
+    private String lenguaNativa;
 
-    private Integer numMujeresIndigenas;         // Antes: numMesasPartes
-    private Integer numPersonasNoIdiomaNacional; // Antes: numServidores
-    private Integer numJovenesQuechuaAymara;  // n_jov_quech_aymar
-    private String codigoAdcPueblosIndigenas; // l_adc_pueb_indg
-    private String tambo;                     // x_tambo
-    private String codigoSaeLenguaNativa;     // l_sae_leng_nativa
-    private String lenguaNativa;              // x_leng_nativa
-
+    // Textos
     private String descripcionActividad;
     private String institucionesAliadas;
     private String observaciones;
@@ -55,19 +58,52 @@ public class JusticiaItinerante implements Serializable {
     private String usuarioRegistro;
     private String activo;
 
-    // --- LISTAS DE DETALLE ---
-
-    // Detalle 1: Personas Beneficiadas (Aún pendiente de implementar en BD)
-    private List<DetallePersonasBeneficiadas> personasBeneficiadas = new ArrayList<>();
-
-    // Detalle 2: Personas Atendidas
-    private List<DetallePersonasAtendidas> personasAtendidas = new ArrayList<>();
-
-    // Detalle 3: Casos Atendidos
-    private List<DetalleCasosAtendidos> casosAtendidos = new ArrayList<>();
-
-    // Detalle 4: Tareas Realizadas (Aún pendiente de implementar en BD)
-    private List<DetalleTareaRealizada> tareasRealizadas = new ArrayList<>();
-
+    // --- LISTAS DE DETALLE (Usando las Clases Internas) ---
+    private List<DetalleBeneficiada> personasBeneficiadas = new ArrayList<>();
+    private List<DetalleAtendida> personasAtendidas = new ArrayList<>();
+    private List<DetalleCaso> casosAtendidos = new ArrayList<>();
+    private List<DetalleTarea> tareasRealizadas = new ArrayList<>();
+    private String search;
+    // Archivos (Estándar)
     private List<Archivo> archivosGuardados;
+
+
+    // =========================================================
+    //    CLASES INTERNAS (ESTANDARIZADO)
+    // =========================================================
+
+    @Data @Builder @NoArgsConstructor @AllArgsConstructor
+    public static class DetalleBeneficiada implements Serializable {
+        private String descripcionRango;
+        private String codigoRango;
+        private Integer cantFemenino;
+        private Integer cantMasculino;
+        private Integer cantLgtbiq;
+    }
+
+    @Data @Builder @NoArgsConstructor @AllArgsConstructor
+    public static class DetalleAtendida implements Serializable {
+        private Integer tipoVulnerabilidadId;
+        private String rangoEdad;
+        private Integer cantFemenino;
+        private Integer cantMasculino;
+        private Integer cantLgtbiq;
+    }
+
+    @Data @Builder @NoArgsConstructor @AllArgsConstructor
+    public static class DetalleCaso implements Serializable {
+        private Integer materiaId;
+        private Integer numDemandas;
+        private Integer numAudiencias;
+        private Integer numSentencias;
+        private Integer numProcesos;
+        private Integer numNotificaciones;
+        private Integer numOrientaciones;
+    }
+
+    @Data @Builder @NoArgsConstructor @AllArgsConstructor
+    public static class DetalleTarea implements Serializable {
+        private String tareaId;
+        private LocalDate fechaInicio;
+    }
 }

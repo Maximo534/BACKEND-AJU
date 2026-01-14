@@ -4,6 +4,8 @@ import jakarta.persistence.*;
 import lombok.Getter;
 import lombok.Setter;
 import pe.gob.pj.prueba.infraestructure.db.negocio.entities.ids.MovJiCasosAtendidosId;
+import pe.gob.pj.prueba.infraestructure.db.negocio.entities.ids.TrimStringConverter;
+
 import java.io.Serializable;
 
 @Getter
@@ -17,6 +19,7 @@ public class MovJiCasosAtendidosEntity implements Serializable {
 
     @Id
     @Column(name = "c_just_itin_id", length = 17)
+    @Convert(converter = TrimStringConverter.class)
     private String justiciaItineranteId;
 
     @Id
