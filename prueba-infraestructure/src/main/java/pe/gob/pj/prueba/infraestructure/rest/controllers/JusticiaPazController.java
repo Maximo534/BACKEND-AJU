@@ -1,0 +1,253 @@
+package pe.gob.pj.prueba.infraestructure.rest.controllers;
+
+import jakarta.validation.Valid;
+import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
+import org.springframework.core.io.InputStreamResource;
+import org.springframework.http.HttpHeaders;
+import org.springframework.http.HttpStatus;
+import org.springframework.http.MediaType;
+import org.springframework.http.ResponseEntity;
+import org.springframework.web.bind.annotation.*;
+import org.springframework.web.multipart.MultipartFile;
+import pe.gob.pj.prueba.domain.model.common.Pagina;
+import pe.gob.pj.prueba.domain.model.common.RecursoArchivo;
+import pe.gob.pj.prueba.domain.model.negocio.JpeCasoAtendido;
+import pe.gob.pj.prueba.domain.model.negocio.ResumenEstadistico;
+import pe.gob.pj.prueba.domain.port.usecase.negocio.GestionJuecesEscolaresUseCasePort;
+import pe.gob.pj.prueba.infraestructure.mappers.JuezPazEscolarMapper;
+import pe.gob.pj.prueba.infraestructure.rest.requests.RegistrarCasoRequest;
+import pe.gob.pj.prueba.infraestructure.rest.responses.GlobalResponse;
+import pe.gob.pj.prueba.infraestructure.rest.responses.JpeCasoAtendidoResponse;
+import pe.gob.pj.prueba.infraestructure.rest.responses.ResumenEstadisticoResponse;
+
+import java.util.List;
+import java.util.stream.Collectors;
+
+@Slf4j
+@RestController
+@RequestMapping("/publico/v1/justicia-paz")
+@RequiredArgsConstructor
+public class JusticiaPazController {
+
+    private final GestionJuecesEscolaresUseCasePort useCase;
+    private final JuezPazEscolarMapper mapper;
+
+    @PostMapping(produces = MediaType.APPLICATION_JSON_VALUE)
+    public ResponseEntity<GlobalResponse> listarCasos(
+            @RequestParam(name = "pagina", defaultValue = "1") int pagina,
+            @RequestParam(name = "tamanio", defaultValue = "10") int tamanio,
+            @RequestBody(required = false) RegistrarCasoRequest request // Usamos el mismo DTO o uno de Filtros
+    ) {
+        GlobalResponse res = new GlobalResponse();
+        try {
+            String usuario = "EMATAMOROSV";
+            JpeCasoAtendido filtros = JpeCasoAtendido.builder().build();
+
+            if (request != null) {
+                filtros.setSearch(request.getResumenHechos()); // Asumimos búsqueda por texto en resumen
+                filtros.setDistritoJudicialId(request.getDistritoJudicialId());
+                // filtros.setUgelId(request.getUgelId()); // Si agregas estos filtros al Request
+                // filtros.setInstitucionEducativaId(request.getInstitucionEducativaId());
+                filtros.setFechaRegistro(request.getFechaRegistro());
+            }
+
+            Pagina<JpeCasoAtendido> paginaRes = useCase.listarCasos(usuario, filtros, pagina, tamanio);
+
+            // Mapeamos a Response DTO
+            List<JpeCasoAtendidoResponse> listaResponse = paginaRes.getContenido().stream()
+                    .map(mapper::toResponse)
+                    .collect(Collectors.toList());
+
+            Pagina<JpeCasoAtendidoResponse> resultado = Pagina.<JpeCasoAtendidoResponse>builder()
+                    .contenido(listaResponse)
+                    .totalRegistros(paginaRes.getTotalRegistros())
+                    .totalPaginas(paginaRes.getTotalPaginas())
+                    .paginaActual(paginaRes.getPaginaActual())
+                    .tamanioPagina(paginaRes.getTamanioPagina())
+                    .build();
+
+            res.setCodigo("200");
+            res.setDescripcion("Listado de casos exitoso");
+            res.setData(resultado);
+            return ResponseEntity.ok(res);
+
+        } catch (Exception e) {
+            log.error("Error listando casos", e);
+            res.setCodigo("500");
+            res.setDescripcion("Error interno: " + e.getMessage());
+            return ResponseEntity.internalServerError().body(res);
+        }
+    }
+
+    @GetMapping(value = "/{id}", produces = MediaType.APPLICATION_JSON_VALUE)
+    public ResponseEntity<GlobalResponse> obtenerCasoPorId(@PathVariable String id) {
+        GlobalResponse res = new GlobalResponse();
+        try {
+            JpeCasoAtendido encontrado = useCase.buscarCasoPorId(id);
+            if (encontrado == null) {
+                res.setCodigo("404");
+                res.setDescripcion("Caso no encontrado");
+                return ResponseEntity.status(HttpStatus.NOT_FOUND).body(res);
+            }
+            res.setCodigo("200");
+            res.setDescripcion("Consulta exitosa");
+            res.setData(mapper.toResponse(encontrado));
+            return ResponseEntity.ok(res);
+        } catch (Exception e) {
+            log.error("Error obteniendo caso", e);
+            res.setCodigo("500");
+            res.setDescripcion("Error: " + e.getMessage());
+            return ResponseEntity.internalServerError().body(res);
+        }
+    }
+
+    @PostMapping( consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
+    public ResponseEntity<GlobalResponse> registrarCaso(
+            @Valid @ModelAttribute RegistrarCasoRequest request, // ✅ @Valid
+            @RequestPart(value = "acta", required = false) MultipartFile acta,
+            @RequestPart(value = "fotos", required = false) List<MultipartFile> fotos
+    ) {
+        GlobalResponse res = new GlobalResponse();
+        try {
+            String usuario = "EMATAMOROSV";
+            JpeCasoAtendido dominio = mapper.toDomain(request);
+            JpeCasoAtendido creado = useCase.registrarCaso(dominio, acta, fotos, usuario);
+
+            res.setCodigo("200");
+            res.setDescripcion("Caso registrado correctamente. ID: " + creado.getId());
+            res.setData(mapper.toResponse(creado));
+            return ResponseEntity.ok(res);
+        } catch (Exception e) {
+            log.error("Error registrando caso", e);
+            res.setCodigo("500");
+            res.setDescripcion("Error: " + e.getMessage());
+            return ResponseEntity.internalServerError().body(res);
+        }
+    }
+
+    @PutMapping(consumes = MediaType.APPLICATION_JSON_VALUE)
+    public ResponseEntity<GlobalResponse> actualizarCaso(@Valid @RequestBody RegistrarCasoRequest request) { // ✅ @Valid
+        GlobalResponse res = new GlobalResponse();
+        try {
+            if (request.getId() == null || request.getId().isBlank()) {
+                throw new Exception("ID es obligatorio para actualizar");
+            }
+            String usuario = "EMATAMOROSV";
+            JpeCasoAtendido dominio = mapper.toDomain(request);
+            // El mapper ya pasa el ID del request al dominio
+            JpeCasoAtendido actualizado = useCase.actualizarCaso(dominio, usuario);
+
+            res.setCodigo("200");
+            res.setDescripcion("Caso actualizado correctamente");
+            res.setData(mapper.toResponse(actualizado));
+            return ResponseEntity.ok(res);
+        } catch (Exception e) {
+            log.error("Error actualizando caso", e);
+            res.setCodigo("500");
+            res.setDescripcion("Error: " + e.getMessage());
+            return ResponseEntity.internalServerError().body(res);
+        }
+    }
+
+    // =========================================================================
+    // SECCIÓN 3: GESTIÓN DE ARCHIVOS Y REPORTES
+    // =========================================================================
+
+    @PostMapping(value = "/archivos", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
+    public ResponseEntity<GlobalResponse> agregarArchivoCaso(
+            @RequestParam("idCaso") String idCaso,
+            @RequestParam("tipo") String tipo, // "ACTA_JPE" o "FOTO_JPE"
+            @RequestPart("archivo") MultipartFile archivo
+    ) {
+        GlobalResponse res = new GlobalResponse();
+        try {
+            String usuario = "EMATAMOROSV";
+            useCase.agregarArchivoCaso(idCaso, archivo, tipo, usuario);
+            res.setCodigo("200");
+            res.setDescripcion("Archivo agregado correctamente");
+            return ResponseEntity.ok(res);
+        } catch (Exception e) {
+            log.error("Error agregando archivo", e);
+            res.setCodigo("500");
+            res.setDescripcion("Error: " + e.getMessage());
+            return ResponseEntity.internalServerError().body(res);
+        }
+    }
+
+    @DeleteMapping(value = "/archivos/{nombreArchivo:.+}")
+    public ResponseEntity<GlobalResponse> eliminarArchivoCaso(@PathVariable String nombreArchivo) {
+        GlobalResponse res = new GlobalResponse();
+        try {
+            useCase.eliminarArchivo(nombreArchivo);
+            res.setCodigo("200");
+            res.setDescripcion("Archivo eliminado correctamente");
+            return ResponseEntity.ok(res);
+        } catch (Exception e) {
+            log.error("Error eliminando archivo", e);
+            res.setCodigo("500");
+            res.setDescripcion("Error: " + e.getMessage());
+            return ResponseEntity.internalServerError().body(res);
+        }
+    }
+
+    @GetMapping("/{id}/acta")
+    public ResponseEntity<InputStreamResource> descargarActa(@PathVariable String id) {
+        try {
+            // "ACTA_JPE" debe coincidir con lo que se guarda en BD
+            RecursoArchivo recurso = useCase.descargarArchivoPorTipo(id, "ACTA_JPE");
+
+            HttpHeaders headers = new HttpHeaders();
+            headers.add(HttpHeaders.CONTENT_DISPOSITION, "inline; filename=" + recurso.getNombreFileName());
+
+            return ResponseEntity.ok()
+                    .headers(headers)
+                    .contentType(MediaType.APPLICATION_PDF)
+                    .body(new InputStreamResource(recurso.getStream()));
+
+        } catch (Exception e) {
+            log.error("Error descargando acta", e);
+            return ResponseEntity.notFound().build();
+        }
+    }
+
+    @GetMapping("{id}/ficha")
+    public ResponseEntity<byte[]> generarReporteCaso(@PathVariable String id) {
+        try {
+            byte[] pdfBytes = useCase.generarFichaPdf(id);
+
+            HttpHeaders headers = new HttpHeaders();
+            headers.setContentType(MediaType.APPLICATION_PDF);
+            headers.setContentDispositionFormData("inline", "Ficha_Caso_JPE_" + id + ".pdf");
+
+            return new ResponseEntity<>(pdfBytes, headers, HttpStatus.OK);
+
+        } catch (Exception e) {
+            log.error("Error generando reporte", e);
+            return ResponseEntity.internalServerError().build();
+        }
+    }
+
+    @GetMapping(value = "estadisticas", produces = MediaType.APPLICATION_JSON_VALUE)
+    public ResponseEntity<GlobalResponse> obtenerEstadisticasChart() {
+        GlobalResponse res = new GlobalResponse();
+        try {
+            List<ResumenEstadistico> dataDominio = useCase.obtenerResumenGrafico();
+
+            List<ResumenEstadisticoResponse> dataResponse = dataDominio.stream()
+                    .map(d -> new ResumenEstadisticoResponse(d.getEtiqueta(), d.getCantidad()))
+                    .collect(Collectors.toList());
+
+            res.setCodigo("200");
+            res.setDescripcion("Estadísticas históricas obtenidas correctamente");
+            res.setData(dataResponse);
+            return ResponseEntity.ok(res);
+
+        } catch (Exception e) {
+            log.error("Error obteniendo estadísticas", e);
+            res.setCodigo("500");
+            res.setDescripcion("Error interno: " + e.getMessage());
+            return ResponseEntity.internalServerError().body(res);
+        }
+    }
+}
