@@ -66,7 +66,7 @@ public class JuezPazEscolarController {
     // SECCIÓN 2: GESTIÓN DE CASOS (INCIDENTES)
     // =========================================================================
 
-    @PostMapping(value = "/casos", produces = MediaType.APPLICATION_JSON_VALUE)
+    @PostMapping(value = "/justicia-paz",consumes = MediaType.APPLICATION_JSON_VALUE, produces = MediaType.APPLICATION_JSON_VALUE)
     public ResponseEntity<GlobalResponse> listarCasos(
             @RequestParam(name = "pagina", defaultValue = "1") int pagina,
             @RequestParam(name = "tamanio", defaultValue = "10") int tamanio,
@@ -113,7 +113,7 @@ public class JuezPazEscolarController {
         }
     }
 
-    @GetMapping(value = "/casos/{id}", produces = MediaType.APPLICATION_JSON_VALUE)
+    @GetMapping(value = "/justicia-paz/{id}", produces = MediaType.APPLICATION_JSON_VALUE)
     public ResponseEntity<GlobalResponse> obtenerCasoPorId(@PathVariable String id) {
         GlobalResponse res = new GlobalResponse();
         try {
@@ -135,7 +135,7 @@ public class JuezPazEscolarController {
         }
     }
 
-    @PostMapping(value = "/casos", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
+    @PostMapping(value = "/justicia-paz/registrar", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
     public ResponseEntity<GlobalResponse> registrarCaso(
             @Valid @ModelAttribute RegistrarCasoRequest request, // ✅ @Valid
             @RequestPart(value = "acta", required = false) MultipartFile acta,
@@ -159,7 +159,7 @@ public class JuezPazEscolarController {
         }
     }
 
-    @PutMapping(value = "/casos", consumes = MediaType.APPLICATION_JSON_VALUE)
+    @PutMapping(value = "/justicia-paz", consumes = MediaType.APPLICATION_JSON_VALUE)
     public ResponseEntity<GlobalResponse> actualizarCaso(@Valid @RequestBody RegistrarCasoRequest request) { // ✅ @Valid
         GlobalResponse res = new GlobalResponse();
         try {
@@ -187,7 +187,7 @@ public class JuezPazEscolarController {
     // SECCIÓN 3: GESTIÓN DE ARCHIVOS Y REPORTES
     // =========================================================================
 
-    @PostMapping(value = "/casos/archivos", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
+    @PostMapping(value = "/justicia-paz/archivos", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
     public ResponseEntity<GlobalResponse> agregarArchivoCaso(
             @RequestParam("idCaso") String idCaso,
             @RequestParam("tipo") String tipo, // "ACTA_JPE" o "FOTO_JPE"
@@ -208,7 +208,7 @@ public class JuezPazEscolarController {
         }
     }
 
-    @DeleteMapping(value = "/casos/archivos/{nombreArchivo:.+}")
+    @DeleteMapping(value = "/justicia-paz/archivos/{nombreArchivo:.+}")
     public ResponseEntity<GlobalResponse> eliminarArchivoCaso(@PathVariable String nombreArchivo) {
         GlobalResponse res = new GlobalResponse();
         try {
@@ -224,7 +224,7 @@ public class JuezPazEscolarController {
         }
     }
 
-    @GetMapping("/casos/{id}/acta")
+    @GetMapping("/justicia-paz/{id}/acta")
     public ResponseEntity<InputStreamResource> descargarActa(@PathVariable String id) {
         try {
             // "ACTA_JPE" debe coincidir con lo que se guarda en BD
@@ -244,7 +244,7 @@ public class JuezPazEscolarController {
         }
     }
 
-    @GetMapping("/casos/{id}/ficha")
+    @GetMapping("/justicia-paz/{id}/ficha")
     public ResponseEntity<byte[]> generarReporteCaso(@PathVariable String id) {
         try {
             byte[] pdfBytes = useCase.generarFichaPdf(id);
@@ -261,7 +261,7 @@ public class JuezPazEscolarController {
         }
     }
 
-    @GetMapping(value = "/casos/estadisticas", produces = MediaType.APPLICATION_JSON_VALUE)
+    @GetMapping(value = "/justicia-paz/estadisticas", produces = MediaType.APPLICATION_JSON_VALUE)
     public ResponseEntity<GlobalResponse> obtenerEstadisticasChart() {
         GlobalResponse res = new GlobalResponse();
         try {
