@@ -37,6 +37,7 @@ public interface FortalecimientoMapper {
     // ⚠️ CORRECCIÓN: El campo en la entidad se llama 'activo', no 'estado'
     @Mapping(target = "activo", ignore = true)
 
+    @BeanMapping(nullValuePropertyMappingStrategy = NullValuePropertyMappingStrategy.IGNORE)
     @Mapping(target = "participantes", ignore = true)
     @Mapping(target = "tareas", ignore = true)
     void updateEntityFromDomain(FortalecimientoCapacidades domain, @MappingTarget MovEventoFcEntity entity);

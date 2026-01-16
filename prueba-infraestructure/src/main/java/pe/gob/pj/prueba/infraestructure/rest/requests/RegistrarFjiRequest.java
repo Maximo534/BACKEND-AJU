@@ -70,17 +70,17 @@ public class RegistrarFjiRequest implements Serializable {
     private String distritoGeograficoId;
 
     // --- ESTADÍSTICAS ---
-    @NotNull(message = "El número de mujeres indígenas es obligatorio.")
-    @Min(value = 0, message = "El número de mujeres indígenas no puede ser negativo.")
-    private Integer numMujeresIndigenas;
+    @NotNull(message = "El número de mesas instaladas es obligatorio.")
+    @Min(value = 0, message = "El número de mesas instaladas no puede ser negativo.")
+    private Integer numMesasInstaladas;
 
-    @NotNull(message = "El número de personas no idioma nacional es obligatorio.")
-    @Min(value = 0, message = "El número de personas no idioma nacional no puede ser negativo.")
-    private Integer numPersonasNoIdiomaNacional;
+    @NotNull(message = "El número de servidores es obligatorio.")
+    @Min(value = 0, message = "El número de servidores no puede ser negativo.")
+    private Integer numServidores;
 
-    @NotNull(message = "El número de jóvenes Quechua/Aymara es obligatorio.")
-    @Min(value = 0, message = "El número de jóvenes Quechua/Aymara no puede ser negativo.")
-    private Integer numJovenesQuechuaAymara;
+    @NotNull(message = "El número de Jueces es obligatorio.")
+    @Min(value = 0, message = "El número Jueces no puede ser negativo.")
+    private Integer numJueces;
 
     @NotBlank(message = "El código ADC es obligatorio.")
     @Size(max = 2)

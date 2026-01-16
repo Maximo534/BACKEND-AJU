@@ -63,14 +63,14 @@ public class MovJusticiaItineranteEntity implements Serializable {
     private String distritoGeograficoId;
 
     // ESTADISTICAS
-    @Column(name = "n_num_muj_indg")
-    private Integer numMujeresIndigenas;
+    @Column(name = "n_num_mesas_inst")
+    private Integer numMesasInstaladas;
 
-    @Column(name = "n_per_no_idi_nac")
-    private Integer numPersonasNoIdiomaNacional;
+    @Column(name = "n_num_ser_bri_ate")
+    private Integer numServidores;
 
-    @Column(name = "n_jov_quech_aymar")
-    private Integer numJovenesQuechuaAymara;
+    @Column(name = "n_num_juez_ate")
+    private Integer numJueces;
 
     @Column(name = "l_adc_pueb_indg", length = 2)
     private String codigoAdcPueblosIndigenas;

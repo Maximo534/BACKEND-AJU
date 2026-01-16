@@ -17,6 +17,7 @@ import pe.gob.pj.prueba.infraestructure.db.negocio.repositories.masters.MaeDistr
 import pe.gob.pj.prueba.infraestructure.mappers.FortalecimientoMapper;
 
 import java.time.LocalDate;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.stream.Collectors;
 
@@ -118,6 +119,12 @@ public class FortalecimientoPersistenceAdapter implements FortalecimientoPersist
                     entityPart.setEventoId(entidadDb.getId());
                     entidadDb.getParticipantes().add(entityPart);
                 });
+            }
+
+            if (entidadDb.getTareas() != null) {
+                entidadDb.getTareas().clear();
+            } else {
+                entidadDb.setTareas(new ArrayList<>());
             }
 
             if (entidadDb.getTareas() != null) entidadDb.getTareas().clear();

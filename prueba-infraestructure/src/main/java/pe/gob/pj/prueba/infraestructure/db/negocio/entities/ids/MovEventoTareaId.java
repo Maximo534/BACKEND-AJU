@@ -6,6 +6,7 @@ import java.io.Serializable;
 import java.util.Objects;
 
 @Data
+@Builder
 @NoArgsConstructor
 @AllArgsConstructor
 public class MovEventoTareaId implements Serializable {

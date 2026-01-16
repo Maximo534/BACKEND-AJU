@@ -115,9 +115,9 @@ public class ReporteJusticiaItineranteService {
             agregarFila(document, "Provincia", ": " + obtenerNombreProv(entity.getProvinciaId()));
             agregarFila(document, "Distrito", ": " + obtenerNombreDist(entity.getDistritoGeograficoId()));
 
-            agregarFila(document, "N° de Mesa de Partes Instaladas", ": " + num(entity.getNumMujeresIndigenas())); // Ojo: mapeo según tu entidad
-            agregarFila(document, "N° de Servidores que Brindaron Atención", ": " + num(entity.getNumPersonasNoIdiomaNacional()));
-            agregarFila(document, "N° de Jueces que Brindaron Atención", ": " + num(entity.getNumJovenesQuechuaAymara()));
+            agregarFila(document, "N° de Mesa de Partes Instaladas", ": " + num(entity.getNumMesasInstaladas())); // Ojo: mapeo según tu entidad
+            agregarFila(document, "N° de Servidores que Brindaron Atención", ": " + num(entity.getNumServidores()));
+            agregarFila(document, "N° de Jueces que Brindaron Atención", ": " + num(entity.getNumJueces()));
 
             boolean esPais = "SI".equalsIgnoreCase(entity.getCodigoAdcPueblosIndigenas()) || "01".equals(entity.getCodigoAdcPueblosIndigenas());
             agregarFila(document, "¿La Actividad en Convenio con PAIS?", ": " + (esPais ? "SI" : "NO"));

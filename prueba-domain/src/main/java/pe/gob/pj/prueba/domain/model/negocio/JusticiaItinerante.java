@@ -40,9 +40,9 @@ public class JusticiaItinerante implements Serializable {
     private String distritoGeograficoId;
 
     // Estadísticas
-    private Integer numMujeresIndigenas;
-    private Integer numPersonasNoIdiomaNacional;
-    private Integer numJovenesQuechuaAymara;
+    private Integer numMesasInstaladas;
+    private Integer numServidores;
+    private Integer numJueces;
     private String codigoAdcPueblosIndigenas;
     private String tambo;
     private String codigoSaeLenguaNativa;
