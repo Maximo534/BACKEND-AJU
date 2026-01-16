@@ -1,13 +1,15 @@
 package pe.gob.pj.prueba.infraestructure.rest.controllers;
 
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
-import pe.gob.pj.prueba.domain.model.negocio.masters.*;
+import pe.gob.pj.prueba.infraestructure.rest.responses.GlobalResponse; // Importa tu GlobalResponse
 import pe.gob.pj.prueba.domain.port.usecase.negocio.masters.GestionarMaestrosUseCasePort;
 
 import java.util.List;
 
+@Slf4j
 @RestController
 @RequestMapping("/publico/v1/maestros")
 @RequiredArgsConstructor
@@ -18,68 +20,87 @@ public class MaestrosController {
 
     // --- ACTIVIDADES OPERATIVAS ---
     @GetMapping("/actividades")
-    public ResponseEntity<List<ActividadOperativa>> listarActividades() {
-        return ResponseEntity.ok(useCase.listarActividadesOperativas());
+    public ResponseEntity<GlobalResponse> listarActividades() {
+        return responder(useCase.listarActividadesOperativas());
     }
+
     @GetMapping("/indicadores/{idActividad}")
-    public ResponseEntity<List<Indicador>> listarIndicadores(@PathVariable String idActividad) {
-        return ResponseEntity.ok(useCase.listarIndicadores(idActividad));
+    public ResponseEntity<GlobalResponse> listarIndicadores(@PathVariable String idActividad) {
+        return responder(useCase.listarIndicadores(idActividad));
     }
+
     @GetMapping("/tareas/{idIndicador}")
-    public ResponseEntity<List<Tarea>> listarTareas(@PathVariable String idIndicador) {
-        return ResponseEntity.ok(useCase.listarTareas(idIndicador));
+    public ResponseEntity<GlobalResponse> listarTareas(@PathVariable String idIndicador) {
+        return responder(useCase.listarTareas(idIndicador));
     }
 
     // --- NUEVOS MAESTROS ---
     @GetMapping("/distritos-judiciales")
-    public ResponseEntity<List<DistritoJudicial>> listarDistritosJudiciales() {
-        return ResponseEntity.ok(useCase.listarDistritosJudiciales());
+    public ResponseEntity<GlobalResponse> listarDistritosJudiciales() {
+        return responder(useCase.listarDistritosJudiciales());
     }
 
     @GetMapping("/ejes")
-    public ResponseEntity<List<Eje>> listarEjes() {
-        return ResponseEntity.ok(useCase.listarEjes());
+    public ResponseEntity<GlobalResponse> listarEjes() {
+        return responder(useCase.listarEjes());
     }
 
     @GetMapping("/materias")
-    public ResponseEntity<List<Materia>> listarMaterias() {
-        return ResponseEntity.ok(useCase.listarMaterias());
+    public ResponseEntity<GlobalResponse> listarMaterias() {
+        return responder(useCase.listarMaterias());
     }
 
     @GetMapping("/tipos-vulnerabilidad")
-    public ResponseEntity<List<TipoVulnerabilidad>> listarVulnerabilidades() {
-        return ResponseEntity.ok(useCase.listarTiposVulnerabilidad());
+    public ResponseEntity<GlobalResponse> listarVulnerabilidades() {
+        return responder(useCase.listarTiposVulnerabilidad());
     }
 
     // Dependientes de Corte
     @GetMapping("/tambos/{idCorte}")
-    public ResponseEntity<List<Tambo>> listarTambos(@PathVariable String idCorte) {
-        return ResponseEntity.ok(useCase.listarTambos(idCorte));
+    public ResponseEntity<GlobalResponse> listarTambos(@PathVariable String idCorte) {
+        return responder(useCase.listarTambos(idCorte));
     }
 
     @GetMapping("/planes")
-    public ResponseEntity<List<Plan>> buscarPlanes(@RequestParam String idCorte, @RequestParam String periodo) {
-        return ResponseEntity.ok(useCase.buscarPlanes(idCorte, periodo));
+    public ResponseEntity<GlobalResponse> buscarPlanes(@RequestParam String idCorte, @RequestParam String periodo) {
+        return responder(useCase.buscarPlanes(idCorte, periodo));
     }
 
     // --- UBIGEO ---
     @GetMapping("/ubigeo/departamentos")
-    public ResponseEntity<List<Ubigeo>> listarDepartamentos() {
-        return ResponseEntity.ok(useCase.listarDepartamentos());
+    public ResponseEntity<GlobalResponse> listarDepartamentos() {
+        return responder(useCase.listarDepartamentos());
     }
 
     @GetMapping("/ubigeo/provincias/{idDepartamento}")
-    public ResponseEntity<List<Ubigeo>> listarProvincias(@PathVariable String idDepartamento) {
-        return ResponseEntity.ok(useCase.listarProvincias(idDepartamento));
+    public ResponseEntity<GlobalResponse> listarProvincias(@PathVariable String idDepartamento) {
+        return responder(useCase.listarProvincias(idDepartamento));
     }
 
     @GetMapping("/ubigeo/distritos/{idProvincia}")
-    public ResponseEntity<List<Ubigeo>> listarDistritos(@PathVariable String idProvincia) {
-        return ResponseEntity.ok(useCase.listarDistritos(idProvincia));
+    public ResponseEntity<GlobalResponse> listarDistritos(@PathVariable String idProvincia) {
+        return responder(useCase.listarDistritos(idProvincia));
     }
 
     @GetMapping("/tipos-participantes")
-    public ResponseEntity<List<TipoParticipante>> listarTiposParticipantes() {
-        return ResponseEntity.ok(useCase.listarTiposParticipantes());
+    public ResponseEntity<GlobalResponse> listarTiposParticipantes() {
+        return responder(useCase.listarTiposParticipantes());
+    }
+
+    private ResponseEntity<GlobalResponse> responder(List<?> lista) {
+        GlobalResponse res = new GlobalResponse();
+        try {
+            res.setCodigo("0000");
+            res.setDescripcion("Operación exitosa");
+            res.setData(lista);
+
+
+            return ResponseEntity.ok(res);
+        } catch (Exception e) {
+            log.error("Error al listar maestro", e);
+            res.setCodigo("500");
+            res.setDescripcion("Error interno: " + e.getMessage());
+            return ResponseEntity.internalServerError().body(res);
+        }
     }
 }
