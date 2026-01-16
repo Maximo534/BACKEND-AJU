@@ -34,7 +34,7 @@ public class JusticiaItineranteController implements Serializable {
 
     private final RegistrarJusticiaItineranteUseCasePort useCase;
     private final JusticiaItineranteMapper mapper;
-    @PostMapping(produces = MediaType.APPLICATION_JSON_VALUE) // Ojo: falta la ruta en @RequestMapping del controller o aquí
+    @PostMapping(produces = MediaType.APPLICATION_JSON_VALUE)
     public ResponseEntity<GlobalResponse> listar(
             @RequestParam(name = "pagina", defaultValue = "1") int pagina,
             @RequestParam(name = "tamanio", defaultValue = "10") int tamanio,
@@ -52,24 +52,28 @@ public class JusticiaItineranteController implements Serializable {
                 filtros.setFechaFin(request.getFechaFin());
             }
 
+            // 1. Obtener data del dominio
             Pagina<JusticiaItinerante> paginaDominio = useCase.listar(usuario, filtros, pagina, tamanio);
 
-            // ✅ CORRECCIÓN AQUÍ: Usamos 'toResponseListado'
+            // 2. Mapear la lista (Usando tu método específico para listados)
             List<JusticiaItineranteResponse> listaResponse = paginaDominio.getContenido().stream()
                     .map(mapper::toResponseListado)
                     .collect(Collectors.toList());
 
-            Pagina<JusticiaItineranteResponse> paginaResponse = Pagina.<JusticiaItineranteResponse>builder()
-                    .contenido(listaResponse)
-                    .totalRegistros(paginaDominio.getTotalRegistros())
-                    .totalPaginas(paginaDominio.getTotalPaginas())
-                    .paginaActual(paginaDominio.getPaginaActual())
-                    .tamanioPagina(paginaDominio.getTamanioPagina())
-                    .build();
 
-            res.setCodigo("200");
+            // ✅ NUEVO: Estructura plana
+            res.setCodigo("0000"); // Estandarizado
             res.setDescripcion("Listado exitoso");
-            res.setData(paginaResponse);
+
+            // A. La lista va directo a data
+            res.setData(listaResponse);
+
+            // B. Metadatos de paginación a la raíz
+            res.setTotalRegistros(paginaDominio.getTotalRegistros());
+            res.setTotalPaginas(paginaDominio.getTotalPaginas());
+            res.setPaginaActual(paginaDominio.getPaginaActual());
+            res.setTamanioPagina(paginaDominio.getTamanioPagina());
+
             return ResponseEntity.ok(res);
 
         } catch (Exception e) {
@@ -140,8 +144,8 @@ public class JusticiaItineranteController implements Serializable {
     }
 
     // --- ACTUALIZAR ---
-    @PutMapping(consumes = MediaType.APPLICATION_JSON_VALUE, produces = MediaType.APPLICATION_JSON_VALUE)
-    public ResponseEntity<GlobalResponse> actualizar(@Valid @RequestBody RegistrarFjiRequest request) { // ✅ Agregado @Valid
+    @PutMapping(consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
+    public ResponseEntity<GlobalResponse> actualizar(@Valid @ModelAttribute RegistrarFjiRequest request) { // ✅ Agregado @Valid
         GlobalResponse res = new GlobalResponse();
         try {
             // 1. Validar ID (Aunque venga en el body, es bueno asegurar que no sea nulo)

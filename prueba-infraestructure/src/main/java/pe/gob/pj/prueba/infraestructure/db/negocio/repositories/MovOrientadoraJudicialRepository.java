@@ -25,8 +25,8 @@ public interface MovOrientadoraJudicialRepository extends JpaRepository<MovOrien
             oj.c_num_exp AS numeroExpediente,
             oj.c_distrito_jud_id AS distritoJudicialId,
             dj.x_nom_corto AS distritoJudicialNombre
-        FROM mov_aju_meta_anuales oj
-        LEFT JOIN mae_aju_distrito_judiciales dj ON oj.c_distrito_jud_id = dj.c_distrito_jud_id
+        FROM prueba.mov_aju_meta_anuales oj -- ✅ AGREGADO 'prueba.'
+        LEFT JOIN prueba.mae_aju_distrito_judiciales dj ON oj.c_distrito_jud_id = dj.c_distrito_jud_id -- ✅ AGREGADO 'prueba.'
         WHERE oj.c_usuario_reg = :usuario
           
           -- FILTROS
@@ -45,7 +45,7 @@ public interface MovOrientadoraJudicialRepository extends JpaRepository<MovOrien
         ORDER BY oj.f_registro DESC
     """, countQuery = """
         SELECT count(*) 
-        FROM mov_aju_meta_anuales oj
+        FROM prueba.mov_aju_meta_anuales oj -- ✅ AGREGADO 'prueba.'
         WHERE oj.c_usuario_reg = :usuario
           AND (:distrito IS NULL OR oj.c_distrito_jud_id = :distrito)
           AND (CAST(:fecIni AS DATE) IS NULL OR oj.f_registro >= :fecIni)

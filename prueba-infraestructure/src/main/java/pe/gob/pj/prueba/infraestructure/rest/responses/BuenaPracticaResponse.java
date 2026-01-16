@@ -15,10 +15,10 @@ import java.util.List;
 @Builder
 @NoArgsConstructor
 @AllArgsConstructor
-@JsonInclude(JsonInclude.Include.NON_NULL) // ✅ CLAVE: Oculta los nulos en el listado
+@JsonInclude(JsonInclude.Include.NON_NULL)
 public class BuenaPracticaResponse implements Serializable {
 
-    // --- CAMPOS CABECERA (Siempre visibles o comunes) ---
+    // --- CABECERA ---
     private String id;
     private String distritoJudicialId;
     private String distritoJudicialNombre;
@@ -27,13 +27,13 @@ public class BuenaPracticaResponse implements Serializable {
     private LocalDate fechaFin;
     private String categoria;
 
-    // --- CAMPOS DE CONTACTO ---
+    // --- CONTACTO ---
     private String responsable;
     private String email;
     private String telefono;
     private String integrantes;
 
-    // --- CAMPOS DE DETALLE (Textos largos) ---
+    // --- DETALLE COMPLETO ---
     private String problema;
     private String causa;
     private String consecuencia;
@@ -56,7 +56,26 @@ public class BuenaPracticaResponse implements Serializable {
     private String leccionAprendida;
     private String infoAdicional;
 
+    // --- CAMPOS EXPUESTOS (Antes ocultos) ---
+    private String aporteRelevante;
+    private String situacionAnterior;
+    private String situacionDespues;
+    private String impactoPrincipal;
+    private String mejora;
+    private String posibilidadReplica;
+    private String acciones;
+    private String objInstitucional;
+    private String politicaPublica;
+    private String importancia;
+    private String aspectosImplementacion;
+    private String aporteSociedad;
+    private String medidas;
+    private String normaInterna;
+    private String dificInterna;
+    private String dificExterna;
+    private String aliadoExt;
+    private String aliadoInt;
+
     // --- ARCHIVOS ---
-    // En el dominio se llama 'archivosGuardados', aquí lo exponemos como 'archivos'
     private List<Archivo> archivos;
 }

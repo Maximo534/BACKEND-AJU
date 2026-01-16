@@ -14,10 +14,6 @@ public class RegistrarFjiRequest implements Serializable {
 
     private static final long serialVersionUID = 1L;
 
-    // --- CABECERA ---
-
-    // El ID es opcional (null al registrar, obligatorio al actualizar,
-    // pero eso lo valida el controlador o el mapper según el endpoint)
     private String id;
 
     @NotBlank(message = "El Distrito Judicial es obligatorio.")
@@ -28,85 +24,105 @@ public class RegistrarFjiRequest implements Serializable {
     @DateTimeFormat(pattern = "yyyy-MM-dd")
     private LocalDate fechaInicio;
 
+    @NotNull(message = "La fecha de fin es obligatoria.")
     @DateTimeFormat(pattern = "yyyy-MM-dd")
-    private LocalDate fechaFin; // Puede ser nula si es un evento de un solo día
+    private LocalDate fechaFin;
 
+    @NotBlank(message = "La resolución del plan anual es obligatoria.")
     @Size(max = 50, message = "La resolución del plan anual excede los 50 caracteres.")
     private String resolucionPlanAnual;
 
+    @NotBlank(message = "La resolución administrativa es obligatoria.")
     @Size(max = 50, message = "La resolución administrativa excede los 50 caracteres.")
     private String resolucionAdminPlan;
 
+    @NotBlank(message = "El documento de autorización es obligatorio.")
     @Size(max = 60, message = "El documento de autorización excede los 60 caracteres.")
     private String documentoAutoriza;
 
+    @NotBlank(message = "El eje es obligatorio.")
     @Size(max = 5, message = "El ID del Eje excede los 5 caracteres.")
     private String ejeId;
 
+    @NotBlank(message = "El público objetivo es obligatorio.")
     @Size(max = 150, message = "El público objetivo excede los 150 caracteres.")
     private String publicoObjetivo;
 
+    @NotBlank(message = "El detalle del público objetivo es obligatorio.")
     @Size(max = 50, message = "El detalle del público objetivo excede los 50 caracteres.")
     private String publicoObjetivoDetalle;
 
+    @NotBlank(message = "El lugar de actividad es obligatorio.")
     @Size(max = 150, message = "El lugar de actividad excede los 150 caracteres.")
     private String lugarActividad;
 
     // --- UBIGEO ---
+    @NotBlank(message = "El departamento es obligatorio.")
     @Size(max = 2, message = "El departamento debe tener 2 caracteres.")
     private String departamentoId;
 
+    @NotBlank(message = "La provincia es obligatoria.")
     @Size(max = 4, message = "La provincia debe tener 4 caracteres.")
     private String provinciaId;
 
+    @NotBlank(message = "El distrito geográfico es obligatorio.")
     @Size(max = 6, message = "El distrito geográfico debe tener 6 caracteres.")
     private String distritoGeograficoId;
 
     // --- ESTADÍSTICAS ---
-    // Usamos @Min(0) para evitar negativos.
-    // No usamos @NotNull para permitir que el backend asuma 0 si viene null (vía Mapper).
-
+    @NotNull(message = "El número de mujeres indígenas es obligatorio.")
     @Min(value = 0, message = "El número de mujeres indígenas no puede ser negativo.")
     private Integer numMujeresIndigenas;
 
+    @NotNull(message = "El número de personas no idioma nacional es obligatorio.")
     @Min(value = 0, message = "El número de personas no idioma nacional no puede ser negativo.")
     private Integer numPersonasNoIdiomaNacional;
 
+    @NotNull(message = "El número de jóvenes Quechua/Aymara es obligatorio.")
     @Min(value = 0, message = "El número de jóvenes Quechua/Aymara no puede ser negativo.")
     private Integer numJovenesQuechuaAymara;
 
+    @NotBlank(message = "El código ADC es obligatorio.")
     @Size(max = 2)
     private String codigoAdcPueblosIndigenas;
 
+    @NotBlank(message = "El tambo es obligatorio.")
     @Size(max = 100)
     private String tambo;
 
+    @NotBlank(message = "El código SAE es obligatorio.")
     @Size(max = 2)
     private String codigoSaeLenguaNativa;
 
+    @NotBlank(message = "La lengua nativa es obligatoria.")
     @Size(max = 25)
     private String lenguaNativa;
 
     // --- TEXTOS ---
-    // No ponemos validación de tamaño estricta si son TEXT en BD,
-    // pero es buena práctica limitar para no desbordar memoria.
+    @NotBlank(message = "La descripción de actividad es obligatoria.")
     private String descripcionActividad;
+
+    @NotBlank(message = "Las instituciones aliadas son obligatorias.")
     private String institucionesAliadas;
+
+    @NotBlank(message = "Las observaciones son obligatorias.")
     private String observaciones;
 
     // --- DETALLES (Listas) ---
-    // @Valid es CRUCIAL aquí. Dice: "Entra a cada objeto de la lista y valídalo también".
-
     @Valid
+    @NotEmpty(message = "Debe registrar al menos una persona atendida.")
     private List<DetallePARequest> personasAtendidas;
 
     @Valid
+    @NotEmpty(message = "Debe registrar al menos un caso atendido.")
     private List<DetallePCARequest> casosAtendidos;
 
     @Valid
+    @NotEmpty(message = "Debe registrar al menos una persona beneficiada.")
     private List<DetallePBRequest> personasBeneficiadas;
 
     @Valid
+    @NotEmpty(message = "Debe registrar al menos una tarea realizada.")
     private List<DetalleTRRequest> tareasRealizadas;
 
 
@@ -117,11 +133,12 @@ public class RegistrarFjiRequest implements Serializable {
         @NotNull(message = "El tipo de vulnerabilidad es obligatorio.")
         private Integer tipoVulnerabilidadId;
 
-        private String rangoEdad; // Se valida tamaño o formato si es crítico
+        @NotBlank(message = "El rango de edad es obligatorio.")
+        private String rangoEdad;
 
-        @Min(0) private Integer cantFemenino;
-        @Min(0) private Integer cantMasculino;
-        @Min(0) private Integer cantLgtbiq;
+        @NotNull(message = "Cant. Femenino obligatorio.") @Min(0) private Integer cantFemenino;
+        @NotNull(message = "Cant. Masculino obligatorio.") @Min(0) private Integer cantMasculino;
+        @NotNull(message = "Cant. LGTBIQ obligatorio.") @Min(0) private Integer cantLgtbiq;
     }
 
     @Data
@@ -129,22 +146,25 @@ public class RegistrarFjiRequest implements Serializable {
         @NotNull(message = "La materia es obligatoria.")
         private Integer materiaId;
 
-        @Min(0) private Integer numDemandas;
-        @Min(0) private Integer numAudiencias;
-        @Min(0) private Integer numSentencias;
-        @Min(0) private Integer numProcesos;
-        @Min(0) private Integer numNotificaciones;
-        @Min(0) private Integer numOrientaciones;
+        @NotNull(message = "Num. Demandas obligatorio.") @Min(0) private Integer numDemandas;
+        @NotNull(message = "Num. Audiencias obligatorio.") @Min(0) private Integer numAudiencias;
+        @NotNull(message = "Num. Sentencias obligatorio.") @Min(0) private Integer numSentencias;
+        @NotNull(message = "Num. Procesos obligatorio.") @Min(0) private Integer numProcesos;
+        @NotNull(message = "Num. Notificaciones obligatorio.") @Min(0) private Integer numNotificaciones;
+        @NotNull(message = "Num. Orientaciones obligatorio.") @Min(0) private Integer numOrientaciones;
     }
 
     @Data
     public static class DetallePBRequest implements Serializable {
+        @NotBlank(message = "Descripción rango obligatoria.")
         private String descripcionRango;
+
+        @NotBlank(message = "Código rango obligatorio.")
         private String codigoRango;
 
-        @Min(0) private Integer cantFemenino;
-        @Min(0) private Integer cantMasculino;
-        @Min(0) private Integer cantLgtbiq;
+        @NotNull(message = "Cant. Femenino obligatorio.") @Min(0) private Integer cantFemenino;
+        @NotNull(message = "Cant. Masculino obligatorio.") @Min(0) private Integer cantMasculino;
+        @NotNull(message = "Cant. LGTBIQ obligatorio.") @Min(0) private Integer cantLgtbiq;
     }
 
     @Data
@@ -152,6 +172,7 @@ public class RegistrarFjiRequest implements Serializable {
         @NotBlank(message = "El ID de la tarea es obligatorio.")
         private String tareaId;
 
+        @NotNull(message = "Fecha inicio obligatoria.")
         private LocalDate fechaInicio;
     }
 }

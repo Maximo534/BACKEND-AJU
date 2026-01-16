@@ -3,6 +3,8 @@ package pe.gob.pj.prueba.infraestructure.db.negocio.entities;
 import jakarta.persistence.*;
 import lombok.Getter;
 import lombok.Setter;
+import pe.gob.pj.prueba.infraestructure.common.utils.EsquemaConstants;
+
 import java.io.Serializable;
 import java.time.LocalDate;
 import java.util.ArrayList;
@@ -10,7 +12,7 @@ import java.util.List;
 
 @Getter @Setter
 @Entity
-@Table(name = "mov_aju_llapanchikpaq_justicia")
+@Table(name = "mov_aju_llapanchikpaq_justicia", schema = EsquemaConstants.PRUEBA)
 public class MovLlapanchikpaqJusticia implements Serializable {
 
     @Id

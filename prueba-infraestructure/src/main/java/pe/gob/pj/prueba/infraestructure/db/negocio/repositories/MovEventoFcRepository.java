@@ -25,21 +25,20 @@ public interface MovEventoFcRepository extends JpaRepository<MovEventoFcEntity, 
             fc.c_tipo_evento AS tipoEvento,
             fc.l_activo AS estado,
             dj.x_nom_corto AS distritoJudicialNombre
-        FROM mov_aju_eventos fc
-        INNER JOIN mae_aju_distrito_judiciales dj ON fc.c_distrito_jud_id = dj.c_distrito_jud_id
+        FROM prueba.mov_aju_eventos fc -- ✅ AGREGADO 'prueba.'
+        INNER JOIN prueba.mae_aju_distrito_judiciales dj ON fc.c_distrito_jud_id = dj.c_distrito_jud_id -- ✅ AGREGADO 'prueba.'
         WHERE fc.c_usuario_reg = :usuario
-          AND fc.l_activo = '1' -- ✅ Solo activos
+          AND fc.l_activo = '1'
           
-          -- FILTROS DE COMBOS (Exactos)
+          -- FILTROS DE COMBOS
           AND (:distrito IS NULL OR fc.c_distrito_jud_id = :distrito)
-          AND (:tipo IS NULL OR fc.c_tipo_evento = :tipo) -- ✅ Combo Tipo Evento
+          AND (:tipo IS NULL OR fc.c_tipo_evento = :tipo)
           
           -- FILTRO FECHAS
           AND (CAST(:fecIni AS DATE) IS NULL OR fc.f_inicio >= :fecIni)
           AND (CAST(:fecFin AS DATE) IS NULL OR fc.f_inicio <= :fecFin)
 
-          -- BUSCADOR GENERAL (Search)
-          -- Busca en ID, Nombre del Evento o Nombre de la Corte
+          -- BUSCADOR GENERAL
           AND (
               :search IS NULL OR :search = '' OR
               UPPER(fc.c_evento_id) LIKE UPPER(CONCAT('%', :search, '%')) OR
@@ -49,8 +48,8 @@ public interface MovEventoFcRepository extends JpaRepository<MovEventoFcEntity, 
         ORDER BY fc.f_inicio DESC
     """, countQuery = """
         SELECT count(*) 
-        FROM mov_aju_eventos fc
-        INNER JOIN mae_aju_distrito_judiciales dj ON fc.c_distrito_jud_id = dj.c_distrito_jud_id
+        FROM prueba.mov_aju_eventos fc -- ✅ AGREGADO 'prueba.'
+        INNER JOIN prueba.mae_aju_distrito_judiciales dj ON fc.c_distrito_jud_id = dj.c_distrito_jud_id -- ✅ AGREGADO 'prueba.'
         WHERE fc.c_usuario_reg = :usuario
           AND fc.l_activo = '1'
           AND (:distrito IS NULL OR fc.c_distrito_jud_id = :distrito)

@@ -2,11 +2,13 @@ package pe.gob.pj.prueba.infraestructure.db.negocio.entities;
 
 import jakarta.persistence.*;
 import lombok.Data;
+import pe.gob.pj.prueba.infraestructure.common.utils.EsquemaConstants;
+
 import java.io.Serializable;
 
 @Data
 @Entity
-@Table(name = "mov_aju_archivos")
+@Table(name = "mov_aju_archivos", schema = EsquemaConstants.PRUEBA)
 public class MovArchivosEntity implements Serializable {
 
     private static final long serialVersionUID = 1L;

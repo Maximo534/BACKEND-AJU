@@ -37,7 +37,7 @@ public class BuenaPracticaController {
     // =========================================================================
     // 1. LISTAR
     // =========================================================================
-    @PostMapping(produces = MediaType.APPLICATION_JSON_VALUE)
+    @PostMapping(produces = MediaType.APPLICATION_JSON_VALUE) // O @GetMapping si cambias a filtros por URL
     public ResponseEntity<GlobalResponse> listar(
             @RequestParam(name = "pagina", defaultValue = "1") int pagina,
             @RequestParam(name = "tamanio", defaultValue = "10") int tamanio,
@@ -45,7 +45,7 @@ public class BuenaPracticaController {
     ) {
         GlobalResponse res = new GlobalResponse();
         try {
-            String usuario = "EMATAMOROSV";
+            String usuario = "EMATAMOROSV"; // Obtener del token real si es necesario
 
             BuenaPractica filtros = BuenaPractica.builder().build();
             if (request != null) {
@@ -55,23 +55,27 @@ public class BuenaPracticaController {
                 filtros.setFechaFin(request.getFechaFin());
             }
 
+            // 1. Obtener la data del servicio
             Pagina<BuenaPractica> paginaRes = useCase.listar(usuario, filtros, pagina, tamanio);
 
+            // 2. Mapear solo la lista de contenido
             List<BuenaPracticaResponse> listaResponse = paginaRes.getContenido().stream()
                     .map(mapper::toResponse)
                     .collect(Collectors.toList());
 
-            Pagina<BuenaPracticaResponse> resultado = Pagina.<BuenaPracticaResponse>builder()
-                    .contenido(listaResponse)
-                    .totalRegistros(paginaRes.getTotalRegistros())
-                    .totalPaginas(paginaRes.getTotalPaginas())
-                    .paginaActual(paginaRes.getPaginaActual())
-                    .tamanioPagina(paginaRes.getTamanioPagina())
-                    .build();
-
-            res.setCodigo("200");
+            // 3. ✅ EL CAMBIO ESTÁ AQUÍ: Llenamos el GlobalResponse plano
+            res.setCodigo("0000"); // Usualmente 0000 o 200 según tu estándar
             res.setDescripcion("Listado exitoso");
-            res.setData(resultado);
+
+            // A. La lista va directo a data (ya no un objeto pagina)
+            res.setData(listaResponse);
+
+            // B. Los datos de paginación van directo al GlobalResponse
+            res.setTotalRegistros(paginaRes.getTotalRegistros());
+            res.setTotalPaginas(paginaRes.getTotalPaginas());
+            res.setPaginaActual(paginaRes.getPaginaActual());
+            res.setTamanioPagina(paginaRes.getTamanioPagina());
+
             return ResponseEntity.ok(res);
 
         } catch (Exception e) {
@@ -138,8 +142,8 @@ public class BuenaPracticaController {
     // =========================================================================
     // 4. ACTUALIZAR
     // =========================================================================
-    @PutMapping(consumes = MediaType.APPLICATION_JSON_VALUE)
-    public ResponseEntity<GlobalResponse> actualizar(@Valid @RequestBody RegistrarBuenaPracticaRequest request) {
+    @PutMapping(consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
+    public ResponseEntity<GlobalResponse> actualizar(@Valid @ModelAttribute RegistrarBuenaPracticaRequest request) {
         GlobalResponse res = new GlobalResponse();
         try {
             if (request.getId() == null || request.getId().isBlank()) {

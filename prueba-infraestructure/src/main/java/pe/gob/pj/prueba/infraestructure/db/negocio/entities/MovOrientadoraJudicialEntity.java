@@ -3,12 +3,14 @@ package pe.gob.pj.prueba.infraestructure.db.negocio.entities;
 import jakarta.persistence.*;
 import lombok.Getter;
 import lombok.Setter;
+import pe.gob.pj.prueba.infraestructure.common.utils.EsquemaConstants;
+
 import java.io.Serializable;
 import java.time.LocalDate;
 
 @Getter @Setter
 @Entity
-@Table(name = "mov_aju_meta_anuales") // Mantenemos el nombre físico de la tabla
+@Table(name = "mov_aju_meta_anuales", schema = EsquemaConstants.PRUEBA) // Mantenemos el nombre físico de la tabla
 public class MovOrientadoraJudicialEntity implements Serializable {
 
     @Id

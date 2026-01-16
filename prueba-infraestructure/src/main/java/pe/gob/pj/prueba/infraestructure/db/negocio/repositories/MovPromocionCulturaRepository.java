@@ -22,22 +22,21 @@ public interface MovPromocionCulturaRepository extends JpaRepository<MovPromocio
             pc.c_actv_prom_cult_id AS id,
             pc.f_inicio AS fechaInicio,
             pc.f_fin AS fechaFin,
-            pc.t_desc_activ AS tipoActividad, -- Usamos la descripción como 'Tipo/Nombre'
+            pc.t_desc_activ AS tipoActividad, 
             pc.l_activo AS estado,
             dj.x_nom_corto AS distritoJudicialNombre
-        FROM mov_aju_actv_prom_culturas pc
-        INNER JOIN mae_aju_distrito_judiciales dj ON pc.c_distrito_jud_id = dj.c_distrito_jud_id
+        FROM prueba.mov_aju_actv_prom_culturas pc -- ✅ AGREGADO 'prueba.'
+        INNER JOIN prueba.mae_aju_distrito_judiciales dj ON pc.c_distrito_jud_id = dj.c_distrito_jud_id -- ✅ AGREGADO 'prueba.'
         WHERE pc.c_usuario_reg = :usuario
           
           -- FILTRO COMBO
           AND (:distrito IS NULL OR pc.c_distrito_jud_id = :distrito)
           
-          -- FILTRO FECHAS (Rango sobre inicio)
+          -- FILTRO FECHAS 
           AND (CAST(:fecIni AS DATE) IS NULL OR pc.f_inicio >= :fecIni)
           AND (CAST(:fecFin AS DATE) IS NULL OR pc.f_inicio <= :fecFin)
 
-          -- ✅ BUSCADOR GENERAL
-          -- Busca en ID, Descripción de actividad o Nombre de Corte
+          -- BUSCADOR GENERAL
           AND (
               :search IS NULL OR :search = '' OR
               UPPER(pc.c_actv_prom_cult_id) LIKE UPPER(CONCAT('%', :search, '%')) OR
@@ -47,8 +46,8 @@ public interface MovPromocionCulturaRepository extends JpaRepository<MovPromocio
         ORDER BY pc.f_inicio DESC
     """, countQuery = """
         SELECT count(*) 
-        FROM mov_aju_actv_prom_culturas pc
-        INNER JOIN mae_aju_distrito_judiciales dj ON pc.c_distrito_jud_id = dj.c_distrito_jud_id
+        FROM prueba.mov_aju_actv_prom_culturas pc -- ✅ AGREGADO 'prueba.'
+        INNER JOIN prueba.mae_aju_distrito_judiciales dj ON pc.c_distrito_jud_id = dj.c_distrito_jud_id -- ✅ AGREGADO 'prueba.'
         WHERE pc.c_usuario_reg = :usuario
           AND (:distrito IS NULL OR pc.c_distrito_jud_id = :distrito)
           AND (CAST(:fecIni AS DATE) IS NULL OR pc.f_inicio >= :fecIni)
@@ -80,7 +79,7 @@ public interface MovPromocionCulturaRepository extends JpaRepository<MovPromocio
         String getId();
         LocalDate getFechaInicio();
         LocalDate getFechaFin();
-        String getTipoActividad(); // Coincide con el alias del SQL
+        String getTipoActividad();
         String getEstado();
         String getDistritoJudicialNombre();
     }

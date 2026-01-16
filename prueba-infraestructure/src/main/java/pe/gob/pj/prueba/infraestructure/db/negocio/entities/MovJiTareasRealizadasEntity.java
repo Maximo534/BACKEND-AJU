@@ -3,6 +3,7 @@ package pe.gob.pj.prueba.infraestructure.db.negocio.entities;
 import jakarta.persistence.*;
 import lombok.Getter;
 import lombok.Setter;
+import pe.gob.pj.prueba.infraestructure.common.utils.EsquemaConstants;
 import pe.gob.pj.prueba.infraestructure.db.negocio.entities.ids.MovJiTareasRealizadasId;
 import pe.gob.pj.prueba.infraestructure.db.negocio.entities.ids.TrimStringConverter;
 import pe.gob.pj.prueba.infraestructure.db.negocio.entities.masters.MaeTareaEntity;
@@ -13,7 +14,7 @@ import java.time.LocalDate;
 @Getter
 @Setter
 @Entity
-@Table(name = "mov_aju_ji_tarea_realizadas", schema = "public")
+@Table(name = "mov_aju_ji_tarea_realizadas", schema = EsquemaConstants.PRUEBA)
 @IdClass(MovJiTareasRealizadasId.class)
 public class MovJiTareasRealizadasEntity implements Serializable {
 

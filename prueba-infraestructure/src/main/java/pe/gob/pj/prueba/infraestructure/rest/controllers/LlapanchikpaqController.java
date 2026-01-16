@@ -58,23 +58,27 @@ public class LlapanchikpaqController implements Serializable {
                 filtros.setFechaFin(request.getFechaFin());
             }
 
+            // 1. Obtener data del dominio
             Pagina<LlapanchikpaqJusticia> paginaDominio = useCase.listar(usuario, filtros, pagina, tamanio);
 
+            // 2. Mapear la lista de contenido
             List<LlapanchikpaqResponse> listaResponse = paginaDominio.getContenido().stream()
                     .map(mapper::toResponse)
                     .collect(Collectors.toList());
 
-            Pagina<LlapanchikpaqResponse> paginaRes = Pagina.<LlapanchikpaqResponse>builder()
-                    .contenido(listaResponse)
-                    .totalRegistros(paginaDominio.getTotalRegistros())
-                    .totalPaginas(paginaDominio.getTotalPaginas())
-                    .paginaActual(paginaDominio.getPaginaActual())
-                    .tamanioPagina(paginaDominio.getTamanioPagina())
-                    .build();
-
-            res.setCodigo("200");
+            // ✅ NUEVO: Llenado plano
+            res.setCodigo("0000"); // Estandarizado
             res.setDescripcion("Listado exitoso");
-            res.setData(paginaRes);
+
+            // A. La lista va directo a data
+            res.setData(listaResponse);
+
+            // B. Paginación en la raíz
+            res.setTotalRegistros(paginaDominio.getTotalRegistros());
+            res.setTotalPaginas(paginaDominio.getTotalPaginas());
+            res.setPaginaActual(paginaDominio.getPaginaActual());
+            res.setTamanioPagina(paginaDominio.getTamanioPagina());
+
             return ResponseEntity.ok(res);
 
         } catch (Exception e) {
@@ -145,8 +149,8 @@ public class LlapanchikpaqController implements Serializable {
     // =========================================================================
     // 4. ACTUALIZAR
     // =========================================================================
-    @PutMapping(consumes = MediaType.APPLICATION_JSON_VALUE, produces = MediaType.APPLICATION_JSON_VALUE)
-    public ResponseEntity<GlobalResponse> actualizar(@Valid @RequestBody RegistrarLlapanchikpaqRequest request) {
+    @PutMapping(consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
+    public ResponseEntity<GlobalResponse> actualizar(@Valid @ModelAttribute RegistrarLlapanchikpaqRequest request) {
         GlobalResponse res = new GlobalResponse();
         try {
             if (request.getId() == null || request.getId().isBlank()) {

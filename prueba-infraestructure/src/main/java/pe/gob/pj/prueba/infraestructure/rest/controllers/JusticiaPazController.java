@@ -34,10 +34,10 @@ public class JusticiaPazController {
     private final JuezPazEscolarMapper mapper;
 
     @PostMapping(produces = MediaType.APPLICATION_JSON_VALUE)
-    public ResponseEntity<GlobalResponse> listarCasos(
+    public ResponseEntity<GlobalResponse> listar(
             @RequestParam(name = "pagina", defaultValue = "1") int pagina,
             @RequestParam(name = "tamanio", defaultValue = "10") int tamanio,
-            @RequestBody(required = false) RegistrarCasoRequest request // Usamos el mismo DTO o uno de Filtros
+            @RequestBody(required = false) RegistrarCasoRequest request
     ) {
         GlobalResponse res = new GlobalResponse();
         try {
@@ -45,31 +45,34 @@ public class JusticiaPazController {
             JpeCasoAtendido filtros = JpeCasoAtendido.builder().build();
 
             if (request != null) {
-                filtros.setSearch(request.getResumenHechos()); // Asumimos búsqueda por texto en resumen
+                // Asegúrate que el campo de búsqueda coincida con lo que esperas
+                filtros.setSearch(request.getResumenHechos());
                 filtros.setDistritoJudicialId(request.getDistritoJudicialId());
-                // filtros.setUgelId(request.getUgelId()); // Si agregas estos filtros al Request
-                // filtros.setInstitucionEducativaId(request.getInstitucionEducativaId());
                 filtros.setFechaRegistro(request.getFechaRegistro());
             }
 
+            // 1. Obtener la data paginada del servicio
             Pagina<JpeCasoAtendido> paginaRes = useCase.listarCasos(usuario, filtros, pagina, tamanio);
 
-            // Mapeamos a Response DTO
+            // 2. Mapear la lista
             List<JpeCasoAtendidoResponse> listaResponse = paginaRes.getContenido().stream()
                     .map(mapper::toResponse)
                     .collect(Collectors.toList());
 
-            Pagina<JpeCasoAtendidoResponse> resultado = Pagina.<JpeCasoAtendidoResponse>builder()
-                    .contenido(listaResponse)
-                    .totalRegistros(paginaRes.getTotalRegistros())
-                    .totalPaginas(paginaRes.getTotalPaginas())
-                    .paginaActual(paginaRes.getPaginaActual())
-                    .tamanioPagina(paginaRes.getTamanioPagina())
-                    .build();
 
-            res.setCodigo("200");
+            // ✅ CORREGIDO: Llenado plano del GlobalResponse
+            res.setCodigo("0000"); // Estandarizado a "0000"
             res.setDescripcion("Listado de casos exitoso");
-            res.setData(resultado);
+
+            // A. La lista va directo a data
+            res.setData(listaResponse);
+
+            // B. La paginación va a la raíz
+            res.setTotalRegistros(paginaRes.getTotalRegistros());
+            res.setTotalPaginas(paginaRes.getTotalPaginas());
+            res.setPaginaActual(paginaRes.getPaginaActual());
+            res.setTamanioPagina(paginaRes.getTamanioPagina());
+
             return ResponseEntity.ok(res);
 
         } catch (Exception e) {
@@ -81,7 +84,7 @@ public class JusticiaPazController {
     }
 
     @GetMapping(value = "/{id}", produces = MediaType.APPLICATION_JSON_VALUE)
-    public ResponseEntity<GlobalResponse> obtenerCasoPorId(@PathVariable String id) {
+    public ResponseEntity<GlobalResponse> obtenerPorId(@PathVariable String id) {
         GlobalResponse res = new GlobalResponse();
         try {
             JpeCasoAtendido encontrado = useCase.buscarCasoPorId(id);
@@ -103,7 +106,7 @@ public class JusticiaPazController {
     }
 
     @PostMapping( consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
-    public ResponseEntity<GlobalResponse> registrarCaso(
+    public ResponseEntity<GlobalResponse> registrar(
             @Valid @ModelAttribute RegistrarCasoRequest request, // ✅ @Valid
             @RequestPart(value = "acta", required = false) MultipartFile acta,
             @RequestPart(value = "fotos", required = false) List<MultipartFile> fotos
@@ -126,8 +129,8 @@ public class JusticiaPazController {
         }
     }
 
-    @PutMapping(consumes = MediaType.APPLICATION_JSON_VALUE)
-    public ResponseEntity<GlobalResponse> actualizarCaso(@Valid @RequestBody RegistrarCasoRequest request) { // ✅ @Valid
+    @PutMapping(consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
+    public ResponseEntity<GlobalResponse> actualizar(@Valid @ModelAttribute RegistrarCasoRequest request) { // ✅ @Valid
         GlobalResponse res = new GlobalResponse();
         try {
             if (request.getId() == null || request.getId().isBlank()) {
@@ -155,7 +158,7 @@ public class JusticiaPazController {
     // =========================================================================
 
     @PostMapping(value = "/archivos", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
-    public ResponseEntity<GlobalResponse> agregarArchivoCaso(
+    public ResponseEntity<GlobalResponse> agregarArchivo(
             @RequestParam("idCaso") String idCaso,
             @RequestParam("tipo") String tipo, // "ACTA_JPE" o "FOTO_JPE"
             @RequestPart("archivo") MultipartFile archivo
@@ -176,7 +179,7 @@ public class JusticiaPazController {
     }
 
     @DeleteMapping(value = "/archivos/{nombreArchivo:.+}")
-    public ResponseEntity<GlobalResponse> eliminarArchivoCaso(@PathVariable String nombreArchivo) {
+    public ResponseEntity<GlobalResponse> eliminarArchivo(@PathVariable String nombreArchivo) {
         GlobalResponse res = new GlobalResponse();
         try {
             useCase.eliminarArchivo(nombreArchivo);
@@ -212,7 +215,7 @@ public class JusticiaPazController {
     }
 
     @GetMapping("{id}/ficha")
-    public ResponseEntity<byte[]> generarReporteCaso(@PathVariable String id) {
+    public ResponseEntity<byte[]> generarReporte(@PathVariable String id) {
         try {
             byte[] pdfBytes = useCase.generarFichaPdf(id);
 

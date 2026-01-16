@@ -3,12 +3,14 @@ package pe.gob.pj.prueba.infraestructure.db.negocio.entities;
 import jakarta.persistence.*;
 import lombok.Getter;
 import lombok.Setter;
+import pe.gob.pj.prueba.infraestructure.common.utils.EsquemaConstants;
+
 import java.io.Serializable;
 import java.time.LocalDate;
 
 @Getter @Setter
 @Entity
-@Table(name = "mov_aju_buena_practicas")
+@Table(name = "mov_aju_buena_practicas", schema = EsquemaConstants.PRUEBA)
 public class MovBuenaPracticaEntity implements Serializable {
 
     @Id
@@ -48,15 +50,14 @@ public class MovBuenaPracticaEntity implements Serializable {
     @Column(name = "t_actividad", columnDefinition = "TEXT") private String actividad;
 
     // --- RESULTADOS ---
-    @Column(name = "t_aporte", columnDefinition = "TEXT") private String aporte; // Innovación
+    @Column(name = "t_aporte", columnDefinition = "TEXT") private String aporte;
     @Column(name = "t_resultado", columnDefinition = "TEXT") private String resultado;
     @Column(name = "t_impacto", columnDefinition = "TEXT") private String impacto;
     @Column(name = "t_publico_obj", columnDefinition = "TEXT") private String publicoObjetivo;
     @Column(name = "t_leccion_aprendida", columnDefinition = "TEXT") private String leccionAprendida;
     @Column(name = "t_info_adicional", columnDefinition = "TEXT") private String infoAdicional;
 
-    // --- CAMPOS FANTASMA (Obligatorios en BD pero que no envías desde el Front) ---
-    // Los definimos para que Hibernate sepa que existen, pero los llenaremos auto.
+    // --- CAMPOS ADICIONALES (Antes ocultos/fantasmas, ahora expuestos) ---
     @Column(name = "t_aporte_relev", columnDefinition = "TEXT") private String aporteRelevante;
     @Column(name = "t_situac_anter", columnDefinition = "TEXT") private String situacionAnterior;
     @Column(name = "t_situac_desp", columnDefinition = "TEXT") private String situacionDespues;
@@ -76,38 +77,9 @@ public class MovBuenaPracticaEntity implements Serializable {
     @Column(name = "t_aliado_ext", columnDefinition = "TEXT") private String aliadoExt;
     @Column(name = "t_aliado_int", columnDefinition = "TEXT") private String aliadoInt;
 
-
     // Auditoría
     @Column(name = "c_usuario_reg", length = 25)
     private String usuarioRegistro;
 
-    // --- MAGIA AQUÍ: Llenar por defecto los campos obligatorios vacíos ---
-    @PrePersist
-    @PreUpdate
-    public void prePersist() {
-        String DEFAULT_TEXT = "-";
-
-        if (this.aporteRelevante == null) this.aporteRelevante = DEFAULT_TEXT;
-        if (this.situacionAnterior == null) this.situacionAnterior = DEFAULT_TEXT;
-        if (this.situacionDespues == null) this.situacionDespues = DEFAULT_TEXT;
-        if (this.impactoPrincipal == null) this.impactoPrincipal = DEFAULT_TEXT;
-        if (this.mejora == null) this.mejora = DEFAULT_TEXT;
-        if (this.posibilidadReplica == null) this.posibilidadReplica = DEFAULT_TEXT;
-        if (this.acciones == null) this.acciones = DEFAULT_TEXT;
-        if (this.objInstitucional == null) this.objInstitucional = DEFAULT_TEXT;
-        if (this.politicaPublica == null) this.politicaPublica = DEFAULT_TEXT;
-        if (this.importancia == null) this.importancia = DEFAULT_TEXT;
-        if (this.aspectosImplementacion == null) this.aspectosImplementacion = DEFAULT_TEXT;
-        if (this.aporteSociedad == null) this.aporteSociedad = DEFAULT_TEXT;
-        if (this.medidas == null) this.medidas = DEFAULT_TEXT;
-        if (this.normaInterna == null) this.normaInterna = DEFAULT_TEXT;
-        if (this.dificInterna == null) this.dificInterna = DEFAULT_TEXT;
-        if (this.dificExterna == null) this.dificExterna = DEFAULT_TEXT;
-        if (this.aliadoExt == null) this.aliadoExt = DEFAULT_TEXT;
-        if (this.aliadoInt == null) this.aliadoInt = DEFAULT_TEXT;
-
-        // También protegemos los campos normales por si el front envía nulls
-        if (this.aliado == null) this.aliado = DEFAULT_TEXT;
-        if (this.norma == null) this.norma = DEFAULT_TEXT;
-    }
+    // ✅ SE ELIMINÓ EL @PrePersist / @PreUpdate
 }

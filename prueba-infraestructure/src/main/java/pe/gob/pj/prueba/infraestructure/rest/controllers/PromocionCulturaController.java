@@ -50,22 +50,27 @@ public class PromocionCulturaController implements Serializable {
                 filtros.setFechaFin(request.getFechaFin());
             }
 
+            // 1. Obtener la data paginada del dominio
             Pagina<PromocionCultura> paginaDominio = useCase.listar(usuario, filtros, pagina, tamanio);
 
+            // 2. Mapear la lista de contenido
             List<PromocionCulturaResponse> listaResponse = paginaDominio.getContenido().stream()
                     .map(mapper::toResponse)
                     .collect(Collectors.toList());
 
-            Pagina<PromocionCulturaResponse> paginaResponse = Pagina.<PromocionCulturaResponse>builder()
-                    .contenido(listaResponse)
-                    .totalRegistros(paginaDominio.getTotalRegistros())
-                    .totalPaginas(paginaDominio.getTotalPaginas())
-                    .paginaActual(paginaDominio.getPaginaActual())
-                    .tamanioPagina(paginaDominio.getTamanioPagina())
-                    .build();
+            // ✅ NUEVO: Llenado plano del GlobalResponse
+            res.setCodigo("0000"); // Estandarizado
+            res.setDescripcion("Listado exitoso");
 
-            res.setCodigo("200");
-            res.setData(paginaResponse);
+            // A. La lista va directo a data
+            res.setData(listaResponse);
+
+            // B. Metadatos de paginación a la raíz
+            res.setTotalRegistros(paginaDominio.getTotalRegistros());
+            res.setTotalPaginas(paginaDominio.getTotalPaginas());
+            res.setPaginaActual(paginaDominio.getPaginaActual());
+            res.setTamanioPagina(paginaDominio.getTamanioPagina());
+
             return ResponseEntity.ok(res);
 
         } catch (Exception e) {
@@ -101,8 +106,8 @@ public class PromocionCulturaController implements Serializable {
         }
     }
 
-    @PutMapping(consumes = MediaType.APPLICATION_JSON_VALUE)
-    public ResponseEntity<GlobalResponse> actualizar(@Valid @RequestBody RegistrarPromocionRequest request) {
+    @PutMapping(consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
+    public ResponseEntity<GlobalResponse> actualizar(@Valid @ModelAttribute RegistrarPromocionRequest request) {
         GlobalResponse res = new GlobalResponse();
         try {
             if (request.getId() == null) throw new Exception("ID obligatorio");

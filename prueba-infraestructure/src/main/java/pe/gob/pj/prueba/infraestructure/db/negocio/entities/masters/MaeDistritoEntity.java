@@ -2,10 +2,12 @@ package pe.gob.pj.prueba.infraestructure.db.negocio.entities.masters;
 
 import jakarta.persistence.*;
 import lombok.Data;
+import pe.gob.pj.prueba.infraestructure.common.utils.EsquemaConstants;
+
 import java.io.Serializable;
 
 @Entity
-@Table(name = "mae_aju_distritos")
+@Table(name = "mae_aju_distritos", schema = EsquemaConstants.PRUEBA)
 @Data
 public class MaeDistritoEntity implements Serializable {
 

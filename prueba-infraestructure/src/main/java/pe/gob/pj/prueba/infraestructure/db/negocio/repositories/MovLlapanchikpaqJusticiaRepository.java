@@ -23,19 +23,18 @@ public interface MovLlapanchikpaqJusticiaRepository extends JpaRepository<MovLla
             ll.f_inicio AS fechaInicio,
             ll.l_activo AS estado,
             dj.x_nom_corto AS distritoJudicialNombre
-        FROM mov_aju_llapanchikpaq_justicia ll
-        INNER JOIN mae_aju_distrito_judiciales dj ON ll.c_distrito_jud_id = dj.c_distrito_jud_id
+        FROM prueba.mov_aju_llapanchikpaq_justicia ll -- ✅ AGREGADO 'prueba.'
+        INNER JOIN prueba.mae_aju_distrito_judiciales dj ON ll.c_distrito_jud_id = dj.c_distrito_jud_id -- ✅ AGREGADO 'prueba.'
         WHERE ll.c_usuario_reg = :usuario
           
           -- FILTRO COMBO
           AND (:distrito IS NULL OR ll.c_distrito_jud_id = :distrito)
           
-          -- ✅ FILTRO RANGO DE FECHAS (Sobre f_inicio)
+          -- FILTRO RANGO DE FECHAS (Sobre f_inicio)
           AND (CAST(:fecIni AS DATE) IS NULL OR ll.f_inicio >= :fecIni)
           AND (CAST(:fecFin AS DATE) IS NULL OR ll.f_inicio <= :fecFin)
 
-          -- ✅ BUSCADOR GENERAL
-          -- Busca en ID, Lugar o Nombre de la Corte
+          -- BUSCADOR GENERAL
           AND (
               :search IS NULL OR :search = '' OR
               UPPER(ll.c_llj_id) LIKE UPPER(CONCAT('%', :search, '%')) OR
@@ -45,8 +44,8 @@ public interface MovLlapanchikpaqJusticiaRepository extends JpaRepository<MovLla
         ORDER BY ll.f_inicio DESC
     """, countQuery = """
         SELECT count(*) 
-        FROM mov_aju_llapanchikpaq_justicia ll
-        INNER JOIN mae_aju_distrito_judiciales dj ON ll.c_distrito_jud_id = dj.c_distrito_jud_id
+        FROM prueba.mov_aju_llapanchikpaq_justicia ll -- ✅ AGREGADO 'prueba.'
+        INNER JOIN prueba.mae_aju_distrito_judiciales dj ON ll.c_distrito_jud_id = dj.c_distrito_jud_id -- ✅ AGREGADO 'prueba.'
         WHERE ll.c_usuario_reg = :usuario
           AND (:distrito IS NULL OR ll.c_distrito_jud_id = :distrito)
           AND (CAST(:fecIni AS DATE) IS NULL OR ll.f_inicio >= :fecIni)

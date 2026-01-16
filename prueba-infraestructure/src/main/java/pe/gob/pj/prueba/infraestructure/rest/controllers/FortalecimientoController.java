@@ -54,23 +54,27 @@ public class FortalecimientoController {
                 filtros.setFechaFin(request.getFechaFin());
             }
 
+            // 1. Obtienes la data paginada del servicio
             Pagina<FortalecimientoCapacidades> resultado = useCase.listar(usuario, filtros, pagina, tamanio);
 
+            // 2. Mapeas la lista de contenido
             List<FortalecimientoResponse> responseList = resultado.getContenido().stream()
                     .map(mapper::toResponse)
                     .collect(Collectors.toList());
 
-            Pagina<FortalecimientoResponse> paginaRes = Pagina.<FortalecimientoResponse>builder()
-                    .contenido(responseList)
-                    .totalRegistros(resultado.getTotalRegistros())
-                    .totalPaginas(resultado.getTotalPaginas())
-                    .paginaActual(resultado.getPaginaActual())
-                    .tamanioPagina(resultado.getTamanioPagina())
-                    .build();
-
-            res.setCodigo("200");
+            // ✅ NUEVO: Llenamos el GlobalResponse directamente
+            res.setCodigo("0000"); // O "200", usa el estándar que prefieras
             res.setDescripcion("Listado exitoso");
-            res.setData(paginaRes);
+
+            // A. La lista va directo a data
+            res.setData(responseList);
+
+            // B. La paginación va a la raíz (usando los campos nuevos de GlobalResponse)
+            res.setTotalRegistros(resultado.getTotalRegistros());
+            res.setTotalPaginas(resultado.getTotalPaginas());
+            res.setPaginaActual(resultado.getPaginaActual());
+            res.setTamanioPagina(resultado.getTamanioPagina());
+
             return ResponseEntity.ok(res);
 
         } catch (Exception e) {
@@ -138,8 +142,8 @@ public class FortalecimientoController {
     // =========================================================================
     // 4. ACTUALIZAR
     // =========================================================================
-    @PutMapping(consumes = MediaType.APPLICATION_JSON_VALUE, produces = MediaType.APPLICATION_JSON_VALUE)
-    public ResponseEntity<GlobalResponse> actualizar(@Valid @RequestBody RegistrarFfcRequest request) {
+    @PutMapping(consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
+    public ResponseEntity<GlobalResponse> actualizar(@Valid @ModelAttribute RegistrarFfcRequest request) {
         GlobalResponse res = new GlobalResponse();
         try {
             if (request.getId() == null || request.getId().isBlank()) {

@@ -51,24 +51,31 @@ public class OrientadoraJudicialController {
                 filtros.setSearch(request.getSearch());
                 filtros.setDistritoJudicialId(request.getDistritoJudicialId());
                 filtros.setFechaAtencion(request.getFechaInicio());
+                // Nota: Verifica si necesitas filtrar también por Fecha Fin si tu request lo tiene
             }
 
+            // 1. Obtener data del dominio
             Pagina<OrientadoraJudicial> pag = useCase.listar(usuario, filtros, pagina, tamanio);
 
+            // 2. Mapear a la lista de respuesta
             List<OrientadoraJudicialResponse> listRes = pag.getContenido().stream()
                     .map(mapper::toResponse)
                     .collect(Collectors.toList());
 
-            Pagina<OrientadoraJudicialResponse> paginaRes = Pagina.<OrientadoraJudicialResponse>builder()
-                    .contenido(listRes)
-                    .totalRegistros(pag.getTotalRegistros())
-                    .totalPaginas(pag.getTotalPaginas())
-                    .paginaActual(pag.getPaginaActual())
-                    .tamanioPagina(pag.getTamanioPagina())
-                    .build();
 
-            res.setCodigo("200");
-            res.setData(paginaRes);
+            // ✅ NUEVO: Estructura plana
+            res.setCodigo("0000"); // Estandarizado
+            res.setDescripcion("Listado exitoso"); // Es bueno agregar una descripción
+
+            // A. La lista directa a data
+            res.setData(listRes);
+
+            // B. Metadatos de paginación a la raíz
+            res.setTotalRegistros(pag.getTotalRegistros());
+            res.setTotalPaginas(pag.getTotalPaginas());
+            res.setPaginaActual(pag.getPaginaActual());
+            res.setTamanioPagina(pag.getTamanioPagina());
+
             return ResponseEntity.ok(res);
 
         } catch (Exception e) {
@@ -108,8 +115,8 @@ public class OrientadoraJudicialController {
     }
 
     // ✅ NUEVO ENDPOINT ACTUALIZAR
-    @PutMapping(consumes = MediaType.APPLICATION_JSON_VALUE)
-    public ResponseEntity<GlobalResponse> actualizar(@Valid @RequestBody RegistrarOrientadoraRequest request) {
+    @PutMapping(consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
+    public ResponseEntity<GlobalResponse> actualizar(@Valid @ModelAttribute RegistrarOrientadoraRequest request) {
         GlobalResponse res = new GlobalResponse();
         try {
             if (request.getId() == null || request.getId().isBlank()) {

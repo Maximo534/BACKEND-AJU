@@ -22,7 +22,7 @@ public class BuenaPractica implements Serializable {
     private String titulo;
     private String categoria;
 
-    // Campos largos
+    // Campos largos originales
     private String problema;
     private String causa;
     private String consecuencia;
@@ -45,8 +45,27 @@ public class BuenaPractica implements Serializable {
     private String leccionAprendida;
     private String infoAdicional;
 
-    private String usuarioRegistro;
+    // Nuevos campos completos
+    private String aporteRelevante;
+    private String situacionAnterior;
+    private String situacionDespues;
+    private String impactoPrincipal;
+    private String mejora;
+    private String posibilidadReplica;
+    private String acciones;
+    private String objInstitucional;
+    private String politicaPublica;
+    private String importancia;
+    private String aspectosImplementacion;
+    private String aporteSociedad;
+    private String medidas;
+    private String normaInterna;
+    private String dificInterna;
+    private String dificExterna;
+    private String aliadoExt;
+    private String aliadoInt;
 
+    private String usuarioRegistro;
     private String search;
     private List<Archivo> archivosGuardados;
 }

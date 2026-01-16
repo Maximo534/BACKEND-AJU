@@ -3,6 +3,7 @@ package pe.gob.pj.prueba.infraestructure.db.negocio.entities;
 import jakarta.persistence.*;
 import lombok.Getter;
 import lombok.Setter;
+import pe.gob.pj.prueba.infraestructure.common.utils.EsquemaConstants;
 import pe.gob.pj.prueba.infraestructure.db.negocio.entities.ids.MovJiCasosAtendidosId;
 import pe.gob.pj.prueba.infraestructure.db.negocio.entities.ids.TrimStringConverter;
 
@@ -11,7 +12,7 @@ import java.io.Serializable;
 @Getter
 @Setter
 @Entity
-@Table(name = "mov_aju_ji_cant_caso_atendidos", schema = "public")
+@Table(name = "mov_aju_ji_cant_caso_atendidos", schema = EsquemaConstants.PRUEBA)
 @IdClass(MovJiCasosAtendidosId.class)
 public class MovJiCasosAtendidosEntity implements Serializable {
 

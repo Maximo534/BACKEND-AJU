@@ -3,6 +3,8 @@ package pe.gob.pj.prueba.infraestructure.db.negocio.entities;
 import jakarta.persistence.*;
 import lombok.Getter;
 import lombok.Setter;
+import pe.gob.pj.prueba.infraestructure.common.utils.EsquemaConstants;
+
 import java.io.Serializable;
 import java.time.LocalDate;
 import java.util.ArrayList;
@@ -11,7 +13,7 @@ import java.util.List;
 @Getter
 @Setter
 @Entity
-@Table(name = "mov_aju_justicia_itinerantes", schema = "public")
+@Table(name = "mov_aju_justicia_itinerantes", schema = EsquemaConstants.PRUEBA)
 public class MovJusticiaItineranteEntity implements Serializable {
 
     private static final long serialVersionUID = 1L;
@@ -119,24 +121,13 @@ public class MovJusticiaItineranteEntity implements Serializable {
     @JoinColumn(name = "c_just_itin_id", referencedColumnName = "c_just_itin_id", nullable = false, insertable = false, updatable = false)
     private List<MovJiTareasRealizadasEntity> tareasRealizadas = new ArrayList<>();
 
+    // ✅ SOLO LÓGICA ESTRUCTURAL, NADA DE VALORES POR DEFECTO
     @PrePersist
     public void prePersist() {
         if (this.fechaRegistro == null) this.fechaRegistro = LocalDate.now();
         if (this.activo == null) this.activo = "1";
 
-        if (this.observaciones == null) this.observaciones = "";
-        if (this.descripcionActividad == null) this.descripcionActividad = "";
-        if (this.institucionesAliadas == null) this.institucionesAliadas = "NINGUNA";
-        if (this.tambo == null) this.tambo = "";
-
-        if (this.numMujeresIndigenas == null) this.numMujeresIndigenas = 0;
-        if (this.numPersonasNoIdiomaNacional == null) this.numPersonasNoIdiomaNacional = 0;
-        if (this.numJovenesQuechuaAymara == null) this.numJovenesQuechuaAymara = 0;
-
-        if (this.resolucionPlanAnual == null) this.resolucionPlanAnual = "NINGUNO";
-        if (this.resolucionAdminPlan == null) this.resolucionAdminPlan = "NINGUNO";
-        if (this.documentoAutoriza == null) this.documentoAutoriza = "NINGUNO";
-
+        // Mantenemos la lógica de IDs para los hijos
         if (this.id != null) {
             if (this.personasAtendidas != null)
                 this.personasAtendidas.forEach(h -> h.setJusticiaItineranteId(this.id));

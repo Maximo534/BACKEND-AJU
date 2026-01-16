@@ -24,14 +24,14 @@ public interface MovBuenaPracticaRepository extends JpaRepository<MovBuenaPracti
             bp.x_titulo AS titulo,
             bp.f_inicio AS fechaInicio,
             dj.x_nom_corto AS distritoJudicialNombre
-        FROM mov_aju_buena_practicas bp
-        INNER JOIN mae_aju_distrito_judiciales dj ON bp.c_distrito_jud_id = dj.c_distrito_jud_id
+        FROM prueba.mov_aju_buena_practicas bp  -- ✅ AGREGADO 'prueba.'
+        INNER JOIN prueba.mae_aju_distrito_judiciales dj ON bp.c_distrito_jud_id = dj.c_distrito_jud_id -- ✅ AGREGADO 'prueba.'
         WHERE bp.c_usuario_reg = :usuario
           
           -- FILTROS
           AND (:distrito IS NULL OR bp.c_distrito_jud_id = :distrito)
           AND (CAST(:fecIni AS DATE) IS NULL OR bp.f_inicio >= :fecIni)
-          AND (CAST(:fecFin AS DATE) IS NULL OR bp.f_inicio <= :fecFin) -- ✅ Correcto: Filtra inicio vs rango fin
+          AND (CAST(:fecFin AS DATE) IS NULL OR bp.f_inicio <= :fecFin)
 
           -- BUSCADOR
           AND (
@@ -43,8 +43,8 @@ public interface MovBuenaPracticaRepository extends JpaRepository<MovBuenaPracti
         ORDER BY bp.f_inicio DESC
     """, countQuery = """
         SELECT count(*) 
-        FROM mov_aju_buena_practicas bp
-        INNER JOIN mae_aju_distrito_judiciales dj ON bp.c_distrito_jud_id = dj.c_distrito_jud_id
+        FROM prueba.mov_aju_buena_practicas bp -- ✅ AGREGADO 'prueba.'
+        INNER JOIN prueba.mae_aju_distrito_judiciales dj ON bp.c_distrito_jud_id = dj.c_distrito_jud_id -- ✅ AGREGADO 'prueba.'
         WHERE bp.c_usuario_reg = :usuario
           AND (:distrito IS NULL OR bp.c_distrito_jud_id = :distrito)
           AND (CAST(:fecIni AS DATE) IS NULL OR bp.f_inicio >= :fecIni)
@@ -70,7 +70,7 @@ public interface MovBuenaPracticaRepository extends JpaRepository<MovBuenaPracti
     interface BuenaPracticaProjection {
         String getId();
         String getDistritoJudicialId();
-        String getDistritoJudicialNombre(); // Se mapea desde x_nom_corto
+        String getDistritoJudicialNombre();
         String getTitulo();
         LocalDate getFechaInicio();
     }

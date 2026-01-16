@@ -2,6 +2,7 @@ package pe.gob.pj.prueba.infraestructure.db.negocio.entities;
 
 import jakarta.persistence.*;
 import lombok.Data;
+import pe.gob.pj.prueba.infraestructure.common.utils.EsquemaConstants;
 import pe.gob.pj.prueba.infraestructure.db.negocio.entities.ids.MovEventoTareaId;
 import pe.gob.pj.prueba.infraestructure.db.negocio.entities.ids.TrimStringConverter;
 import pe.gob.pj.prueba.infraestructure.db.negocio.entities.masters.MaeTareaEntity;
@@ -11,7 +12,7 @@ import java.time.LocalDate;
 
 @Data
 @Entity
-@Table(name = "mov_aju_tarea_realizadas", schema = "public")
+@Table(name = "mov_aju_tarea_realizadas", schema = EsquemaConstants.PRUEBA)
 @IdClass(MovEventoTareaId.class)
 public class MovEventoTareaEntity implements Serializable {
 

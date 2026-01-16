@@ -21,25 +21,24 @@ public interface MovJusticiaItineranteRepository extends JpaRepository<MovJustic
             ji.c_just_itin_id AS id,
             ji.f_inicio AS fechaInicio,
             ji.f_fin AS fechaFin,
-            ji.f_reg_activ AS fechaRegistro,     -- ✅ Para el Response
-            ji.x_lugar_activ AS lugar,           -- ✅ Para el Response
-            ji.x_publico_obj AS publicoObjetivo, -- ✅ Para el Response
+            ji.f_reg_activ AS fechaRegistro,
+            ji.x_lugar_activ AS lugar,
+            ji.x_publico_obj AS publicoObjetivo,
             ji.l_activo AS estado,
             dj.x_nom_corto AS distritoJudicialNombre
-        FROM mov_aju_justicia_itinerantes ji
-        INNER JOIN mae_aju_distrito_judiciales dj ON ji.c_distrito_jud_id = dj.c_distrito_jud_id
+        FROM prueba.mov_aju_justicia_itinerantes ji -- ✅ AGREGADO 'prueba.'
+        INNER JOIN prueba.mae_aju_distrito_judiciales dj ON ji.c_distrito_jud_id = dj.c_distrito_jud_id -- ✅ AGREGADO 'prueba.'
         WHERE ji.c_usuario_reg = :usuario
-          AND ji.l_activo = '1' -- Solo activos
+          AND ji.l_activo = '1'
           
           -- FILTRO COMBO
           AND (:distrito IS NULL OR ji.c_distrito_jud_id = :distrito)
           
-          -- FILTRO FECHAS (Rango de ejecución de la actividad)
+          -- FILTRO FECHAS
           AND (CAST(:fecIni AS DATE) IS NULL OR ji.f_inicio >= :fecIni)
           AND (CAST(:fecFin AS DATE) IS NULL OR ji.f_inicio <= :fecFin)
 
-          -- ✅ BUSCADOR GENERAL
-          -- Busca en ID, Lugar, Público o Nombre de la Corte
+          -- BUSCADOR GENERAL
           AND (
               :search IS NULL OR :search = '' OR
               UPPER(ji.c_just_itin_id) LIKE UPPER(CONCAT('%', :search, '%')) OR
@@ -50,8 +49,8 @@ public interface MovJusticiaItineranteRepository extends JpaRepository<MovJustic
         ORDER BY ji.f_inicio DESC
     """, countQuery = """
         SELECT count(*) 
-        FROM mov_aju_justicia_itinerantes ji
-        INNER JOIN mae_aju_distrito_judiciales dj ON ji.c_distrito_jud_id = dj.c_distrito_jud_id
+        FROM prueba.mov_aju_justicia_itinerantes ji -- ✅ AGREGADO 'prueba.'
+        INNER JOIN prueba.mae_aju_distrito_judiciales dj ON ji.c_distrito_jud_id = dj.c_distrito_jud_id -- ✅ AGREGADO 'prueba.'
         WHERE ji.c_usuario_reg = :usuario
           AND ji.l_activo = '1'
           AND (:distrito IS NULL OR ji.c_distrito_jud_id = :distrito)
@@ -91,5 +90,4 @@ public interface MovJusticiaItineranteRepository extends JpaRepository<MovJustic
         String getEstado();
         String getDistritoJudicialNombre();
     }
-
 }
