@@ -10,13 +10,13 @@ import java.util.List;
 
 @Data @Builder @NoArgsConstructor @AllArgsConstructor
 public class OrientadoraJudicial implements Serializable {
+
     private String id;
     private String distritoJudicialId;
-    private String distritoJudicialNombre;
-
+    private String distritoJudicialNombre; // Campo extra para respuesta
     private LocalDate fechaAtencion;
 
-    // Datos Persona
+    // Datos Usuaria
     private String nombreCompleto;
     private String tipoDocumento;
     private String numeroDocumento;
@@ -40,9 +40,10 @@ public class OrientadoraJudicial implements Serializable {
     private String derivacionInstitucion;
     private String resenaCaso;
 
+    // Auditoría
     private String usuarioRegistro;
+
+    // Auxiliares
     private String search;
-
     private List<Archivo> archivosGuardados;
-
 }

@@ -20,7 +20,7 @@ public class MovPromocionCulturaEntity implements Serializable {
     @Column(name = "c_actv_prom_cult_id", length = 17)
     private String id;
 
-    @Column(name = "c_distrito_jud_id", length = 2)
+    @Column(name = "c_distrito_jud_id", length = 2, nullable = false)
     private String distritoJudicialId;
 
     @Column(name = "x_nom_autoridad", length = 100)
@@ -108,64 +108,23 @@ public class MovPromocionCulturaEntity implements Serializable {
     private String activo;
 
     @OneToMany(cascade = CascadeType.ALL, fetch = FetchType.LAZY, orphanRemoval = true)
-    @JoinColumn(
-            name = "c_actv_prom_cult_id",
-            referencedColumnName = "c_actv_prom_cult_id",
-            nullable = false,
-            insertable = false,
-            updatable = false
-    )
+    @JoinColumn(name = "c_actv_prom_cult_id", referencedColumnName = "c_actv_prom_cult_id", nullable = false, insertable = false, updatable = false)
     private List<MovPromCulturaDetalleEntity> participantes = new ArrayList<>();
 
     @OneToMany(cascade = CascadeType.ALL, fetch = FetchType.LAZY, orphanRemoval = true)
-    @JoinColumn(
-            name = "c_actv_prom_cult_id",
-            referencedColumnName = "c_actv_prom_cult_id",
-            nullable = false,
-            insertable = false,
-            updatable = false
-    )
+    @JoinColumn(name = "c_actv_prom_cult_id", referencedColumnName = "c_actv_prom_cult_id", nullable = false, insertable = false, updatable = false)
     private List<MovPromCulturaTareaEntity> tareas = new ArrayList<>();
 
+    // ✅ SOLO LÓGICA ESTRUCTURAL, NADA DE NEGOCIO
     @PrePersist
     public void prePersist() {
         if (this.fechaRegistro == null) this.fechaRegistro = LocalDate.now();
         if (this.activo == null) this.activo = "1";
 
-        if (this.observacion == null) this.observacion = "";
-        if (this.descripcionActividad == null) this.descripcionActividad = "";
-        if (this.institucionesAliadas == null) this.institucionesAliadas = "NINGUNA";
-
-        if (this.areaRiesgo == null) this.areaRiesgo = "00";
-
-        if (this.tipoActividadOtros == null || this.tipoActividadOtros.isBlank()) {
-            this.tipoActividadOtros = "NINGUNO";
-        }
-        if (this.publicoObjetivoOtros == null || this.publicoObjetivoOtros.isBlank()) {
-            this.publicoObjetivoOtros = "NINGUNO";
-        }
-
-        if (!"SI".equalsIgnoreCase(this.seDictoLenguaNativa)) {
-            if (this.lenguaNativaDesc == null) this.lenguaNativaDesc = "CASTELLANO";
-        }
-
-        if (!"SI".equalsIgnoreCase(this.participaronDiscapacitados)) {
-            this.numeroDiscapacitados = 0;
-        } else if (this.numeroDiscapacitados == null) {
-            this.numeroDiscapacitados = 0;
-        }
-
-        if (this.resolucionPlanAnual == null) this.resolucionPlanAnual = "NINGUNO";
-        if (this.resolucionAdminPlan == null) this.resolucionAdminPlan = "NINGUNO";
-        if (this.documentoAutoriza == null) this.documentoAutoriza = "NINGUNO";
-
+        // Mantenemos la integridad de IDs hijos
         if (this.id != null) {
-            if (this.participantes != null) {
-                this.participantes.forEach(p -> p.setPromocionCulturaId(this.id));
-            }
-            if (this.tareas != null) {
-                this.tareas.forEach(t -> t.setPromocionCulturaId(this.id));
-            }
+            if (this.participantes != null) this.participantes.forEach(p -> p.setPromocionCulturaId(this.id));
+            if (this.tareas != null) this.tareas.forEach(t -> t.setPromocionCulturaId(this.id));
         }
     }
 }

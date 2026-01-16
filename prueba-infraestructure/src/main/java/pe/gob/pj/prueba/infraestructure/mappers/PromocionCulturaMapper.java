@@ -30,29 +30,27 @@ public interface PromocionCulturaMapper {
     @InheritInverseConfiguration(name = "toEntity")
     PromocionCultura toDomain(MovPromocionCulturaEntity entity);
 
-    // ✅ UPDATE: Ignorar campos críticos y listas para manejo manual
+    // ✅ UPDATE: Ignorar listas para manejo manual en el UseCase
+    @BeanMapping(nullValuePropertyMappingStrategy = NullValuePropertyMappingStrategy.IGNORE)
     @Mapping(target = "id", ignore = true)
     @Mapping(target = "usuarioRegistro", ignore = true)
     @Mapping(target = "fechaRegistro", ignore = true)
     @Mapping(target = "activo", ignore = true)
-    @Mapping(target = "participantes", ignore = true) // Se maneja con flush() en el adapter
-    @Mapping(target = "tareas", ignore = true)        // Se maneja con flush() en el adapter
+    @Mapping(target = "participantes", ignore = true) // <--- CRUCIAL
+    @Mapping(target = "tareas", ignore = true)        // <--- CRUCIAL
     @Mapping(target = "modalidadProyecto", source = "modalidad")
     @Mapping(target = "lenguaNativaDesc", source = "lenguaNativaDesc")
     void updateEntityFromDomain(PromocionCultura domain, @MappingTarget MovPromocionCulturaEntity entity);
 
-    // --- SUB-MAPPERS ---
+    // ... resto de sub-mappers ...
     @Mapping(target = "promocionCulturaId", ignore = true)
     MovPromCulturaDetalleEntity toEntityPart(PromocionCultura.DetalleParticipante domainPart);
-
     PromocionCultura.DetalleParticipante toDomainPart(MovPromCulturaDetalleEntity entityPart);
 
     @Mapping(target = "promocionCulturaId", ignore = true)
     MovPromCulturaTareaEntity toEntityTarea(PromocionCultura.DetalleTarea domainTarea);
-
     PromocionCultura.DetalleTarea toDomainTarea(MovPromCulturaTareaEntity entityTarea);
 
-    // --- RESPONSE ---
     @Mapping(target = "tipoActividad", source = "tipoActividad")
     @Mapping(target = "estado", source = "activo")
     @Mapping(target = "archivos", source = "archivosGuardados")

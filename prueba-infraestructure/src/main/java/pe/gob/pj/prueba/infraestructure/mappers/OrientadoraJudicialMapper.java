@@ -10,10 +10,9 @@ import pe.gob.pj.prueba.infraestructure.rest.responses.OrientadoraJudicialRespon
         unmappedTargetPolicy = ReportingPolicy.IGNORE)
 public interface OrientadoraJudicialMapper {
 
-    // Request -> Domain (Incluye ID para updates)
-    @Mapping(target = "id", source = "id")
-    @Mapping(target = "archivosGuardados", ignore = true)
-    @Mapping(target = "usuarioRegistro", ignore = true)
+    // Request -> Domain
+    @Mapping(target = "archivosGuardados", ignore = true) // No viene en el body JSON/Form
+    @Mapping(target = "usuarioRegistro", ignore = true)   // Se setea en el UseCase
     OrientadoraJudicial toDomain(RegistrarOrientadoraRequest request);
 
     // Domain -> Entity
@@ -22,13 +21,13 @@ public interface OrientadoraJudicialMapper {
     // Entity -> Domain
     OrientadoraJudicial toDomain(MovOrientadoraJudicialEntity entity);
 
-    // Update Entity (Protegemos campos de auditoría e ID)
+    // Update Entity (Protegemos ID y Usuario)
     @Mapping(target = "id", ignore = true)
     @Mapping(target = "usuarioRegistro", ignore = true)
     void updateEntityFromDomain(OrientadoraJudicial domain, @MappingTarget MovOrientadoraJudicialEntity entity);
 
     // Domain -> Response
-    @Mapping(target = "nombrePersona", source = "nombreCompleto")
+    // Asignamos una constante a 'estado' si no existe en la tabla nueva
     @Mapping(target = "estado", constant = "REGISTRADO")
     @Mapping(target = "archivos", source = "archivosGuardados")
     OrientadoraJudicialResponse toResponse(OrientadoraJudicial domain);

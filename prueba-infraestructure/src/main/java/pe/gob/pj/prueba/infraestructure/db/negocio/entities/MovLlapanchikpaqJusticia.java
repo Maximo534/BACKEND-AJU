@@ -19,10 +19,10 @@ public class MovLlapanchikpaqJusticia implements Serializable {
     @Column(name = "c_llj_id", length = 17)
     private String id;
 
-    @Column(name = "c_distrito_jud_id", length = 2)
+    @Column(name = "c_distrito_jud_id", length = 2, nullable = false)
     private String distritoJudicialId;
 
-    @Column(name = "f_inicio")
+    @Column(name = "f_inicio", nullable = false)
     private LocalDate fechaInicio;
 
     @Column(name = "x_res_plan_anual", length = 50)
@@ -70,7 +70,7 @@ public class MovLlapanchikpaqJusticia implements Serializable {
     @Column(name = "l_activo", length = 1)
     private String activo;
 
-    // --- RELACIONES CON HIJOS RENOMBRADOS ---
+    // --- RELACIONES CON HIJOS ---
 
     @OneToMany(cascade = CascadeType.ALL, fetch = FetchType.LAZY, orphanRemoval = true)
     @JoinColumn(name = "c_llj_id", referencedColumnName = "c_llj_id", insertable = false, updatable = false)
@@ -92,11 +92,13 @@ public class MovLlapanchikpaqJusticia implements Serializable {
     public void prePersist() {
         if (this.fechaRegistro == null) this.fechaRegistro = LocalDate.now();
         if (this.activo == null) this.activo = "1";
+
+        // Mantener integridad de ID padre en hijos
         if (this.id != null) {
-            beneficiadas.forEach(x -> x.setLljId(this.id));
-            atendidas.forEach(x -> x.setLljId(this.id));
-            casos.forEach(x -> x.setLljId(this.id));
-            tareas.forEach(x -> x.setLljId(this.id));
+            if (beneficiadas != null) beneficiadas.forEach(x -> x.setLljId(this.id));
+            if (atendidas != null) atendidas.forEach(x -> x.setLljId(this.id));
+            if (casos != null) casos.forEach(x -> x.setLljId(this.id));
+            if (tareas != null) tareas.forEach(x -> x.setLljId(this.id));
         }
     }
 }

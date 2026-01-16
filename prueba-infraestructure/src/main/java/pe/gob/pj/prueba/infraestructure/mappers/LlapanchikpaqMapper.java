@@ -12,40 +12,34 @@ import pe.gob.pj.prueba.infraestructure.rest.responses.LlapanchikpaqResponse;
 )
 public interface LlapanchikpaqMapper {
 
-    // 1. Request -> Dominio
-    @Mapping(target = "id", ignore = true)
+    // Request -> Domain
+    @Mapping(target = "id", source = "id") // Permitimos mapear ID si viene en Request
     @Mapping(target = "archivosGuardados", ignore = true)
     @Mapping(target = "fechaRegistro", ignore = true)
     @Mapping(target = "usuarioRegistro", ignore = true)
     @Mapping(target = "activo", ignore = true)
     LlapanchikpaqJusticia toDomain(RegistrarLlapanchikpaqRequest request);
 
-    // 2. Dominio -> Entity
+    // Dominio -> Entity
     MovLlapanchikpaqJusticia toEntity(LlapanchikpaqJusticia domain);
 
-    // 3. Entity -> Dominio
+    // Entity -> Dominio
     @InheritInverseConfiguration(name = "toEntity")
     LlapanchikpaqJusticia toDomain(MovLlapanchikpaqJusticia entity);
 
-    // -------------------------------------------------------------------------
-    // ✅ 4. ACTUALIZAR ENTIDAD (SOLUCIÓN DEL ERROR)
-    // -------------------------------------------------------------------------
+    // ✅ UPDATE: Ignorar listas para evitar error de ID alterado
+    @BeanMapping(nullValuePropertyMappingStrategy = NullValuePropertyMappingStrategy.IGNORE)
     @Mapping(target = "id", ignore = true)
     @Mapping(target = "usuarioRegistro", ignore = true)
     @Mapping(target = "fechaRegistro", ignore = true)
-
-    // Evita error de restricción NOT NULL en 'l_activo'
     @Mapping(target = "activo", ignore = true)
-
-    // ⚠️ CRÍTICO: Evita error "Identifier altered" ignorando las listas
-    @Mapping(target = "beneficiadas", ignore = true)
-    @Mapping(target = "atendidas", ignore = true)
-    @Mapping(target = "casos", ignore = true)
-    @Mapping(target = "tareas", ignore = true)
+    @Mapping(target = "beneficiadas", ignore = true) // <--- CRÍTICO
+    @Mapping(target = "atendidas", ignore = true)    // <--- CRÍTICO
+    @Mapping(target = "casos", ignore = true)        // <--- CRÍTICO
+    @Mapping(target = "tareas", ignore = true)       // <--- CRÍTICO
     void updateEntityFromDomain(LlapanchikpaqJusticia domain, @MappingTarget MovLlapanchikpaqJusticia entity);
 
-
-    // --- SUB-MAPPERS (Helpers) ---
+    // Helpers
     MovLljPersonasBeneficiadasEntity mapBeneficiada(LlapanchikpaqJusticia.DetalleBeneficiada d);
     MovLljPersonasAtendidasEntity mapAtendida(LlapanchikpaqJusticia.DetalleAtendida d);
     MovLljCasosAtendidosEntity mapCaso(LlapanchikpaqJusticia.DetalleCaso d);
@@ -56,7 +50,7 @@ public interface LlapanchikpaqMapper {
     LlapanchikpaqJusticia.DetalleCaso mapCasoToDomain(MovLljCasosAtendidosEntity e);
     LlapanchikpaqJusticia.DetalleTarea mapTareaToDomain(MovLljTareaRealizadasEntity e);
 
-    // 5. Response
+    // Response
     @Mapping(target = "estado", source = "activo")
     @Mapping(target = "archivos", source = "archivosGuardados")
     LlapanchikpaqResponse toResponse(LlapanchikpaqJusticia dominio);

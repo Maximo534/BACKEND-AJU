@@ -21,6 +21,7 @@ public class PromocionCultura implements Serializable {
     private String nombreActividad;       //  (Nombre de la actividad/servicio)
     private String tipoActividad;         // (Charla, Feria, etc.)
     private String tipoActividadOtros;
+    private String areaRiesgo;
     private String zonaIntervencion;
     private String modalidad;
 
@@ -56,7 +57,7 @@ public class PromocionCultura implements Serializable {
     // Descripciones
     private String descripcionActividad;
     private String institucionesAliadas;
-    private String observaciones;
+    private String observacion;
 
     // Auditoría
     private LocalDate fechaRegistro;

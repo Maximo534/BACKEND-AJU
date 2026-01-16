@@ -1,6 +1,6 @@
 package pe.gob.pj.prueba.infraestructure.rest.responses;
 
-import com.fasterxml.jackson.annotation.JsonInclude;
+// import com.fasterxml.jackson.annotation.JsonInclude; // COMENTADO
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
@@ -12,7 +12,7 @@ import java.time.LocalDate;
 import java.util.List;
 
 @Data @Builder @NoArgsConstructor @AllArgsConstructor
-@JsonInclude(JsonInclude.Include.NON_NULL)
+// @JsonInclude(JsonInclude.Include.NON_NULL) // OJO: Comentado para ver nulos
 public class PromocionCulturaResponse implements Serializable {
 
     // Identificadores
@@ -24,8 +24,9 @@ public class PromocionCulturaResponse implements Serializable {
     private String nombreActividad;
     private String tipoActividad;
     private String tipoActividadOtros;
+    private String areaRiesgo;
     private String zonaIntervencion;
-    private String modalidad; // Presencial/Virtual
+    private String modalidad;
 
     private String publicoObjetivo;
     private String publicoObjetivoOtros;
@@ -48,21 +49,21 @@ public class PromocionCulturaResponse implements Serializable {
     private String ejeId;
 
     // Indicadores de Inclusión
-    private String seDictoLenguaNativa;   // SI/NO
-    private String lenguaNativaDesc;      // Cuál
-    private String participaronDiscapacitados; // SI/NO
-    private Integer numeroDiscapacitados;      // Cantidad
+    private String seDictoLenguaNativa;
+    private String lenguaNativaDesc;
+    private String participaronDiscapacitados;
+    private Integer numeroDiscapacitados;
     private String requiereInterprete;
 
     // Descripciones
     private String descripcionActividad;
     private String institucionesAliadas;
-    private String observaciones;
+    private String observacion;
 
     // Auditoría y Estado
     private LocalDate fechaRegistro;
     private String usuarioRegistro;
-    private String estado; // Activo/Inactivo
+    private String estado;
 
     // Listas de Detalle
     private List<DetalleParticipanteResponse> participantesPorGenero;
@@ -71,8 +72,7 @@ public class PromocionCulturaResponse implements Serializable {
     // Archivos Adjuntos
     private List<Archivo> archivos;
 
-    // --- DTOs Internos para Listas ---
-
+    // --- DTOs Internos ---
     @Data @Builder @NoArgsConstructor @AllArgsConstructor
     public static class DetalleParticipanteResponse implements Serializable {
         private String descripcionRango;

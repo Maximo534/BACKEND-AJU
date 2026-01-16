@@ -1,6 +1,6 @@
 package pe.gob.pj.prueba.infraestructure.rest.responses;
 
-import com.fasterxml.jackson.annotation.JsonInclude;
+// import com.fasterxml.jackson.annotation.JsonInclude; // COMENTADO
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
@@ -11,14 +11,13 @@ import java.time.LocalDate;
 import java.util.List;
 
 @Data @Builder @NoArgsConstructor @AllArgsConstructor
-@JsonInclude(JsonInclude.Include.NON_NULL)
+// @JsonInclude(JsonInclude.Include.NON_NULL) // Para ver nulos
 public class LlapanchikpaqResponse implements Serializable {
 
     private String id;
     private String distritoJudicialId;
     private String distritoJudicialNombre;
     private LocalDate fechaInicio;
-    private LocalDate fechaFin;
     private String estado;
 
     // Campos Detalle
@@ -32,6 +31,18 @@ public class LlapanchikpaqResponse implements Serializable {
     private String provinciaId;
     private String distritoGeograficoId;
 
+    // Población
+    private Integer numMujeresIndigenas;
+    private Integer numPersonasQuechuaAymara;
+    private Integer numJuecesQuechuaAymara;
+    private String usoLenguaNativa;
+    private String lenguaNativaDesc;
+
+    // Textos
+    private String derivacion;
+    private String impactoActividad;
+    private String observacion;
+
     // Auditoría
     private LocalDate fechaRegistro;
     private String usuarioRegistro;
@@ -44,7 +55,7 @@ public class LlapanchikpaqResponse implements Serializable {
 
     private List<Archivo> archivos;
 
-    // DTOs internos (Misma estructura que el Request/Domain)
+    // DTOs internos
     @Data @Builder @NoArgsConstructor @AllArgsConstructor
     public static class DetalleBeneficiadaResponse { String codigoRango; String descripcionRango; Integer cantFemenino; Integer cantMasculino; Integer cantLgtbiq; }
     @Data @Builder @NoArgsConstructor @AllArgsConstructor

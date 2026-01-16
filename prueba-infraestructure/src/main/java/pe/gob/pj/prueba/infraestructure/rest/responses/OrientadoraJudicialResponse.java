@@ -15,16 +15,14 @@ import java.util.List;
 @JsonInclude(JsonInclude.Include.NON_NULL)
 public class OrientadoraJudicialResponse implements Serializable {
 
-    // --- Cabecera (Grilla) ---
     private String id;
     private String distritoJudicialId;
-    private String distritoJudicialNombre;
+    private String distritoJudicialNombre; // Se llena en el UseCase/Controller
     private LocalDate fechaAtencion;
-    private String nombrePersona; // Mapeado de nombreCompleto
-    private String numeroExpediente;
-    private String estado;
+    private String estado; // Calculado o quemado en mapper (Ej: "REGISTRADO")
 
-    // --- Detalle (Formulario) ---
+    // --- DATOS USUARIA ---
+    private String nombreCompleto;
     private String tipoDocumento;
     private String numeroDocumento;
     private String nacionalidad;
@@ -32,20 +30,21 @@ public class OrientadoraJudicialResponse implements Serializable {
     private String telefono;
     private String direccion;
 
-    // Ubigeo
+    // --- UBIGEO ---
     private String departamentoId;
     private String provinciaId;
     private String distritoId;
 
-    // Caso
+    // --- DETALLE CASO ---
     private String tipoVulnerabilidad;
     private String genero;
     private String lenguaMaterna;
     private String tipoCasoAtendido;
+    private String numeroExpediente;
     private String tipoViolencia;
     private String derivacionInstitucion;
     private String resenaCaso;
 
-    // Archivos
+    // --- ARCHIVOS ---
     private List<Archivo> archivos;
 }
