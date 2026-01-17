@@ -15,7 +15,10 @@ import pe.gob.pj.prueba.domain.model.common.RecursoArchivo;
 import pe.gob.pj.prueba.domain.model.negocio.JpeCasoAtendido;
 import pe.gob.pj.prueba.domain.model.negocio.ResumenEstadistico;
 import pe.gob.pj.prueba.domain.port.usecase.negocio.GestionJuecesEscolaresUseCasePort;
+import pe.gob.pj.prueba.domain.port.usecase.negocio.GestionJusticiaPazUseCasePort;
 import pe.gob.pj.prueba.infraestructure.mappers.JuezPazEscolarMapper;
+import pe.gob.pj.prueba.infraestructure.mappers.JusticiaPazMapper;
+import pe.gob.pj.prueba.infraestructure.rest.requests.ListarJpeCasosRequest;
 import pe.gob.pj.prueba.infraestructure.rest.requests.RegistrarCasoRequest;
 import pe.gob.pj.prueba.infraestructure.rest.responses.GlobalResponse;
 import pe.gob.pj.prueba.infraestructure.rest.responses.JpeCasoAtendidoResponse;
@@ -30,14 +33,14 @@ import java.util.stream.Collectors;
 @RequiredArgsConstructor
 public class JusticiaPazController {
 
-    private final GestionJuecesEscolaresUseCasePort useCase;
-    private final JuezPazEscolarMapper mapper;
+    private final GestionJusticiaPazUseCasePort useCase;
+    private final JusticiaPazMapper mapper;
 
     @PostMapping(produces = MediaType.APPLICATION_JSON_VALUE)
     public ResponseEntity<GlobalResponse> listar(
             @RequestParam(name = "pagina", defaultValue = "1") int pagina,
             @RequestParam(name = "tamanio", defaultValue = "10") int tamanio,
-            @RequestBody(required = false) RegistrarCasoRequest request
+            @RequestBody(required = false) ListarJpeCasosRequest request
     ) {
         GlobalResponse res = new GlobalResponse();
         try {
@@ -45,14 +48,15 @@ public class JusticiaPazController {
             JpeCasoAtendido filtros = JpeCasoAtendido.builder().build();
 
             if (request != null) {
-                // Asegúrate que el campo de búsqueda coincida con lo que esperas
-                filtros.setSearch(request.getResumenHechos());
+                filtros.setSearch(request.getSearch()); // Ahora sí mapea directo
                 filtros.setDistritoJudicialId(request.getDistritoJudicialId());
+                filtros.setUgelId(request.getUgelId()); // Puedes agregar estos filtros
+                filtros.setInstitucionEducativaId(request.getInstitucionEducativaId());
                 filtros.setFechaRegistro(request.getFechaRegistro());
             }
 
             // 1. Obtener la data paginada del servicio
-            Pagina<JpeCasoAtendido> paginaRes = useCase.listarCasos(usuario, filtros, pagina, tamanio);
+            Pagina<JpeCasoAtendido> paginaRes = useCase.listar(usuario, filtros, pagina, tamanio);
 
             // 2. Mapear la lista
             List<JpeCasoAtendidoResponse> listaResponse = paginaRes.getContenido().stream()
@@ -87,7 +91,7 @@ public class JusticiaPazController {
     public ResponseEntity<GlobalResponse> obtenerPorId(@PathVariable String id) {
         GlobalResponse res = new GlobalResponse();
         try {
-            JpeCasoAtendido encontrado = useCase.buscarCasoPorId(id);
+            JpeCasoAtendido encontrado = useCase.buscarPorId(id);
             if (encontrado == null) {
                 res.setCodigo("404");
                 res.setDescripcion("Caso no encontrado");
@@ -115,7 +119,7 @@ public class JusticiaPazController {
         try {
             String usuario = "EMATAMOROSV";
             JpeCasoAtendido dominio = mapper.toDomain(request);
-            JpeCasoAtendido creado = useCase.registrarCaso(dominio, acta, fotos, usuario);
+            JpeCasoAtendido creado = useCase.registrar(dominio, acta, fotos, usuario);
 
             res.setCodigo("200");
             res.setDescripcion("Caso registrado correctamente. ID: " + creado.getId());
@@ -139,7 +143,7 @@ public class JusticiaPazController {
             String usuario = "EMATAMOROSV";
             JpeCasoAtendido dominio = mapper.toDomain(request);
             // El mapper ya pasa el ID del request al dominio
-            JpeCasoAtendido actualizado = useCase.actualizarCaso(dominio, usuario);
+            JpeCasoAtendido actualizado = useCase.actualizar(dominio, usuario);
 
             res.setCodigo("200");
             res.setDescripcion("Caso actualizado correctamente");
@@ -166,7 +170,7 @@ public class JusticiaPazController {
         GlobalResponse res = new GlobalResponse();
         try {
             String usuario = "EMATAMOROSV";
-            useCase.agregarArchivoCaso(idCaso, archivo, tipo, usuario);
+            useCase.agregarArchivo(idCaso, archivo, tipo, usuario);
             res.setCodigo("200");
             res.setDescripcion("Archivo agregado correctamente");
             return ResponseEntity.ok(res);

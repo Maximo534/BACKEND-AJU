@@ -1,13 +1,10 @@
 package pe.gob.pj.prueba.infraestructure.mappers;
 
 import org.mapstruct.*;
-import pe.gob.pj.prueba.domain.model.negocio.JpeCasoAtendido;
 import pe.gob.pj.prueba.domain.model.negocio.JuezPazEscolar;
 import pe.gob.pj.prueba.infraestructure.db.negocio.entities.MaeJuezPazEscolarEntity;
-import pe.gob.pj.prueba.infraestructure.db.negocio.entities.MovJpeCasoAtendidoEntity;
-import pe.gob.pj.prueba.infraestructure.rest.requests.RegistrarCasoRequest;
+import pe.gob.pj.prueba.infraestructure.rest.requests.ListarJuezEscolarRequest; // Import necesario
 import pe.gob.pj.prueba.infraestructure.rest.requests.RegistrarJuezRequest;
-import pe.gob.pj.prueba.infraestructure.rest.responses.JpeCasoAtendidoResponse;
 import pe.gob.pj.prueba.infraestructure.rest.responses.JuezPazEscolarResponse;
 
 import java.util.List;
@@ -16,50 +13,48 @@ import java.util.List;
         unmappedTargetPolicy = ReportingPolicy.IGNORE)
 public interface JuezPazEscolarMapper {
 
-    // --- SECCIÓN JUECES ---
+    // --- MAPPINGS DE REGISTRO (Ya existían) ---
+    @Mapping(target = "id", source = "id")
+    @Mapping(target = "fechaRegistro", ignore = true)
+    @Mapping(target = "usuarioRegistro", ignore = true)
+    @Mapping(target = "activo", ignore = true)
+    @Mapping(target = "archivosGuardados", ignore = true)
+    // Ignoramos campos de filtro/salida al registrar
+    @Mapping(target = "search", ignore = true)
+    @Mapping(target = "distritoJudicialId", ignore = true)
+    @Mapping(target = "ugelId", ignore = true)
+    @Mapping(target = "distritoJudicialNombre", ignore = true)
+    @Mapping(target = "ugelNombre", ignore = true)
+    @Mapping(target = "institucionEducativaNombre", ignore = true)
     JuezPazEscolar toDomain(RegistrarJuezRequest request);
 
+    // ✅ NUEVO: Request Listado -> Dominio (Filtros)
+    @Mapping(target = "search", source = "search")
+    @Mapping(target = "distritoJudicialId", source = "distritoJudicialId")
+    @Mapping(target = "ugelId", source = "ugelId")
+    @Mapping(target = "institucionEducativaId", source = "institucionEducativaId")
+    // Ignoramos el resto
+    @Mapping(target = "id", ignore = true)
+    @Mapping(target = "dni", ignore = true)
+    // ... (MapStruct ignorará nulls por policy, o puedes ignorar explícitamente)
+    JuezPazEscolar toDomain(ListarJuezEscolarRequest request);
+
+    // --- MAPPINGS ENTITY (Sin cambios) ---
     @Mapping(target = "institucionEducativa", ignore = true)
     MaeJuezPazEscolarEntity toEntity(JuezPazEscolar domain);
 
-    @Mapping(target = "nombreInstitucion", source = "institucionEducativa.nombre")
+    @InheritInverseConfiguration(name = "toEntity")
     JuezPazEscolar toDomain(MaeJuezPazEscolarEntity entity);
 
-    @Mapping(target = "nombreCompleto", expression = "java(domain.getNombres() + ' ' + domain.getApePaterno() + ' ' + domain.getApeMaterno())")
-    @Mapping(target = "nombreColegio", source = "nombreInstitucion")
-    JuezPazEscolarResponse toResponse(JuezPazEscolar domain);
-
-    List<JuezPazEscolarResponse> toResponseList(List<JuezPazEscolar> list);
-
-
-    // --- SECCIÓN CASOS ---
-
-    // Request -> Domain
-    @Mapping(target = "id", source = "id")
-    @Mapping(target = "archivosGuardados", ignore = true)
-    @Mapping(target = "fechaRegistro", source = "fechaRegistro")
-    JpeCasoAtendido toDomain(RegistrarCasoRequest request);
-
-    // Domain -> Entity
-    @Mapping(target = "juezEscolar", ignore = true)
-    MovJpeCasoAtendidoEntity toEntity(JpeCasoAtendido domain);
-
-    // Entity -> Domain
-    @InheritInverseConfiguration(name = "toEntity")
-    @Mapping(target = "juezEscolarId", source = "juezEscolar.id")
-    JpeCasoAtendido toDomain(MovJpeCasoAtendidoEntity entity);
-
-    // ✅ ACTUALIZACIÓN (Corrección: Quitamos 'activo')
+    @Mapping(target = "fechaRegistro", ignore = true)
     @Mapping(target = "id", ignore = true)
     @Mapping(target = "usuarioRegistro", ignore = true)
-    // @Mapping(target = "activo", ignore = true) <--- ELIMINADO PORQUE EL CAMPO NO EXISTE EN ENTIDAD
-    @Mapping(target = "juezEscolar", ignore = true)
-    void updateEntityFromDomain(JpeCasoAtendido domain, @MappingTarget MovJpeCasoAtendidoEntity entity);
+    @Mapping(target = "activo", ignore = true)
+    @Mapping(target = "institucionEducativa", ignore = true)
+    void updateEntityFromDomain(JuezPazEscolar domain, @MappingTarget MaeJuezPazEscolarEntity entity);
 
-    // Domain -> Response
-    @Mapping(target = "estado", constant = "REGISTRADO")
+    // --- RESPONSE (Sin cambios) ---
+    @Mapping(target = "nombreCompleto", expression = "java(domain.getNombres() + ' ' + domain.getApePaterno() + ' ' + domain.getApeMaterno())")
     @Mapping(target = "archivos", source = "archivosGuardados")
-    JpeCasoAtendidoResponse toResponse(JpeCasoAtendido dominio);
-
-    List<JpeCasoAtendidoResponse> toResponseListCasos(List<JpeCasoAtendido> list);
+    JuezPazEscolarResponse toResponse(JuezPazEscolar domain);
 }

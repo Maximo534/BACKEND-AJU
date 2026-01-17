@@ -6,35 +6,41 @@ import lombok.Data;
 import lombok.NoArgsConstructor;
 import java.io.Serializable;
 import java.time.LocalDate;
+import java.util.List;
 
-@Data
-@Builder
-@NoArgsConstructor
-@AllArgsConstructor
+@Data @Builder @NoArgsConstructor @AllArgsConstructor
 public class JuezPazEscolar implements Serializable {
 
-    private String id;                  // c_cod_reg
+    private String id;
     private String dni;
     private String apePaterno;
     private String apeMaterno;
     private String nombres;
     private LocalDate fechaNacimiento;
     private String genero;
-
-    private String grado;               // 1, 2, 3...
-    private String seccion;             // A, B, C...
-
+    private String grado;
+    private String seccion;
     private String email;
     private String celular;
-
-    private String cargo;               // JUEZ / SECRETARIO
+    private String cargo;
     private LocalDate fechaJuramentacion;
-    private String resolucionAcreditacion; // Nro Resolución
+    private String resolucionAcreditacion;
 
     private String institucionEducativaId;
-    private String nombreInstitucion;   // Para mostrar en reportes/listados
+
+    // Campos de Salida (Para mostrar nombres)
+    private String distritoJudicialNombre;
+    private String ugelNombre;
+    private String institucionEducativaNombre;
+
+    // ✅ NUEVOS: Campos de Entrada (Filtros)
+    private String search;              // Buscador general
+    private String distritoJudicialId;  // Filtro Corte
+    private String ugelId;              // Filtro UGEL
 
     private String activo;
     private LocalDate fechaRegistro;
     private String usuarioRegistro;
+
+    private List<Archivo> archivosGuardados;
 }
