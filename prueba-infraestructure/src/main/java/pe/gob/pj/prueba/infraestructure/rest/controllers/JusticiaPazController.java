@@ -48,30 +48,29 @@ public class JusticiaPazController {
             JpeCasoAtendido filtros = JpeCasoAtendido.builder().build();
 
             if (request != null) {
-                filtros.setSearch(request.getSearch()); // Ahora sí mapea directo
+                filtros.setSearch(request.getSearch());
                 filtros.setDistritoJudicialId(request.getDistritoJudicialId());
-                filtros.setUgelId(request.getUgelId()); // Puedes agregar estos filtros
+                filtros.setUgelId(request.getUgelId());
                 filtros.setInstitucionEducativaId(request.getInstitucionEducativaId());
                 filtros.setFechaRegistro(request.getFechaRegistro());
             }
 
-            // 1. Obtener la data paginada del servicio
+            // Obtener la data paginada del servicio
             Pagina<JpeCasoAtendido> paginaRes = useCase.listar(usuario, filtros, pagina, tamanio);
 
-            // 2. Mapear la lista
+            // Mapear la lista
             List<JpeCasoAtendidoResponse> listaResponse = paginaRes.getContenido().stream()
                     .map(mapper::toResponse)
                     .collect(Collectors.toList());
 
 
-            // ✅ CORREGIDO: Llenado plano del GlobalResponse
-            res.setCodigo("0000"); // Estandarizado a "0000"
+            res.setCodigo("0000");
             res.setDescripcion("Listado de casos exitoso");
 
-            // A. La lista va directo a data
+            // La lista va directo a data
             res.setData(listaResponse);
 
-            // B. La paginación va a la raíz
+            // La paginación va a la raíz
             res.setTotalRegistros(paginaRes.getTotalRegistros());
             res.setTotalPaginas(paginaRes.getTotalPaginas());
             res.setPaginaActual(paginaRes.getPaginaActual());
@@ -134,7 +133,7 @@ public class JusticiaPazController {
     }
 
     @PutMapping(consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
-    public ResponseEntity<GlobalResponse> actualizar(@Valid @ModelAttribute RegistrarCasoRequest request) { // ✅ @Valid
+    public ResponseEntity<GlobalResponse> actualizar(@Valid @ModelAttribute RegistrarCasoRequest request) {
         GlobalResponse res = new GlobalResponse();
         try {
             if (request.getId() == null || request.getId().isBlank()) {
@@ -142,7 +141,6 @@ public class JusticiaPazController {
             }
             String usuario = "EMATAMOROSV";
             JpeCasoAtendido dominio = mapper.toDomain(request);
-            // El mapper ya pasa el ID del request al dominio
             JpeCasoAtendido actualizado = useCase.actualizar(dominio, usuario);
 
             res.setCodigo("200");
@@ -156,10 +154,6 @@ public class JusticiaPazController {
             return ResponseEntity.internalServerError().body(res);
         }
     }
-
-    // =========================================================================
-    // SECCIÓN 3: GESTIÓN DE ARCHIVOS Y REPORTES
-    // =========================================================================
 
     @PostMapping(value = "/archivos", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
     public ResponseEntity<GlobalResponse> agregarArchivo(
@@ -201,7 +195,6 @@ public class JusticiaPazController {
     @GetMapping("/{id}/acta")
     public ResponseEntity<InputStreamResource> descargarActa(@PathVariable String id) {
         try {
-            // "ACTA_JPE" debe coincidir con lo que se guarda en BD
             RecursoArchivo recurso = useCase.descargarArchivoPorTipo(id, "ACTA_JPE");
 
             HttpHeaders headers = new HttpHeaders();

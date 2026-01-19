@@ -26,8 +26,8 @@ public interface MovJusticiaItineranteRepository extends JpaRepository<MovJustic
             ji.x_publico_obj AS publicoObjetivo,
             ji.l_activo AS estado,
             dj.x_nom_corto AS distritoJudicialNombre
-        FROM prueba.mov_aju_justicia_itinerantes ji -- ✅ AGREGADO 'prueba.'
-        INNER JOIN prueba.mae_aju_distrito_judiciales dj ON ji.c_distrito_jud_id = dj.c_distrito_jud_id -- ✅ AGREGADO 'prueba.'
+        FROM prueba.mov_aju_justicia_itinerantes ji 
+        INNER JOIN prueba.mae_aju_distrito_judiciales dj ON ji.c_distrito_jud_id = dj.c_distrito_jud_id 
         WHERE ji.c_usuario_reg = :usuario
           AND ji.l_activo = '1'
           
@@ -49,8 +49,8 @@ public interface MovJusticiaItineranteRepository extends JpaRepository<MovJustic
         ORDER BY ji.f_inicio DESC
     """, countQuery = """
         SELECT count(*) 
-        FROM prueba.mov_aju_justicia_itinerantes ji -- ✅ AGREGADO 'prueba.'
-        INNER JOIN prueba.mae_aju_distrito_judiciales dj ON ji.c_distrito_jud_id = dj.c_distrito_jud_id -- ✅ AGREGADO 'prueba.'
+        FROM prueba.mov_aju_justicia_itinerantes ji 
+        INNER JOIN prueba.mae_aju_distrito_judiciales dj ON ji.c_distrito_jud_id = dj.c_distrito_jud_id 
         WHERE ji.c_usuario_reg = :usuario
           AND ji.l_activo = '1'
           AND (:distrito IS NULL OR ji.c_distrito_jud_id = :distrito)

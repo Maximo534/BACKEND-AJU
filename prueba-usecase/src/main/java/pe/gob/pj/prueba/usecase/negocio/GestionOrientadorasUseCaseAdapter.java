@@ -54,7 +54,7 @@ public class GestionOrientadorasUseCaseAdapter implements GestionOrientadorasUse
     @Transactional(rollbackFor = Exception.class)
     public OrientadoraJudicial registrarAtencion(OrientadoraJudicial oj, MultipartFile anexo, List<MultipartFile> fotos, String usuario) throws Exception {
 
-        // 1. Generar ID (Lógica existente...)
+        //Generar ID
         String ultimoId = persistencePort.obtenerUltimoId();
         long siguiente = 1;
         if (ultimoId != null && !ultimoId.isBlank()) {
@@ -69,24 +69,24 @@ public class GestionOrientadorasUseCaseAdapter implements GestionOrientadorasUse
         oj.setUsuarioRegistro(usuario);
         if(oj.getFechaAtencion() == null) oj.setFechaAtencion(LocalDate.now());
 
-        // 2. Guardar Datos
+        // Guardar Datos
         OrientadoraJudicial registrado = persistencePort.guardar(oj);
 
-        // 3. Subir Archivos
+        // Subir Archivos
         String sessionKey = UUID.randomUUID().toString();
         try {
             ftpPort.iniciarSesion(sessionKey, ftpIp, ftpPuerto, ftpUsuario, ftpClave);
 
-            // A. Subir Anexo (Único)
+            // Subir Anexo
             if (anexo != null && !anexo.isEmpty()) {
                 uploadFile(anexo, registrado, "ANEXO_OJ", sessionKey);
             }
 
-            // B. Subir Fotos (Lista) ✅
+            // Subir Fotos
             if (fotos != null && !fotos.isEmpty()) {
                 for (MultipartFile foto : fotos) {
                     if (foto != null && !foto.isEmpty()) {
-                        // Se reutiliza uploadFile que genera nombre con timestamp para no chancar
+                        // Se reutiliza uploadFile
                         uploadFile(foto, registrado, "FOTO_OJ", sessionKey);
                     }
                 }
@@ -97,10 +97,6 @@ public class GestionOrientadorasUseCaseAdapter implements GestionOrientadorasUse
 
         return registrado;
     }
-
-    // --- HELPER UNIFICADO (Ya lo tenías bien, lo mantengo igual) ---
-
-
 
     @Override
     @Transactional
@@ -172,7 +168,7 @@ public class GestionOrientadorasUseCaseAdapter implements GestionOrientadorasUse
     public List<ResumenEstadistico> obtenerResumenGrafico() throws Exception {
         return persistencePort.obtenerResumenGrafico();
     }
-    // --- HELPER UNIFICADO ---
+
     private void uploadFile(MultipartFile file, OrientadoraJudicial oj, String tipo, String sessionKey) throws Exception {
         String carpeta = switch (tipo.toUpperCase()) {
             case "ANEXO_OJ" -> "anexos";
@@ -185,7 +181,7 @@ public class GestionOrientadorasUseCaseAdapter implements GestionOrientadorasUse
 
         String ext = obtenerExtension(file.getOriginalFilename());
 
-        // Usamos UUID parcial + Timestamp para asegurar unicidad en la lista
+        // Usamos UUID parcial
         String uniqueId = UUID.randomUUID().toString().substring(0,4);
         String nombreFinal = oj.getId() + "_" + tipo + "_" + System.currentTimeMillis() + "_" + uniqueId + ext;
 

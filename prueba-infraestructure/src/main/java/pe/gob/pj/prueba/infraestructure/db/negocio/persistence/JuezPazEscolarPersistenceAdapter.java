@@ -30,7 +30,6 @@ public class JuezPazEscolarPersistenceAdapter implements JuezPazEscolarPersisten
     public Pagina<JuezPazEscolar> listar(JuezPazEscolar filtros, int pagina, int tamanio) {
         if (filtros == null) filtros = JuezPazEscolar.builder().build();
 
-        // Extraemos los valores del objeto de Dominio
         var result = repository.listar(
                 filtros.getSearch(),
                 filtros.getDistritoJudicialId(),

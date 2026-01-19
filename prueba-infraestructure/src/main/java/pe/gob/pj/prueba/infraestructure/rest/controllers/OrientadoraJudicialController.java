@@ -51,26 +51,25 @@ public class OrientadoraJudicialController {
                 filtros.setSearch(request.getSearch());
                 filtros.setDistritoJudicialId(request.getDistritoJudicialId());
                 filtros.setFechaAtencion(request.getFechaInicio());
-                // Nota: Verifica si necesitas filtrar también por Fecha Fin si tu request lo tiene
             }
 
-            // 1. Obtener data del dominio
+            //  Obtener data del dominio
             Pagina<OrientadoraJudicial> pag = useCase.listar(usuario, filtros, pagina, tamanio);
 
-            // 2. Mapear a la lista de respuesta
+            // Mapear a la lista de respuesta
             List<OrientadoraJudicialResponse> listRes = pag.getContenido().stream()
                     .map(mapper::toResponse)
                     .collect(Collectors.toList());
 
 
-            // ✅ NUEVO: Estructura plana
+            // Estructura plana
             res.setCodigo("0000"); // Estandarizado
-            res.setDescripcion("Listado exitoso"); // Es bueno agregar una descripción
+            res.setDescripcion("Listado exitoso");
 
-            // A. La lista directa a data
+            //La lista directa a data
             res.setData(listRes);
 
-            // B. Metadatos de paginación a la raíz
+            //Metadatos de paginación a la raíz
             res.setTotalRegistros(pag.getTotalRegistros());
             res.setTotalPaginas(pag.getTotalPaginas());
             res.setPaginaActual(pag.getPaginaActual());
@@ -90,7 +89,6 @@ public class OrientadoraJudicialController {
     public ResponseEntity<GlobalResponse> registrar(
             @Valid @ModelAttribute RegistrarOrientadoraRequest request,
             @RequestPart(value = "anexo", required = false) MultipartFile anexo,
-            // ✅ CAMBIO: Ahora recibe una LISTA
             @RequestPart(value = "fotos", required = false) List<MultipartFile> fotos
     ) {
         GlobalResponse res = new GlobalResponse();
@@ -98,7 +96,6 @@ public class OrientadoraJudicialController {
             String usuario = "EMATAMOROSV";
             OrientadoraJudicial dominio = mapper.toDomain(request);
 
-            // ✅ Pasamos la lista al caso de uso
             OrientadoraJudicial creado = useCase.registrarAtencion(dominio, anexo, fotos, usuario);
 
             res.setCodigo("200");
@@ -114,7 +111,6 @@ public class OrientadoraJudicialController {
         }
     }
 
-    // ✅ NUEVO ENDPOINT ACTUALIZAR
     @PutMapping(consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
     public ResponseEntity<GlobalResponse> actualizar(@Valid @ModelAttribute RegistrarOrientadoraRequest request) {
         GlobalResponse res = new GlobalResponse();
@@ -126,7 +122,6 @@ public class OrientadoraJudicialController {
             String usuario = "EMATAMOROSV";
             OrientadoraJudicial dominio = mapper.toDomain(request);
 
-            // La lógica de negocio ya maneja el update
             OrientadoraJudicial actualizado = useCase.actualizar(dominio, usuario);
 
             res.setCodigo("200");
@@ -250,7 +245,7 @@ public class OrientadoraJudicialController {
 
         } catch (Exception e) {
             log.error("Error generando PDF", e);
-            return ResponseEntity.internalServerError().build(); // O un 500 simple
+            return ResponseEntity.internalServerError().build();
         }
     }
 

@@ -29,7 +29,7 @@ public class LlapanchikpaqPersistenceAdapter implements LlapanchikpaqPersistence
     private final MovLlapanchikpaqJusticiaRepository repository;
     private final LlapanchikpaqMapper mapper;
     private final MovArchivosRepository repoArchivos;
-    private final MaeDistritoJudicialRepository repoCorte; // ✅ Inyectado para buscar nombres
+    private final MaeDistritoJudicialRepository repoCorte; //Inyectado para buscar nombres
 
     @Override
     @Transactional(readOnly = true)

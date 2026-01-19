@@ -7,7 +7,7 @@ import pe.gob.pj.prueba.domain.model.negocio.ResumenEstadistico;
 
 import java.util.List;
 
-public interface RegistrarLlapanchikpaqUseCasePort {
+public interface GestionLlapanchikpaqUseCasePort {
     Pagina<LlapanchikpaqJusticia> listar(String usuario, LlapanchikpaqJusticia filtros, int pagina, int tamanio) throws Exception;
     LlapanchikpaqJusticia buscarPorId(String id) throws Exception;
     List<ResumenEstadistico> obtenerResumenGrafico() throws Exception;

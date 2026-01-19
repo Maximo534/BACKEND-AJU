@@ -29,7 +29,7 @@ public class OrientadoraJudicialPersistenceAdapter implements OrientadoraJudicia
 
     private final MovOrientadoraJudicialRepository repository;
     private final MovArchivosRepository repoArchivos;
-    private final MaeDistritoJudicialRepository repoDistrito; // Solo inyectamos lo necesario
+    private final MaeDistritoJudicialRepository repoDistrito;
     private final OrientadoraJudicialMapper mapper;
 
     @Override
@@ -38,9 +38,8 @@ public class OrientadoraJudicialPersistenceAdapter implements OrientadoraJudicia
         Pageable pageable = PageRequest.of(pagina - 1, tamanio);
         if (filtros == null) filtros = OrientadoraJudicial.builder().build();
 
-        // Llamamos a la Query Nativa que ya trae nombre de Corte
+
         var result = repository.listar(usuario, filtros.getSearch(), filtros.getDistritoJudicialId(), filtros.getFechaAtencion(), null, pageable);
-        // Nota: filtros.getFechaAtencion() lo usé como 'inicio' y 'fin' si es rango, aquí asumo lógica simple o hay que adaptar Request
 
         List<OrientadoraJudicial> contenido = result.getContent().stream()
                 .map(p -> OrientadoraJudicial.builder()
@@ -88,7 +87,6 @@ public class OrientadoraJudicialPersistenceAdapter implements OrientadoraJudicia
         MovOrientadoraJudicialEntity saved = repository.save(dbEntity);
         OrientadoraJudicial res = mapper.toDomain(saved);
 
-        // ✅ ENRIQUECIMIENTO INLINE
         if (res.getDistritoJudicialId() != null) {
             repoDistrito.findById(res.getDistritoJudicialId())
                     .ifPresent(c -> res.setDistritoJudicialNombre(c.getNombreCorto()));
@@ -103,8 +101,6 @@ public class OrientadoraJudicialPersistenceAdapter implements OrientadoraJudicia
         if (entity == null) return null;
 
         OrientadoraJudicial dominio = mapper.toDomain(entity);
-
-        // ✅ ENRIQUECIMIENTO INLINE
         if (dominio.getDistritoJudicialId() != null) {
             repoDistrito.findById(dominio.getDistritoJudicialId())
                     .ifPresent(c -> dominio.setDistritoJudicialNombre(c.getNombreCorto()));

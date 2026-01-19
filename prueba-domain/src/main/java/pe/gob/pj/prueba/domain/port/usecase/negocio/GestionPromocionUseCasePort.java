@@ -7,7 +7,7 @@ import pe.gob.pj.prueba.domain.model.negocio.PromocionCultura;
 
 import java.util.List;
 
-public interface RegistrarPromocionUseCasePort {
+public interface GestionPromocionUseCasePort {
 
     Pagina<PromocionCultura> listar(String usuario, PromocionCultura filtros, int pagina, int tamanio) throws Exception;
 
@@ -17,7 +17,6 @@ public interface RegistrarPromocionUseCasePort {
 
     PromocionCultura buscarPorId(String id) throws Exception;
 
-    // Métodos de Archivos
     void eliminarArchivo(String nombreArchivo) throws Exception; // Solo recibe nombre
 
     void agregarArchivo(String idEvento, MultipartFile archivo, String tipo, String usuario) throws Exception;

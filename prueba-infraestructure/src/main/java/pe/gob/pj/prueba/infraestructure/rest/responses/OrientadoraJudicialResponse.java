@@ -17,11 +17,11 @@ public class OrientadoraJudicialResponse implements Serializable {
 
     private String id;
     private String distritoJudicialId;
-    private String distritoJudicialNombre; // Se llena en el UseCase/Controller
+    private String distritoJudicialNombre;
     private LocalDate fechaAtencion;
     private String estado; // Calculado o quemado en mapper (Ej: "REGISTRADO")
 
-    // --- DATOS USUARIA ---
+    // --- DATOS USUARIO ---
     private String nombreCompleto;
     private String tipoDocumento;
     private String numeroDocumento;

@@ -10,7 +10,6 @@ import java.time.LocalDate;
 @Data
 public class RegistrarBuenaPracticaRequest implements Serializable {
 
-    // El ID sigue siendo opcional para el registro (solo validamos tamaño si viene)
     @Size(max = 17, message = "El ID no puede exceder los 17 caracteres.")
     private String id;
 
@@ -103,8 +102,6 @@ public class RegistrarBuenaPracticaRequest implements Serializable {
 
     @NotBlank(message = "La información adicional es obligatoria.")
     private String infoAdicional;
-
-    // --- NUEVOS CAMPOS COMPLETOS (Antes ocultos) ---
 
     @NotBlank(message = "El aporte relevante es obligatorio.")
     private String aporteRelevante;

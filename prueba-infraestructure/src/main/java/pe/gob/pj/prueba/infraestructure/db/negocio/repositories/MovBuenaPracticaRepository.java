@@ -24,8 +24,8 @@ public interface MovBuenaPracticaRepository extends JpaRepository<MovBuenaPracti
             bp.x_titulo AS titulo,
             bp.f_inicio AS fechaInicio,
             dj.x_nom_corto AS distritoJudicialNombre
-        FROM prueba.mov_aju_buena_practicas bp  -- ✅ AGREGADO 'prueba.'
-        INNER JOIN prueba.mae_aju_distrito_judiciales dj ON bp.c_distrito_jud_id = dj.c_distrito_jud_id -- ✅ AGREGADO 'prueba.'
+        FROM prueba.mov_aju_buena_practicas bp  
+        INNER JOIN prueba.mae_aju_distrito_judiciales dj ON bp.c_distrito_jud_id = dj.c_distrito_jud_id
         WHERE bp.c_usuario_reg = :usuario
           
           -- FILTROS
@@ -43,8 +43,8 @@ public interface MovBuenaPracticaRepository extends JpaRepository<MovBuenaPracti
         ORDER BY bp.f_inicio DESC
     """, countQuery = """
         SELECT count(*) 
-        FROM prueba.mov_aju_buena_practicas bp -- ✅ AGREGADO 'prueba.'
-        INNER JOIN prueba.mae_aju_distrito_judiciales dj ON bp.c_distrito_jud_id = dj.c_distrito_jud_id -- ✅ AGREGADO 'prueba.'
+        FROM prueba.mov_aju_buena_practicas bp 
+        INNER JOIN prueba.mae_aju_distrito_judiciales dj ON bp.c_distrito_jud_id = dj.c_distrito_jud_id 
         WHERE bp.c_usuario_reg = :usuario
           AND (:distrito IS NULL OR bp.c_distrito_jud_id = :distrito)
           AND (CAST(:fecIni AS DATE) IS NULL OR bp.f_inicio >= :fecIni)

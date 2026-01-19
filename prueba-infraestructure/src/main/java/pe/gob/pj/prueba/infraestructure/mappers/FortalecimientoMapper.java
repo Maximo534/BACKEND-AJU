@@ -27,14 +27,9 @@ public interface FortalecimientoMapper {
     @InheritInverseConfiguration(name = "toEntity")
     FortalecimientoCapacidades toDomain(MovEventoFcEntity entity);
 
-    // -------------------------------------------------------------------------
-    // ✅ ACTUALIZAR ENTIDAD (Corrección aplicada)
-    // -------------------------------------------------------------------------
     @Mapping(target = "id", ignore = true)
     @Mapping(target = "usuarioRegistro", ignore = true)
     @Mapping(target = "fechaRegistro", ignore = true)
-
-    // ⚠️ CORRECCIÓN: El campo en la entidad se llama 'activo', no 'estado'
     @Mapping(target = "activo", ignore = true)
 
     @BeanMapping(nullValuePropertyMappingStrategy = NullValuePropertyMappingStrategy.IGNORE)

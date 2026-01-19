@@ -1,6 +1,7 @@
 package pe.gob.pj.prueba.infraestructure.rest.responses;
 
 // import com.fasterxml.jackson.annotation.JsonInclude; // COMENTADO
+import com.fasterxml.jackson.annotation.JsonInclude;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
@@ -12,7 +13,7 @@ import java.time.LocalDate;
 import java.util.List;
 
 @Data @Builder @NoArgsConstructor @AllArgsConstructor
-// @JsonInclude(JsonInclude.Include.NON_NULL) // OJO: Comentado para ver nulos
+@JsonInclude(JsonInclude.Include.NON_NULL)
 public class PromocionCulturaResponse implements Serializable {
 
     // Identificadores

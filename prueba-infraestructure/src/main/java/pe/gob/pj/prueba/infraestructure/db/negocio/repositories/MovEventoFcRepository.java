@@ -25,8 +25,8 @@ public interface MovEventoFcRepository extends JpaRepository<MovEventoFcEntity, 
             fc.c_tipo_evento AS tipoEvento,
             fc.l_activo AS estado,
             dj.x_nom_corto AS distritoJudicialNombre
-        FROM prueba.mov_aju_eventos fc -- ✅ AGREGADO 'prueba.'
-        INNER JOIN prueba.mae_aju_distrito_judiciales dj ON fc.c_distrito_jud_id = dj.c_distrito_jud_id -- ✅ AGREGADO 'prueba.'
+        FROM prueba.mov_aju_eventos fc 
+        INNER JOIN prueba.mae_aju_distrito_judiciales dj ON fc.c_distrito_jud_id = dj.c_distrito_jud_id 
         WHERE fc.c_usuario_reg = :usuario
           AND fc.l_activo = '1'
           
@@ -48,8 +48,8 @@ public interface MovEventoFcRepository extends JpaRepository<MovEventoFcEntity, 
         ORDER BY fc.f_inicio DESC
     """, countQuery = """
         SELECT count(*) 
-        FROM prueba.mov_aju_eventos fc -- ✅ AGREGADO 'prueba.'
-        INNER JOIN prueba.mae_aju_distrito_judiciales dj ON fc.c_distrito_jud_id = dj.c_distrito_jud_id -- ✅ AGREGADO 'prueba.'
+        FROM prueba.mov_aju_eventos fc 
+        INNER JOIN prueba.mae_aju_distrito_judiciales dj ON fc.c_distrito_jud_id = dj.c_distrito_jud_id 
         WHERE fc.c_usuario_reg = :usuario
           AND fc.l_activo = '1'
           AND (:distrito IS NULL OR fc.c_distrito_jud_id = :distrito)

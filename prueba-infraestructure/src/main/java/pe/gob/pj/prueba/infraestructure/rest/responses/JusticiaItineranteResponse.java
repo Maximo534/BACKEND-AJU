@@ -15,18 +15,18 @@ import java.util.List;
 @Builder
 @NoArgsConstructor
 @AllArgsConstructor
-@JsonInclude(JsonInclude.Include.NON_NULL) // CLAVE: Oculta nulos en el listado
+@JsonInclude(JsonInclude.Include.NON_NULL)
 public class JusticiaItineranteResponse implements Serializable {
 
-    // --- CAMPOS COMUNES (Siempre visibles) ---
+    // --- CAMPOS COMUNES ---
     private String id;
     private String distritoJudicialNombre;
-    private String distritoJudicialId; // Para editar (combo)
+    private String distritoJudicialId;
     private LocalDate fechaInicio;
     private LocalDate fechaFin;
     private String estado;
 
-    // --- CAMPOS DETALLE (Nulos al listar) ---
+    // --- CAMPOS DETALLE ---
     private String resolucionPlanAnual;
     private String resolucionAdminPlan;
     private String documentoAutoriza;
@@ -64,7 +64,6 @@ public class JusticiaItineranteResponse implements Serializable {
     // --- ARCHIVOS ---
     private List<Archivo> archivos;
 
-    // SUB-DTOs
     @Data @Builder @NoArgsConstructor @AllArgsConstructor
     public static class DetallePAResponse implements Serializable {
         private Integer tipoVulnerabilidadId;
@@ -73,7 +72,7 @@ public class JusticiaItineranteResponse implements Serializable {
         private Integer cantMasculino;
         private Integer cantLgtbiq;
     }
-    // (Incluir aquí DetallePCAResponse, DetallePBResponse, DetalleTRResponse con estructura similar...)
+
     @Data @Builder @NoArgsConstructor @AllArgsConstructor
     public static class DetallePCAResponse implements Serializable {
         private Integer materiaId;

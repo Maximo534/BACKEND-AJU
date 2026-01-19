@@ -43,7 +43,6 @@ public class FortalecimientoPersistenceAdapter implements FortalecimientoPersist
         LocalDate fIni = filtros.getFechaInicio();
         LocalDate fFin = filtros.getFechaFin();
 
-        // La query nativa ya trae el nombre del distrito (JOIN)
         var result = repository.listar(usuario, search, distrito, tipo, fIni, fFin, pageable);
 
         List<FortalecimientoCapacidades> contenido = result.getContent().stream()
@@ -82,7 +81,7 @@ public class FortalecimientoPersistenceAdapter implements FortalecimientoPersist
             MovEventoFcEntity guardado = repository.save(entidad);
             FortalecimientoCapacidades res = mapper.toDomain(guardado);
 
-            // ✅ Lógica Inline: Enriquecer con nombre para devolver al front
+            //  Enriquecer con nombre para devolver al front
             if (res.getDistritoJudicialId() != null) {
                 repoDistrito.findById(res.getDistritoJudicialId())
                         .ifPresent(d -> res.setDistritoJudicialNombre(d.getNombre()));
@@ -139,7 +138,7 @@ public class FortalecimientoPersistenceAdapter implements FortalecimientoPersist
             MovEventoFcEntity guardado = repository.save(entidadDb);
             FortalecimientoCapacidades res = mapper.toDomain(guardado);
 
-            // ✅ Lógica Inline: Enriquecer con nombre
+            // Enriquecer con nombre
             if (res.getDistritoJudicialId() != null) {
                 repoDistrito.findById(res.getDistritoJudicialId())
                         .ifPresent(d -> res.setDistritoJudicialNombre(d.getNombre()));
@@ -161,7 +160,7 @@ public class FortalecimientoPersistenceAdapter implements FortalecimientoPersist
 
         FortalecimientoCapacidades dominio = mapper.toDomain(entidad);
 
-        // ✅ Lógica Inline: Enriquecer con nombre
+        // Enriquecer con nombre
         if (dominio.getDistritoJudicialId() != null) {
             repoDistrito.findById(dominio.getDistritoJudicialId())
                     .ifPresent(d -> dominio.setDistritoJudicialNombre(d.getNombre()));

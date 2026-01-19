@@ -9,10 +9,8 @@ public class ListarOrientadoraRequest implements Serializable {
 
     private String search; // Buscador por ID, Nombre o DNI
 
-    // Filtros
     private String distritoJudicialId;
 
-    // Rango de fechas (Atención)
     private LocalDate fechaInicio;
     private LocalDate fechaFin;
 }

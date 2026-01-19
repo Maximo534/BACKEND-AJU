@@ -27,7 +27,6 @@ public class MaestrosPersistenceAdapter implements MaestrosPersistencePort {
     private final MaeDistritoRepository repoDist;
     private final MaeTipoParticipanteRepository repoTipoPart;
 
-    // --- EXISTENTES ---
     @Override
     public List<ActividadOperativa> listarActividades() {
         return repoActividad.findByActivo("1").stream()
@@ -49,7 +48,6 @@ public class MaestrosPersistenceAdapter implements MaestrosPersistencePort {
                 .collect(Collectors.toList());
     }
 
-    // --- NUEVOS IMPLEMENTADOS ---
 
     @Override
     public List<DistritoJudicial> listarDistritosJudiciales() {

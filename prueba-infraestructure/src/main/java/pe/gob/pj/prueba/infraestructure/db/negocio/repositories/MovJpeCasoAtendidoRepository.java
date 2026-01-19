@@ -14,11 +14,9 @@ import java.util.List;
 @Repository
 public interface MovJpeCasoAtendidoRepository extends JpaRepository<MovJpeCasoAtendidoEntity, String> {
 
-    // JPQL: No necesita cambios porque lee la configuración de la Entidad
     @Query("SELECT MAX(e.id) FROM MovJpeCasoAtendidoEntity e WHERE e.id LIKE '%-PE'")
     String obtenerUltimoId();
 
-    // ✅ NATIVE QUERY CORREGIDO: Se agregaron los esquemas 'prueba.'
     @Query(value = """
         SELECT 
             pe.c_jpeca_id AS id,
@@ -77,7 +75,6 @@ public interface MovJpeCasoAtendidoRepository extends JpaRepository<MovJpeCasoAt
             @Param("fecha") LocalDate fechaRegistro,
             Pageable pageable);
 
-    // JPQL: No necesita cambios
     @Query("SELECT e.distritoJudicialId, COUNT(e) FROM MovJpeCasoAtendidoEntity e GROUP BY e.distritoJudicialId")
     List<Object[]> obtenerEstadisticasPorCorte();
 

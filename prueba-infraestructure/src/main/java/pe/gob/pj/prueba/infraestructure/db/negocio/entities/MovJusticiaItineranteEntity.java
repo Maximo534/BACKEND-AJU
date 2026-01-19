@@ -121,7 +121,7 @@ public class MovJusticiaItineranteEntity implements Serializable {
     @JoinColumn(name = "c_just_itin_id", referencedColumnName = "c_just_itin_id", nullable = false, insertable = false, updatable = false)
     private List<MovJiTareasRealizadasEntity> tareasRealizadas = new ArrayList<>();
 
-    // ✅ SOLO LÓGICA ESTRUCTURAL, NADA DE VALORES POR DEFECTO
+    // SOLO LÓGICA ESTRUCTURAL, NADA DE VALORES POR DEFECTO
     @PrePersist
     public void prePersist() {
         if (this.fechaRegistro == null) this.fechaRegistro = LocalDate.now();

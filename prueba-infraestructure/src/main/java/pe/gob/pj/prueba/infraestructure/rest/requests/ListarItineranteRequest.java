@@ -8,10 +8,8 @@ import java.time.LocalDate;
 public class ListarItineranteRequest implements Serializable {
     private String search;
 
-    // ✅ FILTRO COMBO
     private String distritoJudicialId;
 
-    // ✅ FILTRO RANGO DE FECHAS (ejecución de la actividad)
     private LocalDate fechaInicio;
     private LocalDate fechaFin;
 

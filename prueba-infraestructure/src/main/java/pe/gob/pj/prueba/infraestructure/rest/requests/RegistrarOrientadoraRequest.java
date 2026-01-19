@@ -9,7 +9,7 @@ import java.time.LocalDate;
 @Data
 public class RegistrarOrientadoraRequest implements Serializable {
 
-    private String id; // Opcional (solo para Updates)
+    private String id;
 
     @NotBlank(message = "El Distrito Judicial es obligatorio")
     @Size(max = 2, message = "El Distrito Judicial excede 2 caracteres")
@@ -91,5 +91,5 @@ public class RegistrarOrientadoraRequest implements Serializable {
     private String derivacionInstitucion;
 
     @NotBlank(message = "La reseña del caso es obligatoria")
-    private String resenaCaso; // TEXT en BD, sin límite estricto en Java
+    private String resenaCaso;
 }

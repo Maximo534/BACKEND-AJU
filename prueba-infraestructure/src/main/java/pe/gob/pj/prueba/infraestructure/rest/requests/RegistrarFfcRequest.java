@@ -11,7 +11,7 @@ import java.util.List;
 @Data
 public class RegistrarFfcRequest implements Serializable {
 
-    private String id; // Opcional al registrar
+    private String id;
 
     @NotBlank(message = "El Distrito Judicial es obligatorio")
     private String distritoJudicialId;

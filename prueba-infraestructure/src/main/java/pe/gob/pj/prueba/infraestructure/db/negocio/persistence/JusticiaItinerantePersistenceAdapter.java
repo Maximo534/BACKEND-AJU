@@ -27,7 +27,7 @@ public class JusticiaItinerantePersistenceAdapter implements JusticiaItineranteP
 
     private final MovJusticiaItineranteRepository repository;
     private final MovArchivosRepository repoArchivos;
-    private final MaeDistritoJudicialRepository repoDistrito; // ✅ Repo Maestro
+    private final MaeDistritoJudicialRepository repoDistrito;
     private final JusticiaItineranteMapper mapper;
 
     @Override
@@ -41,7 +41,6 @@ public class JusticiaItinerantePersistenceAdapter implements JusticiaItineranteP
         LocalDate fIni = (filtros != null) ? filtros.getFechaInicio() : null;
         LocalDate fFin = (filtros != null) ? filtros.getFechaFin() : null;
 
-        // La query nativa ya trae el nombre del distrito (JOIN), no hace falta buscarlo uno por uno.
         var result = repository.listar(usuario, search, distrito, fIni, fFin, pageable);
 
         List<JusticiaItinerante> contenido = result.getContent().stream()
@@ -84,7 +83,7 @@ public class JusticiaItinerantePersistenceAdapter implements JusticiaItineranteP
             MovJusticiaItineranteEntity entidadGuardada = repository.save(entidad);
             JusticiaItinerante resultado = mapper.toDomain(entidadGuardada);
 
-            // ✅ Lógica Inline: Enriquecer con nombre para devolver al front
+            // Enriquecer con nombre para devolver al front
             if (resultado.getDistritoJudicialId() != null) {
                 repoDistrito.findById(resultado.getDistritoJudicialId())
                         .ifPresent(d -> resultado.setDistritoJudicialNombre(d.getNombre()));
@@ -111,7 +110,7 @@ public class JusticiaItinerantePersistenceAdapter implements JusticiaItineranteP
 
         JusticiaItinerante dominio = mapper.toDomain(entidad);
 
-        // ✅ Lógica Inline: Enriquecer con nombre del distrito
+        // Enriquecer con nombre del distrito
         if (dominio.getDistritoJudicialId() != null) {
             repoDistrito.findById(dominio.getDistritoJudicialId())
                     .ifPresent(d -> dominio.setDistritoJudicialNombre(d.getNombre()));
@@ -189,7 +188,7 @@ public class JusticiaItinerantePersistenceAdapter implements JusticiaItineranteP
             MovJusticiaItineranteEntity actualizado = repository.save(entidadDb);
             JusticiaItinerante resultado = mapper.toDomain(actualizado);
 
-            // ✅ Lógica Inline: Enriquecer con nombre para devolver al front
+            // Enriquecer con nombre para devolver al front
             if (resultado.getDistritoJudicialId() != null) {
                 repoDistrito.findById(resultado.getDistritoJudicialId())
                         .ifPresent(d -> resultado.setDistritoJudicialNombre(d.getNombre()));

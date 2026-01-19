@@ -15,9 +15,8 @@ public class ResumenEstadisticoResponse implements Serializable {
 
     private static final long serialVersionUID = 1L;
 
-    // Nombre de la categoría (ej: "LIMA", "CUSCO")
+    //(ej: "LIMA", "CUSCO")
     private String etiqueta;
 
-    // Valor numérico (ej: 45, 10)
     private Long cantidad;
 }

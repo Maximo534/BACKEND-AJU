@@ -7,13 +7,11 @@ import java.time.LocalDate;
 @Data
 public class ListarPromocionRequest implements Serializable {
 
-    // ✅ BUSCADOR GENERAL (ID, Descripción, Corte)
+    // BUSCADOR GENERAL (ID, Descripción, Corte)
     private String search;
 
-    // ✅ FILTRO COMBO
     private String distritoJudicialId;
 
-    // ✅ FILTRO RANGO DE FECHAS (Sobre fecha de inicio)
     private LocalDate fechaInicio;
     private LocalDate fechaFin;
 }

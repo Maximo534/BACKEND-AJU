@@ -34,23 +34,16 @@ public class MovJpeCasoAtendidoEntity implements Serializable {
     @Column(name = "c_dist_id", length = 6)
     private String distritoId;
 
-    // =========================================================================
-    // ✅ CORRECCIÓN AQUÍ: RELACIÓN CON JUEZ ESCOLAR
-    // =========================================================================
-
     // 1. Campo ID (Solo lectura, para consultas rápidas o mappers simples)
     // Se pone insertable=false, updatable=false porque el dueño de la relación será el objeto de abajo
     @Column(name = "c_cod_reg", length = 36, insertable = false, updatable = false)
     private String juezEscolarId;
 
-    // 2. Objeto Relacional (Este es el que usa el PersistenceAdapter con .setJuezEscolar)
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "c_cod_reg") // Esta columna es la FK real
     private MaeJuezPazEscolarEntity juezEscolar;
 
-    // =========================================================================
-
-    // --- ESTUDIANTE 1 (Quien reporta o víctima) ---
+    // --- ESTUDIANTE 1  ---
     @Column(name = "x_nom_comp_estud_1", length = 80)
     private String nombreEstudiante1;
     @Column(name = "x_dni_estud_1", length = 8)
@@ -60,7 +53,7 @@ public class MovJpeCasoAtendidoEntity implements Serializable {
     @Column(name = "x_secc_estud_1", length = 1)
     private String seccionEstudiante1;
 
-    // --- ESTUDIANTE 2 (La otra parte) ---
+    // --- ESTUDIANTE 2---
     @Column(name = "x_nom_comp_estud_2", length = 80)
     private String nombreEstudiante2;
     @Column(name = "x_dni_estud_2", length = 8)

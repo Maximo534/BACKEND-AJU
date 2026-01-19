@@ -6,7 +6,7 @@ import pe.gob.pj.prueba.domain.model.common.RecursoArchivo;
 import pe.gob.pj.prueba.domain.model.negocio.FortalecimientoCapacidades;
 import java.util.List;
 
-public interface RegistrarFortalecimientoUseCasePort {
+public interface GestionFortalecimientoUseCasePort {
 
     Pagina<FortalecimientoCapacidades> listar(String usuario, FortalecimientoCapacidades filtros, int pagina, int tamanio) throws Exception;
 

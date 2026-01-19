@@ -13,7 +13,7 @@ import pe.gob.pj.prueba.infraestructure.rest.responses.LlapanchikpaqResponse;
 public interface LlapanchikpaqMapper {
 
     // Request -> Domain
-    @Mapping(target = "id", source = "id") // Permitimos mapear ID si viene en Request
+    @Mapping(target = "id", source = "id")
     @Mapping(target = "archivosGuardados", ignore = true)
     @Mapping(target = "fechaRegistro", ignore = true)
     @Mapping(target = "usuarioRegistro", ignore = true)
@@ -27,16 +27,15 @@ public interface LlapanchikpaqMapper {
     @InheritInverseConfiguration(name = "toEntity")
     LlapanchikpaqJusticia toDomain(MovLlapanchikpaqJusticia entity);
 
-    // ✅ UPDATE: Ignorar listas para evitar error de ID alterado
     @BeanMapping(nullValuePropertyMappingStrategy = NullValuePropertyMappingStrategy.IGNORE)
     @Mapping(target = "id", ignore = true)
     @Mapping(target = "usuarioRegistro", ignore = true)
     @Mapping(target = "fechaRegistro", ignore = true)
     @Mapping(target = "activo", ignore = true)
-    @Mapping(target = "beneficiadas", ignore = true) // <--- CRÍTICO
-    @Mapping(target = "atendidas", ignore = true)    // <--- CRÍTICO
-    @Mapping(target = "casos", ignore = true)        // <--- CRÍTICO
-    @Mapping(target = "tareas", ignore = true)       // <--- CRÍTICO
+    @Mapping(target = "beneficiadas", ignore = true)
+    @Mapping(target = "atendidas", ignore = true)
+    @Mapping(target = "casos", ignore = true)
+    @Mapping(target = "tareas", ignore = true)
     void updateEntityFromDomain(LlapanchikpaqJusticia domain, @MappingTarget MovLlapanchikpaqJusticia entity);
 
     // Helpers

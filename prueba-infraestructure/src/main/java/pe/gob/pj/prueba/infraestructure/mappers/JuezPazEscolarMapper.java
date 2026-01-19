@@ -13,7 +13,7 @@ import java.util.List;
         unmappedTargetPolicy = ReportingPolicy.IGNORE)
 public interface JuezPazEscolarMapper {
 
-    // --- MAPPINGS DE REGISTRO (Ya existían) ---
+    // --- MAPPINGS DE REGISTRO ---
     @Mapping(target = "id", source = "id")
     @Mapping(target = "fechaRegistro", ignore = true)
     @Mapping(target = "usuarioRegistro", ignore = true)
@@ -28,7 +28,7 @@ public interface JuezPazEscolarMapper {
     @Mapping(target = "institucionEducativaNombre", ignore = true)
     JuezPazEscolar toDomain(RegistrarJuezRequest request);
 
-    // ✅ NUEVO: Request Listado -> Dominio (Filtros)
+    // Request Listado -> Dominio (Filtros)
     @Mapping(target = "search", source = "search")
     @Mapping(target = "distritoJudicialId", source = "distritoJudicialId")
     @Mapping(target = "ugelId", source = "ugelId")
@@ -36,10 +36,10 @@ public interface JuezPazEscolarMapper {
     // Ignoramos el resto
     @Mapping(target = "id", ignore = true)
     @Mapping(target = "dni", ignore = true)
-    // ... (MapStruct ignorará nulls por policy, o puedes ignorar explícitamente)
+    // ... (MapStruct ignorará nulls por policy o ignorar explícitamente)
     JuezPazEscolar toDomain(ListarJuezEscolarRequest request);
 
-    // --- MAPPINGS ENTITY (Sin cambios) ---
+    // --- MAPPINGS ENTITY ---
     @Mapping(target = "institucionEducativa", ignore = true)
     MaeJuezPazEscolarEntity toEntity(JuezPazEscolar domain);
 
@@ -53,7 +53,7 @@ public interface JuezPazEscolarMapper {
     @Mapping(target = "institucionEducativa", ignore = true)
     void updateEntityFromDomain(JuezPazEscolar domain, @MappingTarget MaeJuezPazEscolarEntity entity);
 
-    // --- RESPONSE (Sin cambios) ---
+    // --- RESPONSE ---
     @Mapping(target = "nombreCompleto", expression = "java(domain.getNombres() + ' ' + domain.getApePaterno() + ' ' + domain.getApeMaterno())")
     @Mapping(target = "archivos", source = "archivosGuardados")
     JuezPazEscolarResponse toResponse(JuezPazEscolar domain);

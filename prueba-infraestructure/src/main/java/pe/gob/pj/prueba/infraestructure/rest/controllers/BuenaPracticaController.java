@@ -14,7 +14,7 @@ import pe.gob.pj.prueba.domain.model.common.Pagina;
 import pe.gob.pj.prueba.domain.model.common.RecursoArchivo;
 import pe.gob.pj.prueba.domain.model.negocio.BuenaPractica;
 import pe.gob.pj.prueba.domain.model.negocio.ResumenEstadistico;
-import pe.gob.pj.prueba.domain.port.usecase.negocio.RegistrarBuenaPracticaUseCasePort;
+import pe.gob.pj.prueba.domain.port.usecase.negocio.GestionBuenaPracticaUseCasePort;
 import pe.gob.pj.prueba.infraestructure.mappers.BuenaPracticaMapper;
 import pe.gob.pj.prueba.infraestructure.rest.requests.ListarBuenaPracticaRequest;
 import pe.gob.pj.prueba.infraestructure.rest.requests.RegistrarBuenaPracticaRequest;
@@ -31,13 +31,10 @@ import java.util.stream.Collectors;
 @RequiredArgsConstructor
 public class BuenaPracticaController {
 
-    private final RegistrarBuenaPracticaUseCasePort useCase;
+    private final GestionBuenaPracticaUseCasePort useCase;
     private final BuenaPracticaMapper mapper;
 
-    // =========================================================================
-    // 1. LISTAR
-    // =========================================================================
-    @PostMapping(produces = MediaType.APPLICATION_JSON_VALUE) // O @GetMapping si cambias a filtros por URL
+    @PostMapping(produces = MediaType.APPLICATION_JSON_VALUE)
     public ResponseEntity<GlobalResponse> listar(
             @RequestParam(name = "pagina", defaultValue = "1") int pagina,
             @RequestParam(name = "tamanio", defaultValue = "10") int tamanio,
@@ -45,7 +42,7 @@ public class BuenaPracticaController {
     ) {
         GlobalResponse res = new GlobalResponse();
         try {
-            String usuario = "EMATAMOROSV"; // Obtener del token real si es necesario
+            String usuario = "EMATAMOROSV";
 
             BuenaPractica filtros = BuenaPractica.builder().build();
             if (request != null) {
@@ -55,22 +52,17 @@ public class BuenaPracticaController {
                 filtros.setFechaFin(request.getFechaFin());
             }
 
-            // 1. Obtener la data del servicio
             Pagina<BuenaPractica> paginaRes = useCase.listar(usuario, filtros, pagina, tamanio);
 
-            // 2. Mapear solo la lista de contenido
             List<BuenaPracticaResponse> listaResponse = paginaRes.getContenido().stream()
                     .map(mapper::toResponse)
                     .collect(Collectors.toList());
 
-            // 3. ✅ EL CAMBIO ESTÁ AQUÍ: Llenamos el GlobalResponse plano
-            res.setCodigo("0000"); // Usualmente 0000 o 200 según tu estándar
+            res.setCodigo("0000");
             res.setDescripcion("Listado exitoso");
 
-            // A. La lista va directo a data (ya no un objeto pagina)
             res.setData(listaResponse);
 
-            // B. Los datos de paginación van directo al GlobalResponse
             res.setTotalRegistros(paginaRes.getTotalRegistros());
             res.setTotalPaginas(paginaRes.getTotalPaginas());
             res.setPaginaActual(paginaRes.getPaginaActual());
@@ -86,9 +78,6 @@ public class BuenaPracticaController {
         }
     }
 
-    // =========================================================================
-    // 2. OBTENER POR ID
-    // =========================================================================
     @GetMapping(value = "/{id}", produces = MediaType.APPLICATION_JSON_VALUE)
     public ResponseEntity<GlobalResponse> obtenerPorId(@PathVariable String id) {
         GlobalResponse res = new GlobalResponse();
@@ -105,9 +94,6 @@ public class BuenaPracticaController {
         }
     }
 
-    // =========================================================================
-    // 3. REGISTRAR
-    // =========================================================================
     @PostMapping(consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
     public ResponseEntity<GlobalResponse> registrar(
             @Valid @ModelAttribute RegistrarBuenaPracticaRequest request,
@@ -139,9 +125,6 @@ public class BuenaPracticaController {
         }
     }
 
-    // =========================================================================
-    // 4. ACTUALIZAR
-    // =========================================================================
     @PutMapping(consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
     public ResponseEntity<GlobalResponse> actualizar(@Valid @ModelAttribute RegistrarBuenaPracticaRequest request) {
         GlobalResponse res = new GlobalResponse();
@@ -169,9 +152,6 @@ public class BuenaPracticaController {
         }
     }
 
-    // =========================================================================
-    // 5. GESTIÓN DE ARCHIVOS
-    // =========================================================================
 
     @PostMapping(value = "/archivos", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
     public ResponseEntity<GlobalResponse> agregarArchivo(
@@ -209,9 +189,6 @@ public class BuenaPracticaController {
         }
     }
 
-    // =========================================================================
-    // 6. DESCARGAS (Lógica explícita en cada método)
-    // =========================================================================
 
     @GetMapping("/{id}/ficha")
     public ResponseEntity<byte[]> descargarFicha(@PathVariable String id) {
@@ -237,7 +214,7 @@ public class BuenaPracticaController {
 
             return ResponseEntity.ok()
                     .headers(headers)
-                    .contentType(MediaType.APPLICATION_PDF) // Forzamos PDF para el anexo
+                    .contentType(MediaType.APPLICATION_PDF)
                     .body(new InputStreamResource(recurso.getStream()));
 
         } catch (Exception e) {
@@ -255,7 +232,7 @@ public class BuenaPracticaController {
 
             return ResponseEntity.ok()
                     .headers(headers)
-                    .contentType(MediaType.parseMediaType("application/vnd.ms-powerpoint")) // Forzamos PPT
+                    .contentType(MediaType.parseMediaType("application/vnd.ms-powerpoint"))
                     .body(new InputStreamResource(recurso.getStream()));
 
         } catch (Exception e) {
@@ -263,9 +240,6 @@ public class BuenaPracticaController {
         }
     }
 
-    // =========================================================================
-    // 7. ESTADÍSTICAS
-    // =========================================================================
     @GetMapping(value = "/estadisticas", produces = MediaType.APPLICATION_JSON_VALUE)
     public ResponseEntity<GlobalResponse> obtenerEstadisticasChart() {
         GlobalResponse res = new GlobalResponse();

@@ -11,7 +11,7 @@ import java.util.List;
 @Data
 public class RegistrarPromocionRequest implements Serializable {
 
-    private String id; // Opcional
+    private String id;
 
     @NotBlank(message = "El Distrito Judicial es obligatorio")
     private String distritoJudicialId;
@@ -99,7 +99,7 @@ public class RegistrarPromocionRequest implements Serializable {
 
     @NotBlank(message = "Desc. Lengua nativa obligatorio")
     @Size(max = 25)
-    private String lenguaNativa; // Se mapea a lenguaNativaDesc
+    private String lenguaNativa;
 
     @NotBlank(message = "Participaron discap. obligatorio")
     private String participaronDiscapacitados;
@@ -108,14 +108,11 @@ public class RegistrarPromocionRequest implements Serializable {
     @Min(0)
     private Integer numeroDiscapacitados;
 
-    @NotBlank(message = "Requiere intérprete obligatorio")
-    private String requiereInterprete; // Ojo: Verifica si tu BD tiene este campo, en Entity no lo vi, pero en Domain sí.
-
     // Textos
     @NotBlank(message = "Descripción actividad obligatoria")
     private String descripcionActividad;
 
-    @NotBlank(message = "Recursos utilizados obligatorio") // Se mapea a institucionesAliadas según Entity? Revisa mapeo.
+    @NotBlank(message = "Recursos utilizados obligatorio")
     private String recursosUtilizados;
 
     @NotBlank(message = "Observación obligatoria")

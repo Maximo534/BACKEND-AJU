@@ -39,10 +39,6 @@ public class GestionJusticiaPazUseCaseAdapter implements GestionJusticiaPazUseCa
     @Value("${ftp.clave}") private String ftpClave;
     @Value("${ftp.ruta-base:/evidencias}") private String ftpRutaBase;
 
-    // =========================================================================
-    // SECCIÓN 2: GESTIÓN DE CASOS (INCIDENTES)
-    // =========================================================================
-
     @Override
     public Pagina<JpeCasoAtendido> listar(String usuario, JpeCasoAtendido filtros, int pagina, int tamanio) throws Exception {
         return persistencePort.listar(usuario, filtros, pagina, tamanio);
@@ -64,7 +60,7 @@ public class GestionJusticiaPazUseCaseAdapter implements GestionJusticiaPazUseCa
         dominio.setUsuarioRegistro(usuario);
         JpeCasoAtendido registrado = persistencePort.guardar(dominio);
 
-        // Subida de Archivos Caso (Lógica Específica: Nombre único con timestamp)
+        // Subida de Archivos
         boolean hayArchivos = (acta != null && !acta.isEmpty()) || (fotos != null && !fotos.isEmpty());
         if (hayArchivos) {
             String sessionKey = UUID.randomUUID().toString();
@@ -106,7 +102,6 @@ public class GestionJusticiaPazUseCaseAdapter implements GestionJusticiaPazUseCa
         String sessionKey = UUID.randomUUID().toString();
         try {
             ftpPort.iniciarSesion(sessionKey, ftpIp, ftpPuerto, ftpUsuario, ftpClave);
-            // ✅ Usa la lógica de Caso
             uploadFile(archivo, caso, tipo, sessionKey);
         } finally {
             ftpPort.finalizarSession(sessionKey);

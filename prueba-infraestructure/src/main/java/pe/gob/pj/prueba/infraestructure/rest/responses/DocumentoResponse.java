@@ -13,5 +13,5 @@ public class DocumentoResponse implements Serializable {
     private Integer periodo;
     private String formato;
     private Integer categoriaId;
-    private String urlDescarga;
+//    private String urlDescarga;
 }

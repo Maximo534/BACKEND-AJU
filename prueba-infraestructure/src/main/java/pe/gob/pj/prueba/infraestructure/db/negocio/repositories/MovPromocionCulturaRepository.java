@@ -25,8 +25,8 @@ public interface MovPromocionCulturaRepository extends JpaRepository<MovPromocio
             pc.t_desc_activ AS tipoActividad, 
             pc.l_activo AS estado,
             dj.x_nom_corto AS distritoJudicialNombre
-        FROM prueba.mov_aju_actv_prom_culturas pc -- ✅ AGREGADO 'prueba.'
-        INNER JOIN prueba.mae_aju_distrito_judiciales dj ON pc.c_distrito_jud_id = dj.c_distrito_jud_id -- ✅ AGREGADO 'prueba.'
+        FROM prueba.mov_aju_actv_prom_culturas pc 
+        INNER JOIN prueba.mae_aju_distrito_judiciales dj ON pc.c_distrito_jud_id = dj.c_distrito_jud_id 
         WHERE pc.c_usuario_reg = :usuario
           
           -- FILTRO COMBO
@@ -46,8 +46,8 @@ public interface MovPromocionCulturaRepository extends JpaRepository<MovPromocio
         ORDER BY pc.f_inicio DESC
     """, countQuery = """
         SELECT count(*) 
-        FROM prueba.mov_aju_actv_prom_culturas pc -- ✅ AGREGADO 'prueba.'
-        INNER JOIN prueba.mae_aju_distrito_judiciales dj ON pc.c_distrito_jud_id = dj.c_distrito_jud_id -- ✅ AGREGADO 'prueba.'
+        FROM prueba.mov_aju_actv_prom_culturas pc 
+        INNER JOIN prueba.mae_aju_distrito_judiciales dj ON pc.c_distrito_jud_id = dj.c_distrito_jud_id 
         WHERE pc.c_usuario_reg = :usuario
           AND (:distrito IS NULL OR pc.c_distrito_jud_id = :distrito)
           AND (CAST(:fecIni AS DATE) IS NULL OR pc.f_inicio >= :fecIni)

@@ -12,7 +12,7 @@ import java.time.LocalDate;
 import java.util.List;
 
 @Data @Builder @NoArgsConstructor @AllArgsConstructor
-@JsonInclude(JsonInclude.Include.NON_NULL) // Oculta nulos en el listado
+@JsonInclude(JsonInclude.Include.NON_NULL)
 public class FortalecimientoResponse implements Serializable {
 
     // Cabecera

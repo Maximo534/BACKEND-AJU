@@ -6,10 +6,9 @@ import java.io.Serializable;
 @Data
 public class ListarJuezEscolarRequest implements Serializable {
 
-    // Buscador general (DNI, Nombres, Resolución)
+    //  (DNI, Nombres, Resolución)
     private String search;
 
-    // Filtros jerárquicos
     private String distritoJudicialId;
     private String ugelId;
     private String institucionEducativaId;

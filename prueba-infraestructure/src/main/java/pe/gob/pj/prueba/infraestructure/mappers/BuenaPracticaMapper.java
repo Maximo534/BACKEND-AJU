@@ -21,13 +21,13 @@ public interface BuenaPracticaMapper {
     @InheritInverseConfiguration(name = "toEntity")
     BuenaPractica toDomain(MovBuenaPracticaEntity entity);
 
-    // 3. ACTUALIZACIÓN (Domain -> Entity)
+    // 3.(Domain -> Entity)
     @Mapping(target = "id", ignore = true)
     @Mapping(target = "usuarioRegistro", ignore = true)
     void updateEntityFromDomain(BuenaPractica domain, @MappingTarget MovBuenaPracticaEntity entity);
 
     // 4. DOMAIN -> RESPONSE
-    // ✅ Aquí mapeamos la lista de archivos para que salga en el JSON
+    //Aquí mapeamos la lista de archivos para que salga en el JSON
     @Mapping(target = "archivos", source = "archivosGuardados")
     BuenaPracticaResponse toResponse(BuenaPractica domain);
 }

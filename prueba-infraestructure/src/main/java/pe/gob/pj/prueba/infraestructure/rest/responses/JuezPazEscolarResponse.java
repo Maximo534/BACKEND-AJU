@@ -20,7 +20,7 @@ public class JuezPazEscolarResponse implements Serializable {
 
     private String id;
 
-    // --- DATOS PERSONALES (Necesarios para Editar) ---
+    // --- DATOS PERSONALES ---
     private String dni;
     private String apePaterno;
     private String apeMaterno;
@@ -28,7 +28,7 @@ public class JuezPazEscolarResponse implements Serializable {
     private LocalDate fechaNacimiento;
     private String genero;
 
-    // --- CAMPO CALCULADO (Para Listado/Tabla) ---
+    // --- CAMPO CALCULADO---
     private String nombreCompleto;
 
     // --- DATOS ESCOLARES ---
@@ -44,7 +44,7 @@ public class JuezPazEscolarResponse implements Serializable {
     private LocalDate fechaJuramentacion;
     private String resolucionAcreditacion;
 
-    // --- JERARQUÍA INSTITUCIONAL (Para Listado y Selects) ---
+    // --- JERARQUÍA INSTITUCIONAL ---
     private String institucionEducativaId;
     private String nombreColegio;          // Para columna "I.E."
 
@@ -54,6 +54,6 @@ public class JuezPazEscolarResponse implements Serializable {
     // --- ESTADO ---
     private String estado; // "ACTIVO" (o 1)
 
-    // --- ARCHIVOS (Para ver la resolución al editar) ---
+    // --- ARCHIVOS ---
     private List<Archivo> archivos;
 }

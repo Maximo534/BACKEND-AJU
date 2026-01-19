@@ -54,8 +54,6 @@ public class GestionJuecesEscolaresUseCaseAdapter implements GestionJuecesEscola
             throw new Exception("El alumno con DNI " + juez.getDni() + " ya está registrado en este colegio.");
         }
 
-        // ✅ CORRECCIÓN AQUÍ: Generar ID corto de 17 caracteres
-        // Formato: "J" + Tiempo(13) + Random(3) = 17 chars
         String idCorto = generarIdCorto();
 
         juez.setId(idCorto);
@@ -160,17 +158,8 @@ public class GestionJuecesEscolaresUseCaseAdapter implements GestionJuecesEscola
         return persistencePort.existeDniEnColegio(dni, colegioId);
     }
 
-    // =========================================================================
-    // MÉTODOS PRIVADOS
-    // =========================================================================
-
-    /**
-     * Genera un ID único de exactamente 17 caracteres.
-     * Formato: J + Timestamp(13) + Random(3)
-     */
     private String generarIdCorto() {
         long timestamp = System.currentTimeMillis();
-        // Generamos 3 números aleatorios para evitar colisión en el mismo milisegundo
         int random = ThreadLocalRandom.current().nextInt(100, 999);
         return "J" + timestamp + random;
     }
@@ -186,8 +175,6 @@ public class GestionJuecesEscolaresUseCaseAdapter implements GestionJuecesEscola
         String rutaRelativa = String.format("%s/jpe/alumnos/%s/%s", ftpRutaBase, carpeta, anio);
         String ext = obtenerExtension(file.getOriginalFilename());
 
-        // Nombre del archivo: ID (17) + Tipo + Time + Ext
-        // No excederá el límite de nombre de archivo (100 chars)
         String nombreFinal = juez.getId() + "_" + tipo + "_" + System.currentTimeMillis() + ext;
 
         if (!ftpPort.uploadFileFTP(sessionKey, rutaRelativa + "/" + nombreFinal, file.getInputStream(), tipo)) {
@@ -198,7 +185,6 @@ public class GestionJuecesEscolaresUseCaseAdapter implements GestionJuecesEscola
                 .nombre(nombreFinal)
                 .tipo(tipo)
                 .ruta(rutaRelativa)
-                // Ahora juez.getId() tiene 17 caracteres, así que esto NO fallará
                 .numeroIdentificacion(juez.getId())
                 .build());
     }

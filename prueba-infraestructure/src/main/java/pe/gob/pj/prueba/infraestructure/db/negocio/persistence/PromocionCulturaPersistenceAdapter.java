@@ -29,7 +29,7 @@ public class PromocionCulturaPersistenceAdapter implements PromocionCulturaPersi
 
     private final MovPromocionCulturaRepository repository;
     private final MovArchivosRepository repoArchivos;
-    private final MaeDistritoJudicialRepository repoCorte; // Solo inyectamos lo necesario para nombres
+    private final MaeDistritoJudicialRepository repoCorte;
     private final PromocionCulturaMapper mapper;
 
     @Override
@@ -68,8 +68,6 @@ public class PromocionCulturaPersistenceAdapter implements PromocionCulturaPersi
         try {
             MovPromocionCulturaEntity entity = mapper.toEntity(dominio);
 
-            // Asignar ID a hijos antes de guardar (si el ID ya existe, pero en insert es nuevo)
-            // Hibernate maneja las FKs si la relación está bien hecha, pero por seguridad:
             if (entity.getId() != null) {
                 if (entity.getParticipantes() != null) entity.getParticipantes().forEach(p -> p.setPromocionCulturaId(entity.getId()));
                 if (entity.getTareas() != null) entity.getTareas().forEach(t -> t.setPromocionCulturaId(entity.getId()));
@@ -78,7 +76,6 @@ public class PromocionCulturaPersistenceAdapter implements PromocionCulturaPersi
             MovPromocionCulturaEntity saved = repository.save(entity);
             PromocionCultura res = mapper.toDomain(saved);
 
-            // ✅ ENRIQUECIMIENTO INLINE
             if (res.getDistritoJudicialId() != null) {
                 repoCorte.findById(res.getDistritoJudicialId())
                         .ifPresent(c -> res.setDistritoJudicialNombre(c.getNombreCorto()));
@@ -99,16 +96,12 @@ public class PromocionCulturaPersistenceAdapter implements PromocionCulturaPersi
             MovPromocionCulturaEntity entidadDb = repository.findById(dominio.getId())
                     .orElseThrow(() -> new Exception("Evento no encontrado: " + dominio.getId()));
 
-            // 1. Actualizar campos simples
             mapper.updateEntityFromDomain(dominio, entidadDb);
 
-            // 2. ACTUALIZACIÓN SEGURA DE LISTAS (Flush Strategy)
-
-            // Participantes
             if (entidadDb.getParticipantes() != null) entidadDb.getParticipantes().clear();
             else entidadDb.setParticipantes(new ArrayList<>());
 
-            repository.flush(); // 🔥 Elimina viejos de BD
+            repository.flush(); //Elimina viejos de BD
 
             if (dominio.getParticipantesPorGenero() != null) {
                 dominio.getParticipantesPorGenero().forEach(p -> {
@@ -122,7 +115,7 @@ public class PromocionCulturaPersistenceAdapter implements PromocionCulturaPersi
             if (entidadDb.getTareas() != null) entidadDb.getTareas().clear();
             else entidadDb.setTareas(new ArrayList<>());
 
-            repository.flush(); // 🔥 Elimina viejos de BD
+            repository.flush(); //Elimina viejos de BD
 
             if (dominio.getTareasRealizadas() != null) {
                 dominio.getTareasRealizadas().forEach(t -> {
@@ -135,7 +128,6 @@ public class PromocionCulturaPersistenceAdapter implements PromocionCulturaPersi
             MovPromocionCulturaEntity saved = repository.save(entidadDb);
             PromocionCultura res = mapper.toDomain(saved);
 
-            // ✅ ENRIQUECIMIENTO INLINE
             if (res.getDistritoJudicialId() != null) {
                 repoCorte.findById(res.getDistritoJudicialId())
                         .ifPresent(c -> res.setDistritoJudicialNombre(c.getNombreCorto()));
@@ -157,7 +149,6 @@ public class PromocionCulturaPersistenceAdapter implements PromocionCulturaPersi
 
         PromocionCultura dominio = mapper.toDomain(entidad);
 
-        // ✅ ENRIQUECIMIENTO INLINE
         if (dominio.getDistritoJudicialId() != null) {
             repoCorte.findById(dominio.getDistritoJudicialId())
                     .ifPresent(c -> dominio.setDistritoJudicialNombre(c.getNombreCorto()));

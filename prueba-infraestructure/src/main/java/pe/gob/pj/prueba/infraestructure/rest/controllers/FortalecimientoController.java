@@ -13,7 +13,7 @@ import org.springframework.web.multipart.MultipartFile;
 import pe.gob.pj.prueba.domain.model.common.Pagina;
 import pe.gob.pj.prueba.domain.model.common.RecursoArchivo;
 import pe.gob.pj.prueba.domain.model.negocio.FortalecimientoCapacidades;
-import pe.gob.pj.prueba.domain.port.usecase.negocio.RegistrarFortalecimientoUseCasePort;
+import pe.gob.pj.prueba.domain.port.usecase.negocio.GestionFortalecimientoUseCasePort;
 import pe.gob.pj.prueba.infraestructure.mappers.FortalecimientoMapper;
 import pe.gob.pj.prueba.infraestructure.rest.requests.ListarFfcRequest;
 import pe.gob.pj.prueba.infraestructure.rest.requests.RegistrarFfcRequest;
@@ -29,12 +29,9 @@ import java.util.stream.Collectors;
 @Slf4j
 public class FortalecimientoController {
 
-    private final RegistrarFortalecimientoUseCasePort useCase;
+    private final GestionFortalecimientoUseCasePort useCase;
     private final FortalecimientoMapper mapper;
 
-    // =========================================================================
-    // 1. LISTAR
-    // =========================================================================
     @PostMapping(produces = MediaType.APPLICATION_JSON_VALUE)
     public ResponseEntity<GlobalResponse> listar(
             @RequestParam(name = "pagina", defaultValue = "1") int pagina,
@@ -53,23 +50,19 @@ public class FortalecimientoController {
                 filtros.setFechaInicio(request.getFechaInicio());
                 filtros.setFechaFin(request.getFechaFin());
             }
-
-            // 1. Obtienes la data paginada del servicio
             Pagina<FortalecimientoCapacidades> resultado = useCase.listar(usuario, filtros, pagina, tamanio);
 
-            // 2. Mapeas la lista de contenido
             List<FortalecimientoResponse> responseList = resultado.getContenido().stream()
                     .map(mapper::toResponse)
                     .collect(Collectors.toList());
 
-            // ✅ NUEVO: Llenamos el GlobalResponse directamente
-            res.setCodigo("0000"); // O "200", usa el estándar que prefieras
+            res.setCodigo("0000");
             res.setDescripcion("Listado exitoso");
 
-            // A. La lista va directo a data
+            //  La lista va directo a data
             res.setData(responseList);
 
-            // B. La paginación va a la raíz (usando los campos nuevos de GlobalResponse)
+            // La paginación va a la raíz
             res.setTotalRegistros(resultado.getTotalRegistros());
             res.setTotalPaginas(resultado.getTotalPaginas());
             res.setPaginaActual(resultado.getPaginaActual());
@@ -85,16 +78,12 @@ public class FortalecimientoController {
         }
     }
 
-    // =========================================================================
-    // 2. OBTENER POR ID
-    // =========================================================================
     @GetMapping(value = "/{id}", produces = MediaType.APPLICATION_JSON_VALUE)
     public ResponseEntity<GlobalResponse> obtenerPorId(@PathVariable String id) {
         GlobalResponse res = new GlobalResponse();
         try {
             FortalecimientoCapacidades encontrado = useCase.buscarPorId(id);
 
-            // Mapeamos a DTO Response para ser consistente con la arquitectura
             FortalecimientoResponse responseDto = mapper.toResponse(encontrado);
 
             res.setCodigo("200");
@@ -109,9 +98,6 @@ public class FortalecimientoController {
         }
     }
 
-    // =========================================================================
-    // 3. REGISTRAR
-    // =========================================================================
     @PostMapping(consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
     public ResponseEntity<GlobalResponse> registrar(
             @Valid @ModelAttribute RegistrarFfcRequest request,
@@ -128,7 +114,6 @@ public class FortalecimientoController {
 
             res.setCodigo("200");
             res.setDescripcion("Registro exitoso. ID: " + registrado.getId());
-            // Devolvemos el DTO
             res.setData(mapper.toResponse(registrado));
             return ResponseEntity.ok(res);
         } catch (Exception e) {
@@ -139,9 +124,6 @@ public class FortalecimientoController {
         }
     }
 
-    // =========================================================================
-    // 4. ACTUALIZAR
-    // =========================================================================
     @PutMapping(consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
     public ResponseEntity<GlobalResponse> actualizar(@Valid @ModelAttribute RegistrarFfcRequest request) {
         GlobalResponse res = new GlobalResponse();
@@ -158,7 +140,6 @@ public class FortalecimientoController {
 
             res.setCodigo("200");
             res.setDescripcion("Actualización exitosa");
-            // Devolvemos el DTO
             res.setData(mapper.toResponse(actualizado));
             return ResponseEntity.ok(res);
 
@@ -170,9 +151,6 @@ public class FortalecimientoController {
         }
     }
 
-    // =========================================================================
-    // 5. GESTIÓN DE ARCHIVOS
-    // =========================================================================
     @PostMapping(value = "/archivos", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
     public ResponseEntity<GlobalResponse> agregarArchivo(
             @RequestParam("idEvento") String idEvento,
@@ -212,9 +190,6 @@ public class FortalecimientoController {
         }
     }
 
-    // =========================================================================
-    // 6. DESCARGAS
-    // =========================================================================
     @GetMapping("/anexo/{id}")
     public ResponseEntity<InputStreamResource> descargarAnexo(@PathVariable String id) {
         try {

@@ -15,7 +15,7 @@ import pe.gob.pj.prueba.domain.port.files.FtpPort;
 import pe.gob.pj.prueba.domain.port.output.GenerarReportePort;
 import pe.gob.pj.prueba.domain.port.persistence.negocio.BuenaPracticaPersistencePort;
 import pe.gob.pj.prueba.domain.port.persistence.negocio.GestionArchivosPersistencePort;
-import pe.gob.pj.prueba.domain.port.usecase.negocio.RegistrarBuenaPracticaUseCasePort;
+import pe.gob.pj.prueba.domain.port.usecase.negocio.GestionBuenaPracticaUseCasePort;
 
 import java.io.InputStream;
 import java.time.LocalDate;
@@ -25,7 +25,7 @@ import java.util.UUID;
 @Service
 @RequiredArgsConstructor
 @Slf4j
-public class RegistrarBuenaPracticaUseCaseAdapter implements RegistrarBuenaPracticaUseCasePort {
+public class GestionBuenaPracticaUseCaseAdapter implements GestionBuenaPracticaUseCasePort {
 
     private final BuenaPracticaPersistencePort persistencePort;
     private final GestionArchivosPersistencePort archivosPersistencePort;
@@ -47,7 +47,7 @@ public class RegistrarBuenaPracticaUseCaseAdapter implements RegistrarBuenaPract
     @Transactional(rollbackFor = Exception.class)
     public BuenaPractica registrar(BuenaPractica dominio, MultipartFile anexo, MultipartFile ppt, List<MultipartFile> fotos, MultipartFile video, String usuario) throws Exception {
 
-        // 1. Generar ID
+        // Generar ID
         String ultimoId = persistencePort.obtenerUltimoId();
         long siguiente = 1;
         if (ultimoId != null) {
@@ -57,24 +57,23 @@ public class RegistrarBuenaPracticaUseCaseAdapter implements RegistrarBuenaPract
         String corte = (dominio.getDistritoJudicialId() != null) ? dominio.getDistritoJudicialId() : "00";
         dominio.setId(String.format("%06d-%s-%s-BP", siguiente, corte, anio));
 
-        // 2. Guardar BD
+        // Guardar BD
         dominio.setUsuarioRegistro(usuario);
         BuenaPractica registrado = persistencePort.guardar(dominio);
 
-        // 3. Subir Archivos
+        // Subir Archivos
         boolean hayArchivos = (anexo != null && !anexo.isEmpty()) || (ppt != null && !ppt.isEmpty()) ||
                 (video != null && !video.isEmpty()) || (fotos != null && !fotos.isEmpty());
 
         if (hayArchivos) {
-            // ✅ Generamos UUID para la sesión FTP de este registro
+            // UUID para la sesión FTP de este registro
             String sessionKey = UUID.randomUUID().toString();
             try {
                 ftpPort.iniciarSesion(sessionKey, ftpIp, ftpPuerto, ftpUsuario, ftpClave);
                 String id = registrado.getId();
 
-                // Pasamos la sessionKey en lugar del usuario
                 if (anexo != null && !anexo.isEmpty())
-                    uploadFile(anexo, id, "ANEXO_BP", sessionKey, null); // null = nombre fijo (reemplazo)
+                    uploadFile(anexo, id, "ANEXO_BP", sessionKey, null);
 
                 if (ppt != null && !ppt.isEmpty())
                     uploadFile(ppt, id, "PPT_BP", sessionKey, null);
@@ -94,7 +93,7 @@ public class RegistrarBuenaPracticaUseCaseAdapter implements RegistrarBuenaPract
                 }
             } catch (Exception e) {
                 log.error("Error archivos BP", e);
-                // Opcional: throw new Exception("Error al subir evidencias: " + e.getMessage());
+                 throw new Exception("Error al subir evidencias: " + e.getMessage());
             } finally {
                 ftpPort.finalizarSession(sessionKey);
             }
@@ -116,8 +115,7 @@ public class RegistrarBuenaPracticaUseCaseAdapter implements RegistrarBuenaPract
         return persistencePort.actualizar(dominio);
     }
 
-    // --- AGREGAR ARCHIVO ---
-    // ✅ CORRECCIÓN: Usamos el parámetro 'usuario' para Logs de Auditoría
+    // Usamos el parámetro 'usuario' para Logs de Auditoría
     @Override
     @Transactional
     public void agregarArchivo(String idEvento, MultipartFile archivo, String tipoArchivo, String usuario) throws Exception {
@@ -128,7 +126,7 @@ public class RegistrarBuenaPracticaUseCaseAdapter implements RegistrarBuenaPract
         BuenaPractica bp = persistencePort.buscarPorId(idEvento);
         if (bp == null) throw new Exception("ID no válido");
 
-        // ✅ UUID para sesión FTP aislada
+        //UUID para sesión FTP aislada
         String sessionKey = UUID.randomUUID().toString();
         try {
             ftpPort.iniciarSesion(sessionKey, ftpIp, ftpPuerto, ftpUsuario, ftpClave);
@@ -143,7 +141,6 @@ public class RegistrarBuenaPracticaUseCaseAdapter implements RegistrarBuenaPract
         }
     }
 
-    // --- ELIMINAR ---
     @Override
     @Transactional
     public void eliminarArchivo(String nombreArchivo) throws Exception {
@@ -165,7 +162,6 @@ public class RegistrarBuenaPracticaUseCaseAdapter implements RegistrarBuenaPract
         archivosPersistencePort.eliminarReferenciaArchivo(nombreArchivo);
     }
 
-    // --- DESCARGA GENÉRICA (Temporal File) ---
     @Override
     public RecursoArchivo descargarArchivoPorTipo(String idEvento, String tipoArchivo) throws Exception {
         List<Archivo> archivos = archivosPersistencePort.listarArchivosPorEvento(idEvento);
@@ -212,11 +208,6 @@ public class RegistrarBuenaPracticaUseCaseAdapter implements RegistrarBuenaPract
         return persistencePort.obtenerResumenGrafico();
     }
 
-    // =========================================================================
-    // MÉTODO PRIVADO UNIFICADO ("Cerebro" de la subida BP)
-    // =========================================================================
-    // Nota: A diferencia de JI, aquí pasamos el ID y un sufijo manual
-    // porque las reglas de nombrado son distintas (Reemplazo vs Agregado).
     private void uploadFile(MultipartFile file, String id, String tipo, String sessionKey, String sufijoManual) throws Exception {
         String anio = String.valueOf(LocalDate.now().getYear());
         String carpeta = "otros";

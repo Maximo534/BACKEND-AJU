@@ -14,7 +14,7 @@ import pe.gob.pj.prueba.domain.model.common.Pagina;
 import pe.gob.pj.prueba.domain.model.common.RecursoArchivo;
 import pe.gob.pj.prueba.domain.model.negocio.LlapanchikpaqJusticia;
 import pe.gob.pj.prueba.domain.model.negocio.ResumenEstadistico;
-import pe.gob.pj.prueba.domain.port.usecase.negocio.RegistrarLlapanchikpaqUseCasePort;
+import pe.gob.pj.prueba.domain.port.usecase.negocio.GestionLlapanchikpaqUseCasePort;
 import pe.gob.pj.prueba.infraestructure.mappers.LlapanchikpaqMapper;
 import pe.gob.pj.prueba.infraestructure.rest.requests.ListarLlapanchikpaqRequest;
 import pe.gob.pj.prueba.infraestructure.rest.requests.RegistrarLlapanchikpaqRequest;
@@ -34,12 +34,9 @@ public class LlapanchikpaqController implements Serializable {
 
     private static final long serialVersionUID = 1L;
 
-    private final RegistrarLlapanchikpaqUseCasePort useCase;
+    private final GestionLlapanchikpaqUseCasePort useCase;
     private final LlapanchikpaqMapper mapper;
 
-    // =========================================================================
-    // 1. LISTAR
-    // =========================================================================
     @PostMapping(produces = MediaType.APPLICATION_JSON_VALUE)
     public ResponseEntity<GlobalResponse> listar(
             @RequestParam(name = "pagina", defaultValue = "1") int pagina,
@@ -58,22 +55,21 @@ public class LlapanchikpaqController implements Serializable {
                 filtros.setFechaFin(request.getFechaFin());
             }
 
-            // 1. Obtener data del dominio
+            // Obtener data del dominio
             Pagina<LlapanchikpaqJusticia> paginaDominio = useCase.listar(usuario, filtros, pagina, tamanio);
 
-            // 2. Mapear la lista de contenido
+            // Mapear la lista de contenido
             List<LlapanchikpaqResponse> listaResponse = paginaDominio.getContenido().stream()
                     .map(mapper::toResponse)
                     .collect(Collectors.toList());
 
-            // ✅ NUEVO: Llenado plano
-            res.setCodigo("0000"); // Estandarizado
+            res.setCodigo("0000");
             res.setDescripcion("Listado exitoso");
 
-            // A. La lista va directo a data
+            // La lista va directo a data
             res.setData(listaResponse);
 
-            // B. Paginación en la raíz
+            // Paginación en la raíz
             res.setTotalRegistros(paginaDominio.getTotalRegistros());
             res.setTotalPaginas(paginaDominio.getTotalPaginas());
             res.setPaginaActual(paginaDominio.getPaginaActual());
@@ -89,9 +85,6 @@ public class LlapanchikpaqController implements Serializable {
         }
     }
 
-    // =========================================================================
-    // 2. OBTENER POR ID
-    // =========================================================================
     @GetMapping(value = "/{id}", produces = MediaType.APPLICATION_JSON_VALUE)
     public ResponseEntity<GlobalResponse> obtenerPorId(@PathVariable String id) {
         GlobalResponse res = new GlobalResponse();
@@ -117,9 +110,6 @@ public class LlapanchikpaqController implements Serializable {
         }
     }
 
-    // =========================================================================
-    // 3. REGISTRAR
-    // =========================================================================
     @PostMapping(consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
     public ResponseEntity<GlobalResponse> registrar(
             @Valid @ModelAttribute RegistrarLlapanchikpaqRequest request,
@@ -146,9 +136,6 @@ public class LlapanchikpaqController implements Serializable {
         }
     }
 
-    // =========================================================================
-    // 4. ACTUALIZAR
-    // =========================================================================
     @PutMapping(consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
     public ResponseEntity<GlobalResponse> actualizar(@Valid @ModelAttribute RegistrarLlapanchikpaqRequest request) {
         GlobalResponse res = new GlobalResponse();
@@ -176,9 +163,6 @@ public class LlapanchikpaqController implements Serializable {
         }
     }
 
-    // =========================================================================
-    // 5. GESTIÓN DE ARCHIVOS
-    // =========================================================================
     @PostMapping(value = "/archivos", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
     public ResponseEntity<GlobalResponse> agregarArchivo(
             @RequestParam("idEvento") String idEvento,
@@ -188,7 +172,6 @@ public class LlapanchikpaqController implements Serializable {
         GlobalResponse res = new GlobalResponse();
         try {
             String usuario = "EMATAMOROSV";
-            // Nota: Verifica si tu UseCase usa 'subirArchivoAdicional' o 'agregarArchivo'
             useCase.agregarArchivo(idEvento, archivo, tipo, usuario);
 
             res.setCodigo("200");
@@ -219,9 +202,6 @@ public class LlapanchikpaqController implements Serializable {
         }
     }
 
-    // =========================================================================
-    // 6. DESCARGAS
-    // =========================================================================
     @GetMapping("/anexo/{id}")
     public ResponseEntity<InputStreamResource> descargarAnexo(@PathVariable String id) {
         try {
@@ -257,9 +237,6 @@ public class LlapanchikpaqController implements Serializable {
         }
     }
 
-    // =========================================================================
-    // 7. ESTADÍSTICAS
-    // =========================================================================
     @GetMapping(value = "/estadisticas", produces = MediaType.APPLICATION_JSON_VALUE)
     public ResponseEntity<GlobalResponse> obtenerEstadisticasChart() {
         GlobalResponse res = new GlobalResponse();

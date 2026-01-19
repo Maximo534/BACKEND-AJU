@@ -13,7 +13,7 @@ import org.springframework.web.multipart.MultipartFile;
 import pe.gob.pj.prueba.domain.model.common.Pagina;
 import pe.gob.pj.prueba.domain.model.common.RecursoArchivo;
 import pe.gob.pj.prueba.domain.model.negocio.PromocionCultura;
-import pe.gob.pj.prueba.domain.port.usecase.negocio.RegistrarPromocionUseCasePort;
+import pe.gob.pj.prueba.domain.port.usecase.negocio.GestionPromocionUseCasePort;
 import pe.gob.pj.prueba.infraestructure.mappers.PromocionCulturaMapper;
 import pe.gob.pj.prueba.infraestructure.rest.requests.ListarPromocionRequest;
 import pe.gob.pj.prueba.infraestructure.rest.requests.RegistrarPromocionRequest;
@@ -30,7 +30,7 @@ import java.util.stream.Collectors;
 @Slf4j
 public class PromocionCulturaController implements Serializable {
 
-    private final RegistrarPromocionUseCasePort useCase;
+    private final GestionPromocionUseCasePort useCase;
     private final PromocionCulturaMapper mapper;
 
     @PostMapping(produces = MediaType.APPLICATION_JSON_VALUE)
@@ -50,22 +50,22 @@ public class PromocionCulturaController implements Serializable {
                 filtros.setFechaFin(request.getFechaFin());
             }
 
-            // 1. Obtener la data paginada del dominio
+            // Obtener la data paginada del dominio
             Pagina<PromocionCultura> paginaDominio = useCase.listar(usuario, filtros, pagina, tamanio);
 
-            // 2. Mapear la lista de contenido
+            // Mapear la lista de contenido
             List<PromocionCulturaResponse> listaResponse = paginaDominio.getContenido().stream()
                     .map(mapper::toResponse)
                     .collect(Collectors.toList());
 
-            // ✅ NUEVO: Llenado plano del GlobalResponse
-            res.setCodigo("0000"); // Estandarizado
+            // Llenado plano del GlobalResponse
+            res.setCodigo("0000");
             res.setDescripcion("Listado exitoso");
 
-            // A. La lista va directo a data
+            // La lista va directo a data
             res.setData(listaResponse);
 
-            // B. Metadatos de paginación a la raíz
+            // Metadatos de paginación a la raíz
             res.setTotalRegistros(paginaDominio.getTotalRegistros());
             res.setTotalPaginas(paginaDominio.getTotalPaginas());
             res.setPaginaActual(paginaDominio.getPaginaActual());
@@ -136,7 +136,7 @@ public class PromocionCulturaController implements Serializable {
         try {
             PromocionCultura encontrado = useCase.buscarPorId(id);
             res.setCodigo("200");
-            res.setData(mapper.toResponse(encontrado)); // Ojo: si necesitas detalle completo, usa otro método en mapper
+            res.setData(mapper.toResponse(encontrado));
             return ResponseEntity.ok(res);
         } catch (Exception e) {
             res.setCodigo("500");
@@ -205,7 +205,7 @@ public class PromocionCulturaController implements Serializable {
 
         } catch (Exception e) {
             log.error("Error generando PDF", e);
-            return ResponseEntity.internalServerError().build(); // O un 500 simple
+            return ResponseEntity.internalServerError().build();
         }
     }
 

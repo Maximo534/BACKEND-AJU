@@ -115,13 +115,13 @@ public class MovPromocionCulturaEntity implements Serializable {
     @JoinColumn(name = "c_actv_prom_cult_id", referencedColumnName = "c_actv_prom_cult_id", nullable = false, insertable = false, updatable = false)
     private List<MovPromCulturaTareaEntity> tareas = new ArrayList<>();
 
-    // ✅ SOLO LÓGICA ESTRUCTURAL, NADA DE NEGOCIO
+    //SOLO LÓGICA ESTRUCTURAL, NADA DE NEGOCIO
     @PrePersist
     public void prePersist() {
         if (this.fechaRegistro == null) this.fechaRegistro = LocalDate.now();
         if (this.activo == null) this.activo = "1";
 
-        // Mantenemos la integridad de IDs hijos
+        // integridad de IDs hijos
         if (this.id != null) {
             if (this.participantes != null) this.participantes.forEach(p -> p.setPromocionCulturaId(this.id));
             if (this.tareas != null) this.tareas.forEach(t -> t.setPromocionCulturaId(this.id));

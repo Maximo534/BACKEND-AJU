@@ -12,7 +12,7 @@ import java.time.LocalDate;
 @Data
 public class RegistrarJuezRequest implements Serializable {
 
-    private String id; // Para actualización
+    private String id;
 
     @NotBlank(message = "El DNI es obligatorio.")
     @Size(min = 8, max = 8)

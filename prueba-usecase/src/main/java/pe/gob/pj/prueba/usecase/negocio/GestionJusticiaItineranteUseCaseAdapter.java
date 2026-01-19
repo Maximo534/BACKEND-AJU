@@ -14,7 +14,7 @@ import pe.gob.pj.prueba.domain.port.files.FtpPort;
 import pe.gob.pj.prueba.domain.port.output.GenerarReportePort;
 import pe.gob.pj.prueba.domain.port.persistence.negocio.GestionArchivosPersistencePort;
 import pe.gob.pj.prueba.domain.port.persistence.negocio.JusticiaItinerantePersistencePort;
-import pe.gob.pj.prueba.domain.port.usecase.negocio.RegistrarJusticiaItineranteUseCasePort;
+import pe.gob.pj.prueba.domain.port.usecase.negocio.GestionJusticiaItineranteUseCasePort;
 
 import java.io.InputStream;
 import java.time.LocalDate;
@@ -24,7 +24,7 @@ import java.util.UUID;
 @Service
 @RequiredArgsConstructor
 @Slf4j
-public class RegistrarJusticiaItineranteUseCaseAdapter implements RegistrarJusticiaItineranteUseCasePort {
+public class GestionJusticiaItineranteUseCaseAdapter implements GestionJusticiaItineranteUseCasePort {
 
     private final JusticiaItinerantePersistencePort persistencePort;
     private final FtpPort ftpPort;
@@ -46,12 +46,11 @@ public class RegistrarJusticiaItineranteUseCaseAdapter implements RegistrarJusti
     @Override
     @Transactional(rollbackFor = Exception.class)
     public JusticiaItinerante registrar(JusticiaItinerante dominio, MultipartFile anexo, List<MultipartFile> videos, List<MultipartFile> fotos, String usuario) throws Exception {
-
-        // 1. Validaciones
+        // Validaciones
         if (dominio.getFechaInicio() == null) throw new Exception("La fecha de inicio es obligatoria.");
         if (dominio.getPublicoObjetivoDetalle() == null) dominio.setPublicoObjetivoDetalle("NINGUNO");
 
-        // 2. Generar ID
+        // Generar ID
         String ultimoId = persistencePort.obtenerUltimoId();
         long siguiente = 1;
         if (ultimoId != null && !ultimoId.isBlank()) {
@@ -61,14 +60,14 @@ public class RegistrarJusticiaItineranteUseCaseAdapter implements RegistrarJusti
         String corte = (dominio.getDistritoJudicialId() != null) ? dominio.getDistritoJudicialId() : "00";
         dominio.setId(String.format("%06d-%s-%s-JI", siguiente, corte, anio));
 
-        // 3. Auditoría y Guardado
+        //Auditoría y Guardado
         dominio.setUsuarioRegistro(usuario);
         dominio.setFechaRegistro(LocalDate.now());
         dominio.setActivo("1");
 
         JusticiaItinerante registrado = persistencePort.guardar(dominio);
 
-        // 4. Subir Archivos (Con UUID)
+        //Subir Archivos (Con UUID)
         boolean hayArchivos = (anexo != null && !anexo.isEmpty()) ||
                 (videos != null && !videos.isEmpty()) ||
                 (fotos != null && !fotos.isEmpty());
@@ -78,7 +77,6 @@ public class RegistrarJusticiaItineranteUseCaseAdapter implements RegistrarJusti
             try {
                 ftpPort.iniciarSesion(sessionKey, ftpIp, ftpPuerto, ftpUsuario, ftpClave);
 
-                // ✅ Llamada Limpia: uploadFile encapsula la lógica de carpetas
                 if (anexo != null && !anexo.isEmpty())
                     uploadFile(anexo, registrado, "ANEXO", sessionKey);
 
@@ -92,7 +90,7 @@ public class RegistrarJusticiaItineranteUseCaseAdapter implements RegistrarJusti
 
             } catch (Exception e) {
                 log.error("Error subiendo evidencias JI", e);
-                // Opcional: throw e; si quieres que falle todo el registro
+                Opcional: throw new Exception("Error carga archivos: " + e.getMessage());
             } finally {
                 ftpPort.finalizarSession(sessionKey);
             }
@@ -119,8 +117,7 @@ public class RegistrarJusticiaItineranteUseCaseAdapter implements RegistrarJusti
         return persistencePort.actualizar(dominio);
     }
 
-    // --- AGREGAR ARCHIVO ---
-    // ✅ CORRECTO: Pedimos usuarioOperacion para tener trazabilidad en los logs
+    // Pedimos usuarioOperacion para tener trazabilidad en los logs
     @Override
     @Transactional
     public void agregarArchivo(String idEvento, MultipartFile archivo, String tipoArchivo, String usuarioOperacion) throws Exception {
@@ -134,8 +131,6 @@ public class RegistrarJusticiaItineranteUseCaseAdapter implements RegistrarJusti
         String sessionKey = UUID.randomUUID().toString();
         try {
             ftpPort.iniciarSesion(sessionKey, ftpIp, ftpPuerto, ftpUsuario, ftpClave);
-
-            // ✅ Reutilización total: Usamos el mismo método inteligente que el registro
             uploadFile(archivo, evento, tipoArchivo, sessionKey);
 
         } catch (Exception e) {
@@ -146,13 +141,8 @@ public class RegistrarJusticiaItineranteUseCaseAdapter implements RegistrarJusti
         }
     }
 
-    // =========================================================================
-    // MÉTODO PRIVADO UNIFICADO ("Cerebro" de la subida JI)
-    // =========================================================================
     private void uploadFile(MultipartFile file, JusticiaItinerante evento, String tipo, String sessionKey) throws Exception {
 
-        // 1. Lógica de Carpetas (Aquí centralizamos el mapeo)
-        // Si mañana cambia la carpeta de videos, solo tocas aquí.
         String carpeta = switch (tipo.toUpperCase()) {
             case "ANEXO" -> "fichas";
             case "VIDEO" -> "videos";
@@ -160,7 +150,6 @@ public class RegistrarJusticiaItineranteUseCaseAdapter implements RegistrarJusti
             default -> "otros";
         };
 
-        // 2. Datos de Ruta Jerárquica (Regla de Negocio JI)
         String dist = evento.getDistritoJudicialId();
         String anio = String.valueOf(evento.getFechaInicio().getYear());
         String mes = String.format("%02d", evento.getFechaInicio().getMonthValue());
@@ -168,19 +157,19 @@ public class RegistrarJusticiaItineranteUseCaseAdapter implements RegistrarJusti
         // Ruta: /evidencias/DISTRITO/evidencias_fji/CARPETA/ANIO/MES/ID_EVENTO
         String rutaRelativa = String.format("%s/%s/evidencias_fji/%s/%s/%s/%s", ftpRutaBase, dist, carpeta, anio, mes, evento.getId());
 
-        // 3. Nombre del Archivo (Regla de Negocio JI: Siempre UUID)
+        // Nombre del Archivo (Regla de Negocio JI: Siempre UUID)
         String ext = obtenerExtension(file.getOriginalFilename());
         String nombreFinal = UUID.randomUUID().toString().replace("-", "") + ext;
 
-        // 4. Subida FTP
+        // Subida FTP
         if (!ftpPort.uploadFileFTP(sessionKey, rutaRelativa + "/" + nombreFinal, file.getInputStream(), "Carga " + tipo)) {
             throw new Exception("Error FTP al subir " + nombreFinal);
         }
 
-        // 5. Guardar Referencia en BD
+        // Guardar en BD
         archivosPersistencePort.guardarReferenciaArchivo(Archivo.builder()
                 .nombre(nombreFinal)
-                .tipo(tipo.toUpperCase()) // Guardamos "FOTO", "VIDEO", "ANEXO"
+                .tipo(tipo.toUpperCase())
                 .ruta(rutaRelativa)
                 .numeroIdentificacion(evento.getId())
                 .build());

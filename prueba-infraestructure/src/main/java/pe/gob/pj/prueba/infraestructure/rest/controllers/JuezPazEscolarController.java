@@ -31,7 +31,6 @@ public class JuezPazEscolarController {
     private final GestionJuecesEscolaresUseCasePort useCase;
     private final JuezPazEscolarMapper mapper;
 
-    // --- LISTAR ---
     @PostMapping( produces = MediaType.APPLICATION_JSON_VALUE)
     public ResponseEntity<GlobalResponse> listar(
             @RequestParam(name = "pagina", defaultValue = "1") int pagina,
@@ -40,11 +39,9 @@ public class JuezPazEscolarController {
     ) {
         GlobalResponse res = new GlobalResponse();
         try {
-            // ✅ CORRECCIÓN APLICADA:
-            // Convertimos Request (Infraestructura) -> Dominio antes de llamar al UseCase
+
             JuezPazEscolar filtros = mapper.toDomain(request);
 
-            // Ahora el UseCase recibe un objeto puro del dominio
             Pagina<JuezPazEscolar> paginaRes = useCase.listar(filtros, pagina, tamanio);
 
             List<JuezPazEscolarResponse> lista = paginaRes.getContenido().stream()
@@ -67,7 +64,6 @@ public class JuezPazEscolarController {
         }
     }
 
-    // --- OBTENER POR ID (Para Edición) ---
     @GetMapping("/{id}")
     public ResponseEntity<GlobalResponse> obtenerPorId(@PathVariable String id) {
         GlobalResponse res = new GlobalResponse();
@@ -88,17 +84,14 @@ public class JuezPazEscolarController {
         }
     }
 
-    // --- REGISTRAR (Solo Resolución) ---
     @PostMapping(consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
     public ResponseEntity<GlobalResponse> registrar(
             @Valid @ModelAttribute RegistrarJuezRequest request,
             @RequestPart(value = "resolucion", required = false) MultipartFile resolucion
-            // 🛑 FOTO ELIMINADA DEL REQUEST
     ) {
         GlobalResponse res = new GlobalResponse();
         try {
             String usuario = "EMATAMOROSV";
-            // El mapper ya convierte el request validado al dominio
             JuezPazEscolar creado = useCase.registrar(mapper.toDomain(request), resolucion, usuario);
 
             res.setCodigo("200");
@@ -113,7 +106,6 @@ public class JuezPazEscolarController {
         }
     }
 
-    // --- ACTUALIZAR ---
     @PutMapping(consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
     public ResponseEntity<GlobalResponse> actualizar(@Valid @ModelAttribute RegistrarJuezRequest request) {
         GlobalResponse res = new GlobalResponse();
@@ -135,7 +127,6 @@ public class JuezPazEscolarController {
         }
     }
 
-    // --- GESTIÓN ARCHIVOS ---
     @PostMapping(value = "/archivos", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
     public ResponseEntity<GlobalResponse> agregarArchivo(
             @RequestParam("idJuez") String idJuez,
@@ -143,7 +134,6 @@ public class JuezPazEscolarController {
     ) {
         GlobalResponse res = new GlobalResponse();
         try {
-            // Asumimos que si agregan algo extra es una resolución adicional o reemplazo
             useCase.agregarArchivo(idJuez, archivo, "RESOLUCION_JPE", "EMATAMOROSV");
             res.setCodigo("200");
             res.setDescripcion("Archivo agregado");

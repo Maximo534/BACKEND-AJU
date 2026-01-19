@@ -81,5 +81,4 @@ public class MovBuenaPracticaEntity implements Serializable {
     @Column(name = "c_usuario_reg", length = 25)
     private String usuarioRegistro;
 
-    // ✅ SE ELIMINÓ EL @PrePersist / @PreUpdate
 }

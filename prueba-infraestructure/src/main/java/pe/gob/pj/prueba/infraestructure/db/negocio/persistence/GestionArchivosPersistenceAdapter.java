@@ -55,8 +55,6 @@ public class GestionArchivosPersistenceAdapter implements GestionArchivosPersist
         repository.deleteById(nombre);
     }
 
-    // ... imports ...
-
     @Override
     public List<Archivo> listarArchivosPorEvento(String idEvento) throws Exception {
         List<MovArchivosEntity> entities = repository.findByNumeroIdentificacion(idEvento);

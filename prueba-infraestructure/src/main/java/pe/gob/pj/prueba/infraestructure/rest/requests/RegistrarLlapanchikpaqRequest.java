@@ -11,7 +11,7 @@ import java.util.List;
 @Data
 public class RegistrarLlapanchikpaqRequest implements Serializable {
 
-    private String id; // Opcional (Update)
+    private String id;
 
     @NotBlank(message = "El Distrito Judicial es obligatorio")
     private String distritoJudicialId;

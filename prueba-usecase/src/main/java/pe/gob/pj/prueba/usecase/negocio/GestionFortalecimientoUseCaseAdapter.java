@@ -14,7 +14,7 @@ import pe.gob.pj.prueba.domain.port.files.FtpPort;
 import pe.gob.pj.prueba.domain.port.output.GenerarReportePort;
 import pe.gob.pj.prueba.domain.port.persistence.negocio.FortalecimientoPersistencePort;
 import pe.gob.pj.prueba.domain.port.persistence.negocio.GestionArchivosPersistencePort;
-import pe.gob.pj.prueba.domain.port.usecase.negocio.RegistrarFortalecimientoUseCasePort;
+import pe.gob.pj.prueba.domain.port.usecase.negocio.GestionFortalecimientoUseCasePort;
 
 import java.io.InputStream;
 import java.time.LocalDate;
@@ -24,7 +24,7 @@ import java.util.UUID;
 @Service
 @RequiredArgsConstructor
 @Slf4j
-public class RegistrarFortalecimientoUseCaseAdapter implements RegistrarFortalecimientoUseCasePort {
+public class GestionFortalecimientoUseCaseAdapter implements GestionFortalecimientoUseCasePort {
 
     private final FortalecimientoPersistencePort persistencePort;
     private final FtpPort ftpPort;
@@ -54,11 +54,10 @@ public class RegistrarFortalecimientoUseCaseAdapter implements RegistrarFortalec
     @Transactional(rollbackFor = Exception.class)
     public FortalecimientoCapacidades registrar(FortalecimientoCapacidades dominio, MultipartFile anexo, List<MultipartFile> videos, List<MultipartFile> fotos, String usuario) throws Exception {
 
-        // 1. Validaciones y Defaults
         validarDatos(dominio);
         if (dominio.getResolucionAdminPlan() == null) dominio.setResolucionAdminPlan("NINGUNO");
 
-        // 2. Generar ID
+        // Generar ID
         String ultimoId = persistencePort.obtenerUltimoId();
         long siguiente = 1;
         if (ultimoId != null && !ultimoId.isBlank()) {
@@ -68,14 +67,14 @@ public class RegistrarFortalecimientoUseCaseAdapter implements RegistrarFortalec
         String corte = (dominio.getDistritoJudicialId() != null) ? dominio.getDistritoJudicialId() : "00";
         dominio.setId(String.format("%06d-%s-%s-FC", siguiente, corte, anio));
 
-        // 3. Auditoría y BD
+        //Auditoría y BD
         dominio.setUsuarioRegistro(usuario);
         dominio.setFechaRegistro(LocalDate.now());
         dominio.setActivo("1");
 
         FortalecimientoCapacidades registrado = persistencePort.guardar(dominio);
 
-        // 4. Subir Archivos (Con UUID)
+        //Subir Archivos (Con UUID)
         boolean hayArchivos = (anexo != null && !anexo.isEmpty()) ||
                 (videos != null && !videos.isEmpty()) ||
                 (fotos != null && !fotos.isEmpty());
@@ -112,7 +111,6 @@ public class RegistrarFortalecimientoUseCaseAdapter implements RegistrarFortalec
 
         validarDatos(dominio);
 
-        // Defaults de negocio
         if (dominio.getResolucionAdminPlan() == null || dominio.getResolucionAdminPlan().isBlank()) dominio.setResolucionAdminPlan("NINGUNO");
         if (dominio.getInstitucionesAliadas() == null || dominio.getInstitucionesAliadas().isBlank()) dominio.setInstitucionesAliadas("NINGUNA");
 
@@ -211,9 +209,6 @@ public class RegistrarFortalecimientoUseCaseAdapter implements RegistrarFortalec
         return reportePort.generarFichaFortalecimiento(idEvento);
     }
 
-    // =========================================================================
-    // MÉTODO PRIVADO UNIFICADO ("Cerebro" de subida FFC)
-    // =========================================================================
     private void uploadFile(MultipartFile file, FortalecimientoCapacidades evento, String tipo, String sessionKey) throws Exception {
 
         String carpeta = switch (tipo.toUpperCase()) {

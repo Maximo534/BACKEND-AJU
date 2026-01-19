@@ -69,7 +69,7 @@ public class BuenaPracticaPersistenceAdapter implements BuenaPracticaPersistence
 
         BuenaPractica dominio = mapper.toDomain(entity);
 
-        // ✅ Lógica Inline: Enriquecer con Nombre de Distrito Judicial
+        // Enriquecer con Nombre de Distrito Judicial
         if (dominio.getDistritoJudicialId() != null) {
             repoDistrito.findById(dominio.getDistritoJudicialId())
                     .ifPresent(d -> dominio.setDistritoJudicialNombre(d.getNombre()));
@@ -99,7 +99,7 @@ public class BuenaPracticaPersistenceAdapter implements BuenaPracticaPersistence
 
         BuenaPractica result = mapper.toDomain(saved);
 
-        // ✅ Lógica Inline: Enriquecer con Nombre para devolverlo al Front
+        // Enriquecer con Nombre para devolverlo al Front
         if (result.getDistritoJudicialId() != null) {
             repoDistrito.findById(result.getDistritoJudicialId())
                     .ifPresent(d -> result.setDistritoJudicialNombre(d.getNombre()));
@@ -125,7 +125,7 @@ public class BuenaPracticaPersistenceAdapter implements BuenaPracticaPersistence
 
         BuenaPractica result = mapper.toDomain(saved);
 
-        // ✅ Lógica Inline: Enriquecer con Nombre para devolverlo al Front
+        //  Enriquecer con Nombre para devolverlo al Front
         if (result.getDistritoJudicialId() != null) {
             repoDistrito.findById(result.getDistritoJudicialId())
                     .ifPresent(d -> result.setDistritoJudicialNombre(d.getNombre()));

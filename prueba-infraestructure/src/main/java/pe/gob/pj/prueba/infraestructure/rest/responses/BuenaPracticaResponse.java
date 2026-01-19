@@ -56,7 +56,7 @@ public class BuenaPracticaResponse implements Serializable {
     private String leccionAprendida;
     private String infoAdicional;
 
-    // --- CAMPOS EXPUESTOS (Antes ocultos) ---
+    // --- CAMPOS EXPUESTOS---
     private String aporteRelevante;
     private String situacionAnterior;
     private String situacionDespues;

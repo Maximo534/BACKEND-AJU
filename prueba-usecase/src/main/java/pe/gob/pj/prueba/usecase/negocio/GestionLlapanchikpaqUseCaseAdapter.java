@@ -15,7 +15,7 @@ import pe.gob.pj.prueba.domain.port.files.FtpPort;
 import pe.gob.pj.prueba.domain.port.output.GenerarReportePort;
 import pe.gob.pj.prueba.domain.port.persistence.negocio.GestionArchivosPersistencePort;
 import pe.gob.pj.prueba.domain.port.persistence.negocio.LlapanchikpaqPersistencePort;
-import pe.gob.pj.prueba.domain.port.usecase.negocio.RegistrarLlapanchikpaqUseCasePort;
+import pe.gob.pj.prueba.domain.port.usecase.negocio.GestionLlapanchikpaqUseCasePort;
 
 import java.io.InputStream;
 import java.time.LocalDate;
@@ -25,7 +25,7 @@ import java.util.UUID;
 @Service
 @RequiredArgsConstructor
 @Slf4j
-public class RegistrarLlapanchikpaqUseCaseAdapter implements RegistrarLlapanchikpaqUseCasePort {
+public class GestionLlapanchikpaqUseCaseAdapter implements GestionLlapanchikpaqUseCasePort {
 
     private final LlapanchikpaqPersistencePort persistencePort;
     private final GestionArchivosPersistencePort archivosPersistencePort;
@@ -53,7 +53,7 @@ public class RegistrarLlapanchikpaqUseCaseAdapter implements RegistrarLlapanchik
     @Transactional(rollbackFor = Exception.class)
     public LlapanchikpaqJusticia registrar(LlapanchikpaqJusticia dominio, MultipartFile anexo, List<MultipartFile> fotos, String usuario) throws Exception {
 
-        // 1. Generar ID
+        //Generar ID
         String ultimoId = persistencePort.obtenerUltimoId();
         long siguiente = 1;
         if (ultimoId != null && !ultimoId.isBlank()) {
@@ -63,14 +63,14 @@ public class RegistrarLlapanchikpaqUseCaseAdapter implements RegistrarLlapanchik
         String corte = (dominio.getDistritoJudicialId() != null) ? dominio.getDistritoJudicialId() : "00";
         dominio.setId(String.format("%06d-%s-%s-LL", siguiente, corte, anio));
 
-        // 2. BD
+        // BD
         dominio.setUsuarioRegistro(usuario);
         dominio.setFechaRegistro(LocalDate.now());
         dominio.setActivo("1");
 
         LlapanchikpaqJusticia registrado = persistencePort.guardar(dominio);
 
-        // 3. Archivos
+        //Archivos
         boolean hayArchivos = (anexo != null && !anexo.isEmpty()) || (fotos != null && !fotos.isEmpty());
         if (hayArchivos) {
             String sessionKey = UUID.randomUUID().toString();
@@ -87,7 +87,7 @@ public class RegistrarLlapanchikpaqUseCaseAdapter implements RegistrarLlapanchik
                 }
             } catch (Exception e) {
                 log.error("Error archivos LLJ", e);
-                // Opcional: throw new Exception("Error carga archivos: " + e.getMessage());
+                 throw new Exception("Error carga archivos: " + e.getMessage());
             } finally {
                 ftpPort.finalizarSession(sessionKey);
             }
@@ -99,14 +99,10 @@ public class RegistrarLlapanchikpaqUseCaseAdapter implements RegistrarLlapanchik
     @Transactional(rollbackFor = Exception.class)
     public LlapanchikpaqJusticia actualizar(LlapanchikpaqJusticia dominio, String usuario) throws Exception {
         log.info("Actualizando LLJ ID: {} por: {}", dominio.getId(), usuario);
-
-        // Validaciones de negocio si las hay...
-
         dominio.setUsuarioRegistro(usuario);
         return persistencePort.actualizar(dominio);
     }
 
-    // --- AGREGAR ARCHIVO EXTRA ---
     @Override
     @Transactional
     public void agregarArchivo(String idEvento, MultipartFile archivo, String tipo, String usuario) throws Exception {
@@ -120,7 +116,6 @@ public class RegistrarLlapanchikpaqUseCaseAdapter implements RegistrarLlapanchik
         String sessionKey = UUID.randomUUID().toString();
         try {
             ftpPort.iniciarSesion(sessionKey, ftpIp, ftpPuerto, ftpUsuario, ftpClave);
-            // ✅ Reutilizamos la lógica unificada
             uploadFile(archivo, evento, tipo, sessionKey);
         } catch (Exception e) {
             log.error("Error agregando archivo LLJ", e);
@@ -196,9 +191,6 @@ public class RegistrarLlapanchikpaqUseCaseAdapter implements RegistrarLlapanchik
         return reportePort.generarFichaLlj(id);
     }
 
-    // =========================================================================
-    // MÉTODO PRIVADO UNIFICADO ("Cerebro" de subida LLJ)
-    // =========================================================================
     private void uploadFile(MultipartFile file, LlapanchikpaqJusticia evento, String tipo, String sessionKey) throws Exception {
 
         String carpeta = switch (tipo.toUpperCase()) {

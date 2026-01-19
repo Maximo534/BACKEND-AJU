@@ -11,7 +11,7 @@ import java.time.LocalDate;
 @Data
 public class RegistrarCasoRequest implements Serializable {
 
-    private String id; // Opcional, solo se usa para editar
+    private String id;
 
     @NotBlank(message = "Debe seleccionar un Juez Escolar.")
     @Size(max = 36)
@@ -29,7 +29,7 @@ public class RegistrarCasoRequest implements Serializable {
     @DateTimeFormat(pattern = "yyyy-MM-dd")
     private LocalDate fechaRegistro;
 
-    // --- UBIGEO (Ahora son obligatorios) ---
+    // --- UBIGEO ---
     @NotBlank(message = "El departamento es obligatorio.")
     @Size(max = 2)
     private String departamentoId;

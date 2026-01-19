@@ -18,7 +18,6 @@ public class MaestrosController {
 
     private final GestionarMaestrosUseCasePort useCase;
 
-    // --- ACTIVIDADES OPERATIVAS ---
     @GetMapping("/actividades")
     public ResponseEntity<GlobalResponse> listarActividades() {
         return responder(useCase.listarActividadesOperativas());
@@ -34,7 +33,6 @@ public class MaestrosController {
         return responder(useCase.listarTareas(idIndicador));
     }
 
-    // --- NUEVOS MAESTROS ---
     @GetMapping("/distritos-judiciales")
     public ResponseEntity<GlobalResponse> listarDistritosJudiciales() {
         return responder(useCase.listarDistritosJudiciales());
@@ -55,7 +53,6 @@ public class MaestrosController {
         return responder(useCase.listarTiposVulnerabilidad());
     }
 
-    // Dependientes de Corte
     @GetMapping("/tambos/{idCorte}")
     public ResponseEntity<GlobalResponse> listarTambos(@PathVariable String idCorte) {
         return responder(useCase.listarTambos(idCorte));
@@ -66,7 +63,6 @@ public class MaestrosController {
         return responder(useCase.buscarPlanes(idCorte, periodo));
     }
 
-    // --- UBIGEO ---
     @GetMapping("/ubigeo/departamentos")
     public ResponseEntity<GlobalResponse> listarDepartamentos() {
         return responder(useCase.listarDepartamentos());

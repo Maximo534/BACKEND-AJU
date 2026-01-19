@@ -46,7 +46,7 @@ public interface JusticiaPazMapper {
     void updateEntityFromDomain(JpeCasoAtendido domain, @MappingTarget MovJpeCasoAtendidoEntity entity);
 
     // 5. Response
-    @Mapping(target = "estado", constant = "REGISTRADO") // Opcional, si quieres mostrar algo fijo
+    @Mapping(target = "estado", constant = "REGISTRADO") // Opcional, si se quiere mostrar algo fijo
     @Mapping(target = "archivos", source = "archivosGuardados")
     JpeCasoAtendidoResponse toResponse(JpeCasoAtendido dominio);
 

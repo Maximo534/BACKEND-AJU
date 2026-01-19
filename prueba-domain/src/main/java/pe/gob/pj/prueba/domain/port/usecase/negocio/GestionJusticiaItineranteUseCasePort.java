@@ -6,7 +6,7 @@ import pe.gob.pj.prueba.domain.model.common.RecursoArchivo;
 import pe.gob.pj.prueba.domain.model.negocio.JusticiaItinerante;
 import java.util.List;
 
-public interface RegistrarJusticiaItineranteUseCasePort {
+public interface GestionJusticiaItineranteUseCasePort {
 
     Pagina<JusticiaItinerante> listar(String usuario, JusticiaItinerante filtros, int pagina, int tamanio) throws Exception;
     JusticiaItinerante registrar(JusticiaItinerante dominio, MultipartFile anexo, List<MultipartFile> videos, List<MultipartFile> fotos, String usuario) throws Exception;

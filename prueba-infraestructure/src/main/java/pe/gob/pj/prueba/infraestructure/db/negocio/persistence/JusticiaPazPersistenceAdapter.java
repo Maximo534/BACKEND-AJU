@@ -78,7 +78,6 @@ public class JusticiaPazPersistenceAdapter implements JusticiaPazPersistencePort
         MovJpeCasoAtendidoEntity saved = casoRepository.save(entity);
         JpeCasoAtendido res = mapper.toDomain(saved);
 
-        // ✅ LÓGICA INLINE: Enriquecer nombres
         if (res.getDistritoJudicialId() != null) {
             repoCorte.findById(res.getDistritoJudicialId())
                     .ifPresent(c -> res.setDistritoJudicialNombre(c.getNombre()));
@@ -118,7 +117,6 @@ public class JusticiaPazPersistenceAdapter implements JusticiaPazPersistencePort
         MovJpeCasoAtendidoEntity saved = casoRepository.save(entityDb);
         JpeCasoAtendido res = mapper.toDomain(saved);
 
-        // ✅ LÓGICA INLINE: Enriquecer nombres
         if (res.getDistritoJudicialId() != null) {
             repoCorte.findById(res.getDistritoJudicialId())
                     .ifPresent(c -> res.setDistritoJudicialNombre(c.getNombre()));
@@ -149,7 +147,6 @@ public class JusticiaPazPersistenceAdapter implements JusticiaPazPersistencePort
 
         JpeCasoAtendido dominio = mapper.toDomain(entity);
 
-        // ✅ LÓGICA INLINE: Enriquecer nombres
         if (dominio.getDistritoJudicialId() != null) {
             repoCorte.findById(dominio.getDistritoJudicialId())
                     .ifPresent(c -> dominio.setDistritoJudicialNombre(c.getNombre()));

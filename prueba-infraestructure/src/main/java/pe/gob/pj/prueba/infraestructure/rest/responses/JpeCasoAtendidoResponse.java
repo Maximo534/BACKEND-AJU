@@ -16,7 +16,7 @@ public class JpeCasoAtendidoResponse implements Serializable {
 
     private String id;
     private String distritoJudicialId;
-    private String distritoJudicialNombre; // "CORTE"
+    private String distritoJudicialNombre;
 
     // Datos Institucionales (Recuperados via Juez)
     private String ugelId;

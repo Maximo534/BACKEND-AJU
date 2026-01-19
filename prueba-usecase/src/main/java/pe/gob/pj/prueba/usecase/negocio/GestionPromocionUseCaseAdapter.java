@@ -14,7 +14,7 @@ import pe.gob.pj.prueba.domain.port.files.FtpPort;
 import pe.gob.pj.prueba.domain.port.output.GenerarReportePort;
 import pe.gob.pj.prueba.domain.port.persistence.negocio.GestionArchivosPersistencePort;
 import pe.gob.pj.prueba.domain.port.persistence.negocio.PromocionCulturaPersistencePort;
-import pe.gob.pj.prueba.domain.port.usecase.negocio.RegistrarPromocionUseCasePort;
+import pe.gob.pj.prueba.domain.port.usecase.negocio.GestionPromocionUseCasePort;
 
 import java.io.InputStream;
 import java.time.LocalDate;
@@ -24,7 +24,7 @@ import java.util.UUID;
 @Service
 @RequiredArgsConstructor
 @Slf4j
-public class RegistrarPromocionUseCaseAdapter implements RegistrarPromocionUseCasePort {
+public class GestionPromocionUseCaseAdapter implements GestionPromocionUseCasePort {
 
     private final PromocionCulturaPersistencePort persistencePort;
     private final GestionArchivosPersistencePort archivosPersistencePort;
@@ -53,7 +53,7 @@ public class RegistrarPromocionUseCaseAdapter implements RegistrarPromocionUseCa
     @Transactional(rollbackFor = Exception.class)
     public PromocionCultura registrar(PromocionCultura dominio, MultipartFile anexo, List<MultipartFile> videos, List<MultipartFile> fotos, String usuario) throws Exception {
 
-        // 1. Generar ID: 000001-15-2025-CJ
+        //Generar ID: 000001-15-2025-CJ
         String ultimoId = persistencePort.obtenerUltimoId();
         long siguiente = 1;
         if (ultimoId != null) {
@@ -67,10 +67,10 @@ public class RegistrarPromocionUseCaseAdapter implements RegistrarPromocionUseCa
         dominio.setFechaRegistro(LocalDate.now());
         dominio.setActivo("1");
 
-        // 2. Guardar BD
+        //Guardar BD
         PromocionCultura registrado = persistencePort.guardar(dominio);
 
-        // 3. Subir Archivos (Usando método unificado)
+        // Subir Archivos
         if ((anexo != null && !anexo.isEmpty()) || (videos != null && !videos.isEmpty()) || (fotos != null && !fotos.isEmpty())) {
             String sessionKey = UUID.randomUUID().toString();
             try {
@@ -94,7 +94,7 @@ public class RegistrarPromocionUseCaseAdapter implements RegistrarPromocionUseCa
 
             } catch (Exception e) {
                 log.error("Error archivos CJ", e);
-                // Opcional: throw new Exception("Error al cargar archivos: " + e.getMessage());
+                 Opcional: throw new Exception("Error al cargar archivos: " + e.getMessage());
             } finally {
                 ftpPort.finalizarSession(sessionKey);
             }
@@ -119,7 +119,6 @@ public class RegistrarPromocionUseCaseAdapter implements RegistrarPromocionUseCa
         String sessionKey = UUID.randomUUID().toString();
         try {
             ftpPort.iniciarSesion(sessionKey, ftpIp, ftpPuerto, ftpUsuario, ftpClave);
-            // ✅ Reutilizamos la lógica centralizada
             uploadFile(archivo, evento, tipo, sessionKey);
         } finally {
             ftpPort.finalizarSession(sessionKey);
@@ -186,12 +185,9 @@ public class RegistrarPromocionUseCaseAdapter implements RegistrarPromocionUseCa
         return reportePort.generarFichaPromocion(id);
     }
 
-    // =========================================================================
-    // ✅ MÉTODO PRIVADO UNIFICADO ("Cerebro" de subida CJ)
-    // =========================================================================
     private void uploadFile(MultipartFile file, PromocionCultura evento, String tipo, String sessionKey) throws Exception {
 
-        // 1. Determinar subcarpeta según el tipo
+        //Determinar subcarpeta según el tipo
         String carpetaTipo = switch (tipo.toUpperCase()) {
             case "ANEXO_CJ" -> "fichas";
             case "VIDEO_CJ" -> "videos";
@@ -199,28 +195,28 @@ public class RegistrarPromocionUseCaseAdapter implements RegistrarPromocionUseCa
             default -> "otros";
         };
 
-        // 2. Extraer datos para la ruta
+        // Extraer datos para la ruta
         String distrito = evento.getDistritoJudicialId();
         String anio = String.valueOf(evento.getFechaInicio() != null ? evento.getFechaInicio().getYear() : LocalDate.now().getYear());
         // Mes formateado a 2 dígitos
         String mes = String.format("%02d", evento.getFechaInicio() != null ? evento.getFechaInicio().getMonthValue() : LocalDate.now().getMonthValue());
 
-        // 3. Construir Ruta Base: /evidencias/{distrito}/evidencias_apcj/{CARPETA}/{ANIO}/{MES}/{ID}
+        // Construir Ruta Base: /evidencias/{distrito}/evidencias_apcj/{CARPETA}/{ANIO}/{MES}/{ID}
         String rutaBase = String.format("%s/%s/evidencias_apcj/%s/%s/%s/%s",
                 ftpRutaBase, distrito, carpetaTipo, anio, mes, evento.getId());
 
-        // 4. Nombre físico único
+        // Nombre físico único
         String ext = obtenerExtension(file.getOriginalFilename());
         String nombreFinal = evento.getId() + "_" + tipo + "_" + System.currentTimeMillis() + "_" + UUID.randomUUID().toString().substring(0,4) + ext;
 
         String rutaCompleta = rutaBase + "/" + nombreFinal;
 
-        // 5. Subir FTP
+        // Subir FTP
         if (!ftpPort.uploadFileFTP(sessionKey, rutaCompleta, file.getInputStream(), tipo)) {
             throw new Exception("Fallo FTP al subir " + nombreFinal);
         }
 
-        // 6. Guardar Referencia
+        // Guardar Referencia
         archivosPersistencePort.guardarReferenciaArchivo(Archivo.builder()
                 .nombre(nombreFinal)
                 .tipo(tipo)

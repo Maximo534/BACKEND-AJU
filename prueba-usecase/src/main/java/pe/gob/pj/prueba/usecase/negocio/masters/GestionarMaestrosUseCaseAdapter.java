@@ -26,8 +26,6 @@ public class GestionarMaestrosUseCaseAdapter implements GestionarMaestrosUseCase
     public List<Tarea> listarTareas(String idIndicador) {
         return persistencePort.listarTareasPorIndicador(idIndicador);
     }
-
-    // --- Nuevos ---
     @Override
     public List<DistritoJudicial> listarDistritosJudiciales() {
         return persistencePort.listarDistritosJudiciales();

@@ -117,11 +117,11 @@ public class MovEventoFcEntity implements Serializable {
     @JoinColumn(name = "c_evento_id", referencedColumnName = "c_evento_id", nullable = false, insertable = false, updatable = false)
     private List<MovEventoTareaEntity> tareas = new ArrayList<>();
 
-    // ✅ SOLO LÓGICA ESTRUCTURAL, NADA DE VALORES POR DEFECTO
+    //SOLO LÓGICA ESTRUCTURAL, NADA DE VALORES POR DEFECTO
     @PrePersist
     public void prePersist() {
-        if (this.fechaRegistro == null) this.fechaRegistro = LocalDate.now(); // Esto suele ser obligatorio por sistema
-        if (this.activo == null) this.activo = "1"; // Esto también
+        if (this.fechaRegistro == null) this.fechaRegistro = LocalDate.now();
+        if (this.activo == null) this.activo = "1";
 
         // Mantenemos esto para que las relaciones funcionen
         if (this.id != null) {

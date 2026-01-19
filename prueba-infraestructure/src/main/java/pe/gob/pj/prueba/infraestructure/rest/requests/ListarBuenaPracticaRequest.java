@@ -7,10 +7,8 @@ import java.time.LocalDate;
 @Data
 public class ListarBuenaPracticaRequest implements Serializable {
 
-    // ✅ BUSCADOR GENERAL (Reemplaza a palabraClave)
     private String search;
 
-    // FILTROS ESPECÍFICOS (Combos)
     private String distritoJudicialId;
     private LocalDate fechaInicio;
     private LocalDate fechaFin;
