@@ -68,4 +68,25 @@ public class GestionArchivosPersistenceAdapter implements GestionArchivosPersist
                         .build())
                 .collect(Collectors.toList());
     }
+
+    @Override
+    public List<Archivo> listarParaDescargaMasiva(String tipoArchivo, Integer anio, Integer mes) throws Exception {
+        try {
+            // Llamar al Query Nativo del repositorio
+            List<MovArchivosRepository.ArchivoDescargaProjection> resultados = repository.listarParaDescargaMasiva(tipoArchivo, anio, mes);
+
+            // Mapear de Projection (Interfaz) a Domain (Clase Archivo)
+            return resultados.stream()
+                    .map(p -> Archivo.builder()
+                            .nombre(p.getNombre())
+                            .ruta(p.getRuta())
+                            .build())
+                    .collect(Collectors.toList());
+
+        } catch (Exception e) {
+            log.error("Error al listar archivos para descarga masiva", e);
+            throw new Exception("Error al consultar archivos para reporte: " + e.getMessage());
+        }
+    }
+
 }

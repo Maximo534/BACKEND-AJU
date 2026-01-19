@@ -9,4 +9,6 @@ public interface GestionArchivosPersistencePort {
     Archivo buscarPorNombre(String nombre) throws Exception;
     void eliminarReferenciaArchivo(String nombre) throws Exception;
     List<Archivo> listarArchivosPorEvento(String idEvento) throws Exception;
+
+    List<Archivo> listarParaDescargaMasiva(String tipoArchivo, Integer anio, Integer mes) throws Exception;
 }

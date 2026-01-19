@@ -296,4 +296,21 @@ public class FtpAdapter implements FtpPort {
     }
   }
 
+
+  @Override
+  public boolean completarTransferencia(String cuo) {
+    try {
+      boolean completado = ftp.completePendingCommand();
+      if (completado) {
+        log.info("{} Transacción FTP finalizada correctamente.", cuo);
+      } else {
+        log.warn("{} No se pudo finalizar la transacción FTP (o no era necesaria).", cuo);
+      }
+      return completado;
+    } catch (Exception e) {
+      log.error("{} Error al completar comando pendiente FTP", cuo, e);
+      return false;
+    }
+  }
+
 }
