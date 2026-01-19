@@ -29,7 +29,7 @@ public class LlapanchikpaqPersistenceAdapter implements LlapanchikpaqPersistence
     private final MovLlapanchikpaqJusticiaRepository repository;
     private final LlapanchikpaqMapper mapper;
     private final MovArchivosRepository repoArchivos;
-    private final MaeDistritoJudicialRepository repoCorte; //Inyectado para buscar nombres
+    private final MaeDistritoJudicialRepository repoCorte;
 
     @Override
     @Transactional(readOnly = true)
@@ -49,8 +49,10 @@ public class LlapanchikpaqPersistenceAdapter implements LlapanchikpaqPersistence
                 .map(p -> LlapanchikpaqJusticia.builder()
                         .id(p.getId())
                         .fechaInicio(p.getFechaInicio())
-                        .activo(p.getEstado())
+                        .lugarActividad(p.getLugarActividad())
+                        .descripcionActividad(p.getDescripcionActividad())
                         .distritoJudicialNombre(p.getDistritoJudicialNombre()) // Viene de la BD
+                        .activo(p.getEstado())
                         .build())
                 .collect(Collectors.toList());
 

@@ -115,11 +115,11 @@ public class ReporteLljService {
 
             // Mapeo de campos numéricos según reporte PHP
             // nmpi -> numMujeresIndigenas
-            agregarFila(document, "N° de Mesa de Partes Instaladas", ": " + num(entity.getNumMujeresIndigenas()));
+            agregarFila(document, "N° de Mesa de Partes Instaladas", ": " + num(entity.getNumMesasInstaladas()));
             // nsqba -> numPersonasQuechuaAymara
-            agregarFila(document, "N° de Servidores que Brindaron Atención", ": " + num(entity.getNumPersonasQuechuaAymara()));
+            agregarFila(document, "N° de Servidores que Brindaron Atención", ": " + num(entity.getNumServidores()));
             // njqba -> numJuecesQuechuaAymara
-            agregarFila(document, "N° de Jueces que Brindaron Atención", ": " + num(entity.getNumJuecesQuechuaAymara()));
+            agregarFila(document, "N° de Jueces que Brindaron Atención", ": " + num(entity.getNumJueces()));
 
             agregarFila(document, "¿Se atendió en Lengua Nativa?", ": " + val(entity.getUsoLenguaNativa()));
             if ("SI".equalsIgnoreCase(entity.getUsoLenguaNativa())) {
@@ -147,10 +147,9 @@ public class ReporteLljService {
 
             // --- TEXTOS ---
             document.add(new Paragraph("IV. DESCRIPCIÓN DE LA ACTIVIDAD REALIZADA (DETALLAR OBJETIVO Y FINALIDAD): ", FONT_BOLD_8));
-            agregarBloqueTexto(document, entity.getDerivacion()); // Mapeado a descripción en BD? Revisar si es derivacion o el otro campo
-
+            agregarBloqueTexto(document, entity.getDescripcionActividad());
             document.add(new Paragraph("V. INSTITUCIONES ALIADAS: ", FONT_BOLD_8));
-            agregarBloqueTexto(document, entity.getImpactoActividad()); // Asumiendo mapeo (ia -> impacto)
+            agregarBloqueTexto(document, entity.getDerivacion()); // Asumiendo mapeo (ia -> impacto)
 
             document.add(new Paragraph("VI. OBSERVACIONES: ", FONT_BOLD_8));
             agregarBloqueTexto(document, entity.getObservacion());

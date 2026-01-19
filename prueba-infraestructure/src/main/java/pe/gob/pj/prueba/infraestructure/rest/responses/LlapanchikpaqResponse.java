@@ -33,15 +33,15 @@ public class LlapanchikpaqResponse implements Serializable {
     private String distritoGeograficoId;
 
     // Población
-    private Integer numMujeresIndigenas;
-    private Integer numPersonasQuechuaAymara;
-    private Integer numJuecesQuechuaAymara;
+    private Integer numMesasInstaladas;
+    private Integer numServidores;
+    private Integer numJueces;
     private String usoLenguaNativa;
     private String lenguaNativaDesc;
 
     // Textos
     private String derivacion;
-    private String impactoActividad;
+    private String descripcionActividad;
     private String observacion;
 
     // Auditoría

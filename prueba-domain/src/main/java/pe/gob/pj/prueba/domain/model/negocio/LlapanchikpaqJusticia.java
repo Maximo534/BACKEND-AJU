@@ -27,15 +27,15 @@ public class LlapanchikpaqJusticia implements Serializable {
     private String distritoGeograficoId;
 
     // Datos Población
-    private Integer numMujeresIndigenas;
-    private Integer numPersonasQuechuaAymara;
-    private Integer numJuecesQuechuaAymara;
+    private Integer numMesasInstaladas;
+    private Integer numServidores;
+    private Integer numJueces;
     private String usoLenguaNativa; // "SI"/"NO"
     private String lenguaNativaDesc;
 
     // Textos
     private String derivacion;
-    private String impactoActividad;
+    private String descripcionActividad;
     private String observacion;
 
     // Auditoría

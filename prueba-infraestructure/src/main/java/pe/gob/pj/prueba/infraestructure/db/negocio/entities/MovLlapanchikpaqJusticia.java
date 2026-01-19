@@ -44,12 +44,12 @@ public class MovLlapanchikpaqJusticia implements Serializable {
     @Column(name = "c_dist_id", length = 6)
     private String distritoGeograficoId;
 
-    @Column(name = "n_num_muj_indg")
-    private Integer numMujeresIndigenas;
-    @Column(name = "n_per_quech_aymar")
-    private Integer numPersonasQuechuaAymara;
-    @Column(name = "n_juez_quech_aymar")
-    private Integer numJuecesQuechuaAymara;
+    @Column(name = "n_num_mesas_inst")
+    private Integer numMesasInstaladas;
+    @Column(name = "n_num_ser_bri_ate")
+    private Integer numServidores;
+    @Column(name = "n_num_juez_ate")
+    private Integer numJueces;
 
     @Column(name = "l_uso_leng_nativa", length = 2)
     private String usoLenguaNativa;
@@ -58,8 +58,8 @@ public class MovLlapanchikpaqJusticia implements Serializable {
 
     @Column(name = "t_derivacion", columnDefinition = "TEXT")
     private String derivacion;
-    @Column(name = "t_impac_activ", columnDefinition = "TEXT")
-    private String impactoActividad;
+    @Column(name = "t_desc_activ", columnDefinition = "TEXT")
+    private String descripcionActividad;
     @Column(name = "t_observacion", columnDefinition = "TEXT")
     private String observacion;
 

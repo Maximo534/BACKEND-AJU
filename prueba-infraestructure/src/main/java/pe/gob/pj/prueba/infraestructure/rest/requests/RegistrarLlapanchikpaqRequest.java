@@ -41,14 +41,14 @@ public class RegistrarLlapanchikpaqRequest implements Serializable {
     @NotBlank(message = "Distrito Geográfico obligatorio")
     private String distritoGeograficoId;
 
-    @NotNull(message = "Num Mujeres Indígenas obligatorio") @Min(0)
-    private Integer numMujeresIndigenas;
+    @NotNull(message = "Num Mesas Instaladas obligatorio") @Min(0)
+    private Integer numMesasInstaladas;
 
-    @NotNull(message = "Num Quechua/Aymara obligatorio") @Min(0)
-    private Integer numPersonasQuechuaAymara;
+    @NotNull(message = "Num Servidores obligatorio") @Min(0)
+    private Integer numServidores;
 
-    @NotNull(message = "Num Jueces Quechua/Aymara obligatorio") @Min(0)
-    private Integer numJuecesQuechuaAymara;
+    @NotNull(message = "Num Jueces obligatorio") @Min(0)
+    private Integer numJueces;
 
     @NotBlank(message = "Uso Lengua Nativa obligatorio")
     private String usoLenguaNativa;
@@ -59,8 +59,8 @@ public class RegistrarLlapanchikpaqRequest implements Serializable {
     @NotBlank(message = "Derivación obligatoria")
     private String derivacion;
 
-    @NotBlank(message = "Impacto Actividad obligatorio")
-    private String impactoActividad;
+    @NotBlank(message = "Descripcion Actividad obligatorio")
+    private String descripcionActividad;
 
     @NotBlank(message = "Observación obligatoria")
     private String observacion;

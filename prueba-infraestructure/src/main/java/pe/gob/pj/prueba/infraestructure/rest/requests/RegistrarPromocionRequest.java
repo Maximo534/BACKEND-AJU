@@ -112,9 +112,6 @@ public class RegistrarPromocionRequest implements Serializable {
     @NotBlank(message = "Descripción actividad obligatoria")
     private String descripcionActividad;
 
-    @NotBlank(message = "Recursos utilizados obligatorio")
-    private String recursosUtilizados;
-
     @NotBlank(message = "Observación obligatoria")
     private String observacion;
 

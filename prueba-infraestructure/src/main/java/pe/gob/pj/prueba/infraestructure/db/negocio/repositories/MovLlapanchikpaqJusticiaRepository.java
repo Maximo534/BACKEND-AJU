@@ -22,6 +22,8 @@ public interface MovLlapanchikpaqJusticiaRepository extends JpaRepository<MovLla
             ll.c_llj_id AS id,
             ll.f_inicio AS fechaInicio,
             ll.l_activo AS estado,
+            ll.x_lugar_activ AS lugarActividad,
+            ll.t_desc_activ As descripcionActividad,
             dj.x_nom_corto AS distritoJudicialNombre
         FROM prueba.mov_aju_llapanchikpaq_justicia ll 
         INNER JOIN prueba.mae_aju_distrito_judiciales dj ON ll.c_distrito_jud_id = dj.c_distrito_jud_id 
@@ -74,7 +76,9 @@ public interface MovLlapanchikpaqJusticiaRepository extends JpaRepository<MovLla
     interface LlapanchikpaqResumenProjection {
         String getId();
         LocalDate getFechaInicio();
-        String getEstado();
         String getDistritoJudicialNombre();
+        String getLugarActividad();
+        String getDescripcionActividad();
+        String getEstado();
     }
 }
