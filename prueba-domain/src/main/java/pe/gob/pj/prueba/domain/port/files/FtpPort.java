@@ -59,7 +59,5 @@ public interface FtpPort {
 
 	boolean deleteFileFTP(String rutaCompleta) throws Exception;
 
-	InputStream descargarArchivo(String rutaCompleta) throws Exception;
-
 	boolean completarTransferencia(String cuo) throws Exception;
 }

@@ -180,9 +180,20 @@ public class GestionFortalecimientoUseCaseAdapter implements GestionFortalecimie
         String sessionKey = UUID.randomUUID().toString();
 
         ftpPort.iniciarSesion(sessionKey, ftpIp, ftpPuerto, ftpUsuario, ftpClave);
-        try (InputStream ftpStream = ftpPort.descargarArchivo(anexo.getRuta() + "/" + anexo.getNombre());
-             java.io.OutputStream tempStream = java.nio.file.Files.newOutputStream(tempFile)) {
-            ftpStream.transferTo(tempStream);
+
+        try {
+            String rutaCompleta = anexo.getRuta() + "/" + anexo.getNombre();
+            InputStream ftpStream = ftpPort.downloadFileStream(sessionKey, rutaCompleta);
+
+            if (ftpStream == null) {
+                throw new Exception("El archivo no se pudo leer del FTP (Posiblemente no existe).");
+            }
+
+            try (java.io.OutputStream tempStream = java.nio.file.Files.newOutputStream(tempFile)) {
+                ftpStream.transferTo(tempStream);
+            }
+            ftpStream.close();
+
         } catch (Exception e) {
             java.nio.file.Files.deleteIfExists(tempFile);
             throw e;

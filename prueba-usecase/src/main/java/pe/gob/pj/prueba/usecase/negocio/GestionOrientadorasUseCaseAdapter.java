@@ -141,25 +141,47 @@ public class GestionOrientadorasUseCaseAdapter implements GestionOrientadorasUse
 
     @Override
     public RecursoArchivo descargarAnexo(String id, String tipoArchivo) throws Exception {
+        // Buscar metadatos en BD
         List<Archivo> archivos = archivosPersistencePort.listarArchivosPorEvento(id);
         Archivo encontrado = archivos.stream()
                 .filter(a -> a.getTipo().equalsIgnoreCase(tipoArchivo))
-                .findFirst().orElseThrow(() -> new Exception("Archivo no encontrado: " + tipoArchivo));
+                .findFirst()
+                .orElseThrow(() -> new Exception("Archivo no encontrado: " + tipoArchivo));
 
+        // Preparar temporal
         String sessionKey = UUID.randomUUID().toString();
         java.nio.file.Path tempFile = java.nio.file.Files.createTempFile("oj_" + tipoArchivo, ".tmp");
 
+        //Descarga FTP segura
         ftpPort.iniciarSesion(sessionKey, ftpIp, ftpPuerto, ftpUsuario, ftpClave);
-        try (InputStream is = ftpPort.descargarArchivo(encontrado.getRuta() + "/" + encontrado.getNombre());
-             java.io.OutputStream os = java.nio.file.Files.newOutputStream(tempFile)) {
-            is.transferTo(os);
+
+        try {
+            String rutaCompleta = encontrado.getRuta() + "/" + encontrado.getNombre();
+            InputStream is = ftpPort.downloadFileStream(sessionKey, rutaCompleta);
+
+            if (is == null) {
+                throw new Exception("El archivo no existe en el servidor FTP.");
+            }
+
+            try (java.io.OutputStream os = java.nio.file.Files.newOutputStream(tempFile)) {
+                is.transferTo(os);
+            }
+            is.close();
+
+        } catch (Exception e) {
+            java.nio.file.Files.deleteIfExists(tempFile);
+            throw e;
         } finally {
             ftpPort.finalizarSession(sessionKey);
         }
 
+        //Retorno con auto-borrado
         return RecursoArchivo.builder()
                 .stream(new java.io.FileInputStream(tempFile.toFile()) {
-                    @Override public void close() throws java.io.IOException { super.close(); java.nio.file.Files.deleteIfExists(tempFile); }
+                    @Override public void close() throws java.io.IOException {
+                        super.close();
+                        java.nio.file.Files.deleteIfExists(tempFile);
+                    }
                 })
                 .nombreFileName(encontrado.getNombre())
                 .build();

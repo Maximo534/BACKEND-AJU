@@ -117,9 +117,22 @@ public class GestionDocumentosUseCaseAdapter implements GestionDocumentosUseCase
         String sessionKey = UUID.randomUUID().toString();
 
         ftpPort.iniciarSesion(sessionKey, ftpIp, ftpPuerto, ftpUsuario, ftpClave);
-        try (InputStream ftpStream = ftpPort.descargarArchivo(doc.getRutaArchivo());
-             java.io.OutputStream tempFileStream = java.nio.file.Files.newOutputStream(tempFile)) {
-            ftpStream.transferTo(tempFileStream);
+
+        try {
+            InputStream ftpStream = ftpPort.downloadFileStream(sessionKey, doc.getRutaArchivo());
+
+            if (ftpStream == null) {
+                throw new Exception("El archivo físico no existe en el servidor FTP.");
+            }
+
+            try (java.io.OutputStream tempFileStream = java.nio.file.Files.newOutputStream(tempFile)) {
+                ftpStream.transferTo(tempFileStream);
+            }
+            ftpStream.close();
+
+        } catch (Exception e) {
+            java.nio.file.Files.deleteIfExists(tempFile);
+            throw e;
         } finally {
             ftpPort.finalizarSession(sessionKey);
         }

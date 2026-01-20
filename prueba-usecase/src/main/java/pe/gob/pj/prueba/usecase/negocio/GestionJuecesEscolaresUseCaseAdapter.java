@@ -123,18 +123,30 @@ public class GestionJuecesEscolaresUseCaseAdapter implements GestionJuecesEscola
         List<Archivo> archivos = archivosPersistencePort.listarArchivosPorEvento(id);
         Archivo res = archivos.stream()
                 .filter(a -> "RESOLUCION_JPE".equals(a.getTipo()))
-                .findFirst().orElseThrow(() -> new Exception("Sin resolución adjunta"));
+                .findFirst()
+                .orElseThrow(() -> new Exception("Este registro no tiene resolución adjunta."));
 
         java.nio.file.Path tempFile = java.nio.file.Files.createTempFile("res_jpe_" + id, ".tmp");
         String sessionKey = UUID.randomUUID().toString();
 
         ftpPort.iniciarSesion(sessionKey, ftpIp, ftpPuerto, ftpUsuario, ftpClave);
-        try (InputStream ftpStream = ftpPort.descargarArchivo(res.getRuta() + "/" + res.getNombre());
-             java.io.OutputStream tempStream = java.nio.file.Files.newOutputStream(tempFile)) {
-            ftpStream.transferTo(tempStream);
+
+        try {
+            String rutaCompleta = res.getRuta() + "/" + res.getNombre();
+            InputStream ftpStream = ftpPort.downloadFileStream(sessionKey, rutaCompleta);
+
+            if (ftpStream == null) {
+                throw new Exception("El archivo no se encuentra en el servidor FTP.");
+            }
+
+            try (java.io.OutputStream tempStream = java.nio.file.Files.newOutputStream(tempFile)) {
+                ftpStream.transferTo(tempStream);
+            }
+            ftpStream.close();
+
         } catch (Exception e) {
             java.nio.file.Files.deleteIfExists(tempFile);
-            throw e;
+            throw new Exception("Error descargando del FTP: " + e.getMessage());
         } finally {
             ftpPort.finalizarSession(sessionKey);
         }

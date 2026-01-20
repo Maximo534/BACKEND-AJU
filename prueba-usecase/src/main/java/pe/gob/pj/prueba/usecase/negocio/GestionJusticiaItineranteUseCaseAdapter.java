@@ -201,7 +201,10 @@ public class GestionJusticiaItineranteUseCaseAdapter implements GestionJusticiaI
 
     @Override
     public RecursoArchivo descargarAnexo(String idEvento, String usuario) throws Exception {
-        if (idEvento == null || idEvento.isEmpty()) throw new Exception("El ID del evento es obligatorio");
+
+        if (idEvento == null || idEvento.isEmpty()) {
+            throw new Exception("El ID del evento es obligatorio");
+        }
 
         List<Archivo> archivos = archivosPersistencePort.listarArchivosPorEvento(idEvento);
         Archivo archivoAnexo = archivos.stream()
@@ -213,9 +216,21 @@ public class GestionJusticiaItineranteUseCaseAdapter implements GestionJusticiaI
         String sessionKey = UUID.randomUUID().toString();
 
         ftpPort.iniciarSesion(sessionKey, ftpIp, ftpPuerto, ftpUsuario, ftpClave);
-        try (InputStream ftpStream = ftpPort.descargarArchivo(archivoAnexo.getRuta() + "/" + archivoAnexo.getNombre());
-             java.io.OutputStream tempFileStream = java.nio.file.Files.newOutputStream(tempFile)) {
-            ftpStream.transferTo(tempFileStream);
+
+        try {
+            String rutaCompleta = archivoAnexo.getRuta() + "/" + archivoAnexo.getNombre();
+
+            InputStream ftpStream = ftpPort.downloadFileStream(sessionKey, rutaCompleta);
+
+            if (ftpStream == null) {
+                throw new Exception("El archivo no se encontró en el servidor FTP.");
+            }
+
+            try (java.io.OutputStream tempFileStream = java.nio.file.Files.newOutputStream(tempFile)) {
+                ftpStream.transferTo(tempFileStream);
+            }
+            ftpStream.close();
+
         } catch (Exception e) {
             java.nio.file.Files.deleteIfExists(tempFile);
             throw new Exception("Error descargando del FTP: " + e.getMessage());

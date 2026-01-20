@@ -168,16 +168,26 @@ public class GestionBuenaPracticaUseCaseAdapter implements GestionBuenaPracticaU
         Archivo encontrado = archivos.stream()
                 .filter(a -> tipoArchivo.equalsIgnoreCase(a.getTipo()))
                 .findFirst()
-                .orElseThrow(() -> new Exception("No se encontró archivo " + tipoArchivo));
+                .orElseThrow(() -> new Exception("No se encontró archivo de tipo " + tipoArchivo));
 
         java.nio.file.Path tempFile = java.nio.file.Files.createTempFile("bp_" + tipoArchivo + "_" + idEvento, ".tmp");
-
         String sessionKey = UUID.randomUUID().toString();
 
         ftpPort.iniciarSesion(sessionKey, ftpIp, ftpPuerto, ftpUsuario, ftpClave);
-        try (InputStream ftpStream = ftpPort.descargarArchivo(encontrado.getRuta() + "/" + encontrado.getNombre());
-             java.io.OutputStream tempStream = java.nio.file.Files.newOutputStream(tempFile)) {
-            ftpStream.transferTo(tempStream);
+
+        try {
+            String rutaCompleta = encontrado.getRuta() + "/" + encontrado.getNombre();
+            InputStream ftpStream = ftpPort.downloadFileStream(sessionKey, rutaCompleta);
+
+            if (ftpStream == null) {
+                throw new Exception("El archivo no existe en el servidor FTP.");
+            }
+
+            try (java.io.OutputStream tempStream = java.nio.file.Files.newOutputStream(tempFile)) {
+                ftpStream.transferTo(tempStream);
+            }
+            ftpStream.close();
+
         } catch (Exception e) {
             java.nio.file.Files.deleteIfExists(tempFile);
             throw e;

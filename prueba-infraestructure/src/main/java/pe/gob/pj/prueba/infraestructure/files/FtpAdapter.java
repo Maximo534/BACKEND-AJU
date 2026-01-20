@@ -283,21 +283,6 @@ public class FtpAdapter implements FtpPort {
   }
 
   @Override
-  public InputStream descargarArchivo(String rutaCompleta) throws Exception {
-    try {
-      InputStream inputStream = ftp.retrieveFileStream(rutaCompleta);
-      if (inputStream == null) {
-        throw new Exception("No se pudo obtener el stream del archivo (¿Existe?): " + rutaCompleta);
-      }
-      return inputStream;
-    } catch (Exception e) {
-      log.error("Error descargando archivo FTP", e);
-      throw e;
-    }
-  }
-
-
-  @Override
   public boolean completarTransferencia(String cuo) {
     try {
       boolean completado = ftp.completePendingCommand();

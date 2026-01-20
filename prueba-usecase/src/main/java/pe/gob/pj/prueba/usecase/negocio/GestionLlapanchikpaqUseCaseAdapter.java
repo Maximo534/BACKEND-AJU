@@ -127,19 +127,33 @@ public class GestionLlapanchikpaqUseCaseAdapter implements GestionLlapanchikpaqU
 
     @Override
     public RecursoArchivo descargarArchivoPorTipo(String id, String tipoArchivo) throws Exception {
+        // Buscar el archivo en BD
         List<Archivo> archivos = archivosPersistencePort.listarArchivosPorEvento(id);
         Archivo encontrado = archivos.stream()
                 .filter(a -> a.getTipo().equalsIgnoreCase(tipoArchivo))
                 .findFirst()
                 .orElseThrow(() -> new Exception("No se encontró archivo " + tipoArchivo));
 
+        // Crear archivo temporal
         java.nio.file.Path tempFile = java.nio.file.Files.createTempFile("llj_" + tipoArchivo + "_" + id, ".tmp");
         String sessionKey = UUID.randomUUID().toString();
 
+        // Iniciar sesión y descargar
         ftpPort.iniciarSesion(sessionKey, ftpIp, ftpPuerto, ftpUsuario, ftpClave);
-        try (InputStream ftpStream = ftpPort.descargarArchivo(encontrado.getRuta() + "/" + encontrado.getNombre());
-             java.io.OutputStream tempStream = java.nio.file.Files.newOutputStream(tempFile)) {
-            ftpStream.transferTo(tempStream);
+
+        try {
+            String rutaCompleta = encontrado.getRuta() + "/" + encontrado.getNombre();
+            InputStream ftpStream = ftpPort.downloadFileStream(sessionKey, rutaCompleta);
+
+            if (ftpStream == null) {
+                throw new Exception("El archivo no existe en el servidor FTP.");
+            }
+
+            try (java.io.OutputStream tempStream = java.nio.file.Files.newOutputStream(tempFile)) {
+                ftpStream.transferTo(tempStream);
+            }
+            ftpStream.close();
+
         } catch (Exception e) {
             java.nio.file.Files.deleteIfExists(tempFile);
             throw e;

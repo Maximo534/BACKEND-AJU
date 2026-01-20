@@ -110,19 +110,33 @@ public class GestionJusticiaPazUseCaseAdapter implements GestionJusticiaPazUseCa
 
     @Override
     public RecursoArchivo descargarArchivoPorTipo(String idCaso, String tipoArchivo) throws Exception {
+        // Buscar en BD
         List<Archivo> archivos = archivosPersistencePort.listarArchivosPorEvento(idCaso);
         Archivo encontrado = archivos.stream()
                 .filter(a -> a.getTipo().equalsIgnoreCase(tipoArchivo))
                 .findFirst()
                 .orElseThrow(() -> new Exception("Archivo no encontrado: " + tipoArchivo));
 
+        // Preparar temporal
         java.nio.file.Path tempFile = java.nio.file.Files.createTempFile("jpe_" + tipoArchivo + "_" + idCaso, ".tmp");
         String sessionKey = UUID.randomUUID().toString();
 
+        // Descarga FTP segura
         ftpPort.iniciarSesion(sessionKey, ftpIp, ftpPuerto, ftpUsuario, ftpClave);
-        try (InputStream ftpStream = ftpPort.descargarArchivo(encontrado.getRuta() + "/" + encontrado.getNombre());
-             java.io.OutputStream tempStream = java.nio.file.Files.newOutputStream(tempFile)) {
-            ftpStream.transferTo(tempStream);
+
+        try {
+            String rutaCompleta = encontrado.getRuta() + "/" + encontrado.getNombre();
+            InputStream ftpStream = ftpPort.downloadFileStream(sessionKey, rutaCompleta);
+
+            if (ftpStream == null) {
+                throw new Exception("El archivo no existe en el servidor FTP.");
+            }
+
+            try (java.io.OutputStream tempStream = java.nio.file.Files.newOutputStream(tempFile)) {
+                ftpStream.transferTo(tempStream);
+            }
+            ftpStream.close();
+
         } catch (Exception e) {
             java.nio.file.Files.deleteIfExists(tempFile);
             throw e;
