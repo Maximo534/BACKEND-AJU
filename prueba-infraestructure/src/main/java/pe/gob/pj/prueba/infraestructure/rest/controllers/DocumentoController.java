@@ -33,7 +33,7 @@ public class DocumentoController {
     private final GestionDocumentosUseCasePort useCase;
     private final DocumentoMapper mapper;
 
-    @GetMapping("/listar/{tipo}")
+    @GetMapping("/{tipo}")
     public ResponseEntity<GlobalResponse> listar(@PathVariable String tipo) {
 
         GlobalResponse res = new GlobalResponse();
