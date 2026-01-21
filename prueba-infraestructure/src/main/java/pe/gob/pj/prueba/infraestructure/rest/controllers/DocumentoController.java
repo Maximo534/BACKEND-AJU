@@ -33,34 +33,18 @@ public class DocumentoController {
     private final GestionDocumentosUseCasePort useCase;
     private final DocumentoMapper mapper;
 
-    @PostMapping(produces = MediaType.APPLICATION_JSON_VALUE)
-    public ResponseEntity<GlobalResponse> listar(
-            @RequestParam(defaultValue = "1") int pagina,
-            @RequestParam(defaultValue = "10") int tamanio,
-            @RequestBody(required = false) ListarDocumentosRequest request) {
+    @GetMapping("/listar/{tipo}")
+    public ResponseEntity<GlobalResponse> listar(@PathVariable String tipo) {
 
         GlobalResponse res = new GlobalResponse();
         try {
-            Documento filtros = Documento.builder().build();
-            if (request != null) {
-                filtros.setTipo(request.getTipo());
-                filtros.setPeriodo(request.getPeriodo());
-                filtros.setCategoriaId(request.getCategoriaId());
-                filtros.setNombre(request.getNombre());
-            }
+            List<Documento> listaDominio = useCase.listarDocumentosPorTipo(tipo);
 
-            Pagina<Documento> paginaDominio = useCase.listarDocumentos(filtros, pagina, tamanio);
-
-            List<DocumentoResponse> listaResponse = mapper.toResponseList(paginaDominio.getContenido());
+            List<DocumentoResponse> listaResponse = mapper.toResponseList(listaDominio);
 
             res.setCodigo("0000");
             res.setDescripcion("Listado exitoso");
             res.setData(listaResponse);
-
-            res.setTotalRegistros(paginaDominio.getTotalRegistros());
-            res.setTotalPaginas(paginaDominio.getTotalPaginas());
-            res.setPaginaActual(paginaDominio.getPaginaActual());
-            res.setTamanioPagina(paginaDominio.getTamanioPagina());
 
             return ResponseEntity.ok(res);
 
@@ -71,6 +55,45 @@ public class DocumentoController {
             return ResponseEntity.internalServerError().body(res);
         }
     }
+
+//    @PostMapping(produces = MediaType.APPLICATION_JSON_VALUE)
+//    public ResponseEntity<GlobalResponse> listar(
+//            @RequestParam(defaultValue = "1") int pagina,
+//            @RequestParam(defaultValue = "10") int tamanio,
+//            @RequestBody(required = false) ListarDocumentosRequest request) {
+//
+//        GlobalResponse res = new GlobalResponse();
+//        try {
+//            Documento filtros = Documento.builder().build();
+//            if (request != null) {
+//                filtros.setTipo(request.getTipo());
+//                filtros.setPeriodo(request.getPeriodo());
+//                filtros.setCategoriaId(request.getCategoriaId());
+//                filtros.setNombre(request.getNombre());
+//            }
+//
+//            Pagina<Documento> paginaDominio = useCase.listarDocumentos(filtros, pagina, tamanio);
+//
+//            List<DocumentoResponse> listaResponse = mapper.toResponseList(paginaDominio.getContenido());
+//
+//            res.setCodigo("0000");
+//            res.setDescripcion("Listado exitoso");
+//            res.setData(listaResponse);
+//
+//            res.setTotalRegistros(paginaDominio.getTotalRegistros());
+//            res.setTotalPaginas(paginaDominio.getTotalPaginas());
+//            res.setPaginaActual(paginaDominio.getPaginaActual());
+//            res.setTamanioPagina(paginaDominio.getTamanioPagina());
+//
+//            return ResponseEntity.ok(res);
+//
+//        } catch (Exception e) {
+//            log.error("Error al listar documentos", e);
+//            res.setCodigo("500");
+//            res.setDescripcion("Error: " + e.getMessage());
+//            return ResponseEntity.internalServerError().body(res);
+//        }
+//    }
 
     @PostMapping(consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
     public ResponseEntity<GlobalResponse> registrar(

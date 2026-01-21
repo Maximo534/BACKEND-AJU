@@ -3,6 +3,8 @@ package pe.gob.pj.prueba.domain.port.persistence.negocio;
 import pe.gob.pj.prueba.domain.model.common.Pagina;
 import pe.gob.pj.prueba.domain.model.negocio.Documento;
 
+import java.util.List;
+
 public interface DocumentoPersistencePort {
 
     /**
@@ -12,7 +14,8 @@ public interface DocumentoPersistencePort {
      * @param tamanio Cantidad de registros por página
      * @return Objeto Pagina con la lista de documentos y metadatos
      */
-    Pagina<Documento> listarConFiltros(Documento filtros, int pagina, int tamanio);
+//    Pagina<Documento> listarConFiltros(Documento filtros, int pagina, int tamanio);
+     List<Documento> listarPorTipo(String tipo);
 
     /**
      * Guarda o Actualiza un documento en la base de datos.

@@ -26,30 +26,41 @@ public class DocumentoPersistenceAdapter implements DocumentoPersistencePort {
     private final DocumentoRepository repository;
     private final DocumentoMapper mapper;
 
+
     @Override
     @Transactional(readOnly = true)
-    public Pagina<Documento> listarConFiltros(Documento filtros, int pagina, int tamanio) {
-        Pageable pageable = PageRequest.of(pagina - 1, tamanio);
+    public List<Documento> listarPorTipo(String tipo) {
 
-        String tipo = (filtros != null) ? filtros.getTipo() : null;
-        Integer periodo = (filtros != null) ? filtros.getPeriodo() : null;
-        Integer catId = (filtros != null) ? filtros.getCategoriaId() : null;
-        String nombre = (filtros != null) ? filtros.getNombre() : null;
+        List<DocumentoEntity> entities = repository.findByTipoAndActivoOrderByPeriodoDesc(tipo, "1");
 
-        Page<DocumentoEntity> result = repository.listar(tipo, periodo, catId, nombre, pageable);
-
-        List<Documento> contenido = result.getContent().stream()
+        return entities.stream()
                 .map(mapper::toDomain)
                 .collect(Collectors.toList());
-
-        return Pagina.<Documento>builder()
-                .contenido(contenido)
-                .totalRegistros(result.getTotalElements())
-                .totalPaginas(result.getTotalPages())
-                .paginaActual(pagina)
-                .tamanioPagina(tamanio)
-                .build();
     }
+//    @Override
+//    @Transactional(readOnly = true)
+//    public Pagina<Documento> listarConFiltros(Documento filtros, int pagina, int tamanio) {
+//        Pageable pageable = PageRequest.of(pagina - 1, tamanio);
+//
+//        String tipo = (filtros != null) ? filtros.getTipo() : null;
+//        Integer periodo = (filtros != null) ? filtros.getPeriodo() : null;
+//        Integer catId = (filtros != null) ? filtros.getCategoriaId() : null;
+//        String nombre = (filtros != null) ? filtros.getNombre() : null;
+//
+//        Page<DocumentoEntity> result = repository.listar(tipo, periodo, catId, nombre, pageable);
+//
+//        List<Documento> contenido = result.getContent().stream()
+//                .map(mapper::toDomain)
+//                .collect(Collectors.toList());
+//
+//        return Pagina.<Documento>builder()
+//                .contenido(contenido)
+//                .totalRegistros(result.getTotalElements())
+//                .totalPaginas(result.getTotalPages())
+//                .paginaActual(pagina)
+//                .tamanioPagina(tamanio)
+//                .build();
+//    }
 
     @Override
     @Transactional

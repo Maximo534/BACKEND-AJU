@@ -15,6 +15,7 @@ import pe.gob.pj.prueba.domain.port.usecase.negocio.GestionDocumentosUseCasePort
 
 import java.io.InputStream;
 import java.time.LocalDate;
+import java.util.List;
 import java.util.UUID;
 
 @Slf4j
@@ -33,9 +34,15 @@ public class GestionDocumentosUseCaseAdapter implements GestionDocumentosUseCase
 
     @Override
     @Transactional(readOnly = true)
-    public Pagina<Documento> listarDocumentos(Documento filtros, int pagina, int tamanio) throws Exception {
-        return persistencePort.listarConFiltros(filtros, pagina, tamanio);
+    public List<Documento> listarDocumentosPorTipo(String tipo) throws Exception {
+        return persistencePort.listarPorTipo(tipo);
     }
+
+//    @Override
+//    @Transactional(readOnly = true)
+//    public Pagina<Documento> listarDocumentos(Documento filtros, int pagina, int tamanio) throws Exception {
+//        return persistencePort.listarConFiltros(filtros, pagina, tamanio);
+//    }
 
     @Override
     @Transactional
