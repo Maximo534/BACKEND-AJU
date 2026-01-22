@@ -10,7 +10,7 @@ import pe.gob.pj.prueba.infraestructure.rest.responses.JusticiaItineranteRespons
         unmappedTargetPolicy = ReportingPolicy.IGNORE)
 public interface JusticiaItineranteMapper {
 
-    // 1. ENTITY <-> DOMAIN (Persistencia)
+    // --- MAPPINGS DE ENTIDAD Y DOMINIO ---
     @Mapping(target = "personasAtendidas", source = "personasAtendidas")
     @Mapping(target = "casosAtendidos", source = "casosAtendidos")
     @Mapping(target = "personasBeneficiadas", source = "personasBeneficiadas")
@@ -20,10 +20,7 @@ public interface JusticiaItineranteMapper {
     @InheritInverseConfiguration(name = "toEntity")
     JusticiaItinerante toDomain(MovJusticiaItineranteEntity entity);
 
-    // --- Mappings Específicos para Listas Hijas (Entity <-> Domain) ---
-    // MapStruct los usa automáticamente cuando convierte las listas
-
-    // Personas Atendidas
+    // Mappings Hijos
     @Mapping(target = "cantidadFemenino", source = "cantFemenino")
     @Mapping(target = "cantidadMasculino", source = "cantMasculino")
     @Mapping(target = "cantidadLgtbiq", source = "cantLgtbiq")
@@ -31,7 +28,6 @@ public interface JusticiaItineranteMapper {
     @InheritInverseConfiguration
     JusticiaItinerante.DetalleAtendida toDomainPA(MovJiPersonasAtendidasEntity e);
 
-    // Casos Atendidos
     @Mapping(target = "cantidadDemandas", source = "numDemandas")
     @Mapping(target = "cantidadAudiencias", source = "numAudiencias")
     @Mapping(target = "cantidadSentencias", source = "numSentencias")
@@ -42,23 +38,19 @@ public interface JusticiaItineranteMapper {
     @InheritInverseConfiguration
     JusticiaItinerante.DetalleCaso toDomainPCA(MovJiCasosAtendidosEntity e);
 
-    // Personas Beneficiadas
     MovJiPersonasBeneficiadasEntity toEntityPB(JusticiaItinerante.DetalleBeneficiada d);
     @InheritInverseConfiguration
     JusticiaItinerante.DetalleBeneficiada toDomainPB(MovJiPersonasBeneficiadasEntity e);
 
-    // Tareas Realizadas
     MovJiTareasRealizadasEntity toEntityTR(JusticiaItinerante.DetalleTarea d);
     @InheritInverseConfiguration
     JusticiaItinerante.DetalleTarea toDomainTR(MovJiTareasRealizadasEntity e);
 
-    // 2. ACTUALIZACIÓN PARCIAL (Dominio -> Entity Existente)
+    // Update
     @Mapping(target = "id", ignore = true)
     @Mapping(target = "fechaRegistro", ignore = true)
     @Mapping(target = "usuarioRegistro", ignore = true)
     @Mapping(target = "activo", ignore = true)
-
-    // Listas ignoradas (se manejan manual)
     @BeanMapping(nullValuePropertyMappingStrategy = NullValuePropertyMappingStrategy.IGNORE)
     @Mapping(target = "personasAtendidas", ignore = true)
     @Mapping(target = "casosAtendidos", ignore = true)
@@ -66,9 +58,8 @@ public interface JusticiaItineranteMapper {
     @Mapping(target = "tareasRealizadas", ignore = true)
     void updateEntityFromDomain(JusticiaItinerante domain, @MappingTarget MovJusticiaItineranteEntity entity);
 
-    // 3. REQUEST -> DOMAIN (Con Defaults)
+    // Request -> Domain (Igual)
     @Mapping(target = "id", source = "id")
-    // DEFAULTS: Limpiamos los nulos antes de llegar al UseCase
     @Mapping(target = "publicoObjetivoDetalle", source = "publicoObjetivoDetalle", defaultValue = "NINGUNO")
     @Mapping(target = "tambo", source = "tambo", defaultValue = "NINGUNO")
     @Mapping(target = "lenguaNativa", source = "lenguaNativa", defaultValue = "NINGUNO")
@@ -80,29 +71,19 @@ public interface JusticiaItineranteMapper {
     @Mapping(target = "descripcionActividad", source = "descripcionActividad", defaultValue = "")
     @Mapping(target = "institucionesAliadas", source = "institucionesAliadas", defaultValue = "")
     @Mapping(target = "observaciones", source = "observaciones", defaultValue = "")
-    // Ignoramos campos de auditoría (se llenan en UseCase/Entity)
     @Mapping(target = "fechaRegistro", ignore = true)
     @Mapping(target = "usuarioRegistro", ignore = true)
     @Mapping(target = "activo", ignore = true)
     @Mapping(target = "archivosGuardados", ignore = true)
     JusticiaItinerante toDomain(RegistrarFjiRequest request);
 
-    // Mappings para items del request
     JusticiaItinerante.DetalleAtendida toDomainPA(RegistrarFjiRequest.DetallePARequest r);
     JusticiaItinerante.DetalleCaso toDomainPCA(RegistrarFjiRequest.DetallePCARequest r);
     JusticiaItinerante.DetalleBeneficiada toDomainPB(RegistrarFjiRequest.DetallePBRequest r);
     JusticiaItinerante.DetalleTarea toDomainTR(RegistrarFjiRequest.DetalleTRRequest r);
-
-    // 4. DOMAIN -> RESPONSE (Dos versiones)
-
-    // LISTADO (Ligero: ignora listas pesadas)
+    // LISTADO 
     @Mapping(target = "estado", source = "activo")
-    @Mapping(target = "archivos", ignore = true)
-    @Mapping(target = "personasAtendidas", ignore = true)
-    @Mapping(target = "casosAtendidos", ignore = true)
-    @Mapping(target = "personasBeneficiadas", ignore = true)
-    @Mapping(target = "tareasRealizadas", ignore = true)
-    @Mapping(target = "observaciones", ignore = true)
+    @Mapping(target = "archivos", source = "archivosGuardados")
     JusticiaItineranteResponse toResponseListado(JusticiaItinerante dominio);
 
     // DETALLE

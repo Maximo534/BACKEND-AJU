@@ -41,25 +41,42 @@ public class JusticiaItinerantePersistenceAdapter implements JusticiaItineranteP
         LocalDate fIni = (filtros != null) ? filtros.getFechaInicio() : null;
         LocalDate fFin = (filtros != null) ? filtros.getFechaFin() : null;
 
-        var result = repository.listar(usuario, search, distrito, fIni, fFin, pageable);
+        // 1. Llamamos al nuevo método que trae ENTIDADES completas
+        var pageResult = repository.listarCompleto(usuario, search, distrito, fIni, fFin, pageable);
 
-        List<JusticiaItinerante> contenido = result.getContent().stream()
-                .map(p -> JusticiaItinerante.builder()
-                        .id(p.getId())
-                        .fechaInicio(p.getFechaInicio())
-                        .fechaFin(p.getFechaFin())
-                        .fechaRegistro(p.getFechaRegistro())
-                        .lugarActividad(p.getLugar())
-                        .publicoObjetivo(p.getPublicoObjetivo())
-                        .activo(p.getEstado())
-                        .distritoJudicialNombre(p.getDistritoJudicialNombre()) // Viene directo de la BD
-                        .build())
+        List<JusticiaItinerante> contenido = pageResult.getContent().stream()
+                .map(entity -> {
+                    // Mapeo automático de todos los campos básicos y listas hijas
+                    JusticiaItinerante dominio = mapper.toDomain(entity);
+
+                    // Nombre Distrito Judicial
+                    if (dominio.getDistritoJudicialId() != null) {
+                        repoDistrito.findById(dominio.getDistritoJudicialId())
+                                .ifPresent(d -> dominio.setDistritoJudicialNombre(d.getNombre()));
+                    }
+
+                    // Archivos Adjuntos
+                    List<MovArchivosEntity> archivosEntities = repoArchivos.findByNumeroIdentificacion(dominio.getId());
+                    if (archivosEntities != null && !archivosEntities.isEmpty()) {
+                        List<Archivo> listaArchivos = archivosEntities.stream()
+                                .map(a -> Archivo.builder()
+                                        .nombre(a.getNombre())
+                                        .tipo(a.getTipo())
+                                        .ruta(a.getRuta())
+                                        .numeroIdentificacion(a.getNumeroIdentificacion())
+                                        .build())
+                                .collect(Collectors.toList());
+                        dominio.setArchivosGuardados(listaArchivos);
+                    }
+
+                    return dominio;
+                })
                 .collect(Collectors.toList());
 
         return Pagina.<JusticiaItinerante>builder()
                 .contenido(contenido)
-                .totalRegistros(result.getTotalElements())
-                .totalPaginas(result.getTotalPages())
+                .totalRegistros(pageResult.getTotalElements())
+                .totalPaginas(pageResult.getTotalPages())
                 .paginaActual(pagina)
                 .tamanioPagina(tamanio)
                 .build();
