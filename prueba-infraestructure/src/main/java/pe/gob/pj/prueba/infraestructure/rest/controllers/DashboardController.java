@@ -23,14 +23,13 @@ public class DashboardController {
 
     @GetMapping("/graficos")
     public ResponseEntity<GlobalResponse> obtenerGraficos(
-            @RequestParam(required = false) Integer anio,
-            @RequestHeader(value = "usuario", required = false) String usuarioHeader
+            @RequestParam(required = false) Integer anio
     ) {
         GlobalResponse res = new GlobalResponse();
         try {
             int anioConsulta = (anio != null) ? anio : LocalDate.now().getYear();
-            String usuarioFinal = (usuarioHeader != null && !usuarioHeader.isBlank()) ? usuarioHeader : "EMATAMOROSV";
 
+            String usuarioFinal = "EMATAMOROSV";
 
             Dashboard dominio = useCase.obtenerDashboard(anioConsulta, usuarioFinal);
 

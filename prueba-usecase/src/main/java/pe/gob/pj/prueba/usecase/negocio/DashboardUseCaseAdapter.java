@@ -19,9 +19,10 @@ public class DashboardUseCaseAdapter implements DashboardUseCasePort {
     @Transactional(readOnly = true)
     public Dashboard obtenerDashboard(int anio, String usuario) throws Exception {
 
-        List<Integer> statsJI = persistencePort.obtenerEstadisticasJusticiaItinerante(anio, usuario);
-        List<Integer> statsFFC = persistencePort.obtenerEstadisticasFortalecimiento(anio, usuario);
-        List<Integer> statsCultura = persistencePort.obtenerEstadisticasPromocionCultura(anio, usuario);
+        // Ahora recibimos List<DataMes> en lugar de List<Integer>
+        List<Dashboard.DataMes> statsJI = persistencePort.obtenerEstadisticasJusticiaItinerante(anio, usuario);
+        List<Dashboard.DataMes> statsFFC = persistencePort.obtenerEstadisticasFortalecimiento(anio, usuario);
+        List<Dashboard.DataMes> statsCultura = persistencePort.obtenerEstadisticasPromocionCultura(anio, usuario);
 
         var widgetGrafico = Dashboard.GraficoBarras.builder()
                 .justiciaItinerante(statsJI)

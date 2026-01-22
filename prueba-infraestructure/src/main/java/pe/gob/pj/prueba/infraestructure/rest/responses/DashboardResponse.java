@@ -1,8 +1,10 @@
 package pe.gob.pj.prueba.infraestructure.rest.responses;
 
 import com.fasterxml.jackson.annotation.JsonInclude;
+import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
+import lombok.NoArgsConstructor;
 import java.io.Serializable;
 import java.util.List;
 
@@ -18,8 +20,17 @@ public class DashboardResponse implements Serializable {
     @Data
     @Builder
     public static class GraficoBarrasResponse implements Serializable {
-        private List<Integer> justiciaItinerante;
-        private List<Integer> fortalecimiento;
-        private List<Integer> promocionCultura;
+        private List<DataMesResponse> justiciaItinerante;
+        private List<DataMesResponse> fortalecimiento;
+        private List<DataMesResponse> promocionCultura;
+    }
+
+    @Data
+    @Builder
+    @NoArgsConstructor
+    @AllArgsConstructor
+    public static class DataMesResponse implements Serializable {
+        private Integer mes;
+        private Integer cantidad;
     }
 }
