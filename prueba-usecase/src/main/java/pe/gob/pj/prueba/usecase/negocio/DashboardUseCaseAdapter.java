@@ -15,25 +15,40 @@ public class DashboardUseCaseAdapter implements DashboardUseCasePort {
 
     private final DashboardPersistencePort persistencePort;
 
+    private static final List<String> LABELS_MESES = List.of(
+            "Enero", "Febrero", "Marzo", "Abril", "Mayo", "Junio",
+            "Julio", "Agosto", "Septiembre", "Octubre", "Noviembre", "Diciembre"
+    );
+
     @Override
     @Transactional(readOnly = true)
     public Dashboard obtenerDashboard(int anio, String usuario) throws Exception {
 
-        // Ahora recibimos List<DataMes> en lugar de List<Integer>
-        List<Dashboard.DataMes> statsJI = persistencePort.obtenerEstadisticasJusticiaItinerante(anio, usuario);
-        List<Dashboard.DataMes> statsFFC = persistencePort.obtenerEstadisticasFortalecimiento(anio, usuario);
-        List<Dashboard.DataMes> statsCultura = persistencePort.obtenerEstadisticasPromocionCultura(anio, usuario);
+        List<Integer> statsJI = persistencePort.obtenerEstadisticasJusticiaItinerante(anio, usuario);
+        List<Integer> statsFFC = persistencePort.obtenerEstadisticasFortalecimiento(anio, usuario);
+        List<Integer> statsCultura = persistencePort.obtenerEstadisticasPromocionCultura(anio, usuario);
 
-        var widgetGrafico = Dashboard.GraficoBarras.builder()
-                .justiciaItinerante(statsJI)
-                .fortalecimiento(statsFFC)
-                .promocionCultura(statsCultura)
+        var graficoJI = Dashboard.DetalleGrafico.builder()
+                .labels(LABELS_MESES)
+                .cantidad(statsJI)
+                .build();
+
+        var graficoFFC = Dashboard.DetalleGrafico.builder()
+                .labels(LABELS_MESES)
+                .cantidad(statsFFC)
+                .build();
+
+        var graficoCultura = Dashboard.DetalleGrafico.builder()
+                .labels(LABELS_MESES)
+                .cantidad(statsCultura)
                 .build();
 
         return Dashboard.builder()
                 .anioConsultado(anio)
                 .usuarioConsultado(usuario)
-                .graficoAnual(widgetGrafico)
+                .anualJusticiaItinerante(graficoJI)
+                .anualFortalecimiento(graficoFFC)
+                .anualPromocion(graficoCultura)
                 .build();
     }
 }

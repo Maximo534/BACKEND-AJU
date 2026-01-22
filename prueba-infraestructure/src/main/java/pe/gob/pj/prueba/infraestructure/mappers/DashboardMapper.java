@@ -12,7 +12,6 @@ public interface DashboardMapper {
 
     DashboardResponse toResponse(Dashboard domain);
 
-    DashboardResponse.GraficoBarrasResponse toResponseGrafico(Dashboard.GraficoBarras domainGrafico);
-
-    DashboardResponse.DataMesResponse toResponseDataMes(Dashboard.DataMes domainDataMes);
+    // Mapeo de la nueva clase interna
+    DashboardResponse.DetalleGraficoResponse toResponseDetalle(Dashboard.DetalleGrafico domainDetalle);
 }
