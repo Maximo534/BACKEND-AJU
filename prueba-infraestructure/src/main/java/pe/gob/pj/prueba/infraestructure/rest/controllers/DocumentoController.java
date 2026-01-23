@@ -120,7 +120,7 @@ public class DocumentoController {
             return ResponseEntity.internalServerError().body(res);
         }
     }
-    @GetMapping("/{id}")
+    @GetMapping("/id/{id}")
     @Operation(summary = "Obtener detalle", description = "Retorna los metadatos para llenar el formulario de edición.")
     public ResponseEntity<GlobalResponse> obtenerPorId(@PathVariable String id) {
         GlobalResponse res = new GlobalResponse();
