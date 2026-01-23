@@ -33,8 +33,8 @@ public class DocumentoController {
     private final GestionDocumentosUseCasePort useCase;
     private final DocumentoMapper mapper;
 
-    @GetMapping("/{tipo}")
-    public ResponseEntity<GlobalResponse> listar(@PathVariable String tipo) {
+    @GetMapping
+    public ResponseEntity<GlobalResponse> listar(@RequestParam String tipo) {
 
         GlobalResponse res = new GlobalResponse();
         try {
@@ -120,7 +120,7 @@ public class DocumentoController {
             return ResponseEntity.internalServerError().body(res);
         }
     }
-    @GetMapping("/id/{id}")
+    @GetMapping("/{id}")
     @Operation(summary = "Obtener detalle", description = "Retorna los metadatos para llenar el formulario de edición.")
     public ResponseEntity<GlobalResponse> obtenerPorId(@PathVariable String id) {
         GlobalResponse res = new GlobalResponse();
