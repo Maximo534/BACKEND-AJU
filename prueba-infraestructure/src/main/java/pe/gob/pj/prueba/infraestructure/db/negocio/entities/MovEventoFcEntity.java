@@ -115,7 +115,7 @@ public class MovEventoFcEntity implements Serializable {
 
     @OneToMany(cascade = CascadeType.ALL, fetch = FetchType.LAZY, orphanRemoval = true)
     @JoinColumn(name = "c_evento_id", referencedColumnName = "c_evento_id", nullable = false, insertable = false, updatable = false)
-    private List<MovEventoTareaEntity> tareas = new ArrayList<>();
+    private List<MovEventoTareaEntity> tareasRealizadas = new ArrayList<>();
 
     //SOLO LÓGICA ESTRUCTURAL, NADA DE VALORES POR DEFECTO
     @PrePersist
@@ -126,7 +126,7 @@ public class MovEventoFcEntity implements Serializable {
         // Mantenemos esto para que las relaciones funcionen
         if (this.id != null) {
             if(this.participantes != null) this.participantes.forEach(p -> p.setEventoId(this.id));
-            if(this.tareas != null) this.tareas.forEach(t -> t.setEventoId(this.id));
+            if(this.tareasRealizadas != null) this.tareasRealizadas.forEach(t -> t.setEventoId(this.id));
         }
     }
 }

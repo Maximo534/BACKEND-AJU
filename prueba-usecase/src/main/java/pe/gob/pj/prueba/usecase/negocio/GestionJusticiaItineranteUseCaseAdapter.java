@@ -49,7 +49,13 @@ public class GestionJusticiaItineranteUseCaseAdapter implements GestionJusticiaI
         // Validaciones
         if (dominio.getFechaInicio() == null) throw new Exception("La fecha de inicio es obligatoria.");
         if (dominio.getPublicoObjetivoDetalle() == null) dominio.setPublicoObjetivoDetalle("NINGUNO");
-
+        if (dominio.getTareasRealizadas() != null) {
+            for (JusticiaItinerante.DetalleTarea tarea : dominio.getTareasRealizadas()) {
+                if (tarea.getFechaInicio() == null) {
+                    tarea.setFechaInicio(dominio.getFechaInicio());
+                }
+            }
+        }
         // Generar ID
         String ultimoId = persistencePort.obtenerUltimoId();
         long siguiente = 1;
@@ -112,6 +118,14 @@ public class GestionJusticiaItineranteUseCaseAdapter implements GestionJusticiaI
         if (dominio.getFechaInicio() == null) throw new Exception("La fecha de inicio es obligatoria.");
         if (dominio.getFechaFin() != null && dominio.getFechaFin().isBefore(dominio.getFechaInicio())) {
             throw new Exception("La fecha fin no puede ser anterior a la fecha de inicio.");
+        }
+
+        if (dominio.getTareasRealizadas() != null) {
+            for (JusticiaItinerante.DetalleTarea tarea : dominio.getTareasRealizadas()) {
+                if (tarea.getFechaInicio() == null) {
+                    tarea.setFechaInicio(dominio.getFechaInicio());
+                }
+            }
         }
         dominio.setUsuarioRegistro(usuarioOperacion);
         return persistencePort.actualizar(dominio);

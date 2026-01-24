@@ -54,7 +54,7 @@ public class FortalecimientoResponse implements Serializable {
 
     // Listas anidadas
     private List<DetalleParticipanteResponse> participantes;
-    private List<DetalleTareaResponse> tareas;
+    private List<DetalleTareaResponse> tareasRealizadas;
 
     // Archivos
     private List<Archivo> archivos;

@@ -9,6 +9,7 @@ import org.springframework.web.multipart.MultipartFile;
 import pe.gob.pj.prueba.domain.model.common.Pagina;
 import pe.gob.pj.prueba.domain.model.common.RecursoArchivo;
 import pe.gob.pj.prueba.domain.model.negocio.Archivo;
+import pe.gob.pj.prueba.domain.model.negocio.JusticiaItinerante;
 import pe.gob.pj.prueba.domain.model.negocio.PromocionCultura;
 import pe.gob.pj.prueba.domain.port.files.FtpPort;
 import pe.gob.pj.prueba.domain.port.output.GenerarReportePort;
@@ -53,6 +54,13 @@ public class GestionPromocionUseCaseAdapter implements GestionPromocionUseCasePo
     @Transactional(rollbackFor = Exception.class)
     public PromocionCultura registrar(PromocionCultura dominio, MultipartFile anexo, List<MultipartFile> videos, List<MultipartFile> fotos, String usuario) throws Exception {
 
+        if (dominio.getTareasRealizadas() != null) {
+            for (PromocionCultura.DetalleTarea tarea : dominio.getTareasRealizadas()) {
+                if (tarea.getFechaInicio() == null) {
+                    tarea.setFechaInicio(dominio.getFechaInicio());
+                }
+            }
+        }
         //Generar ID: 000001-15-2025-CJ
         String ultimoId = persistencePort.obtenerUltimoId();
         long siguiente = 1;
@@ -106,6 +114,15 @@ public class GestionPromocionUseCaseAdapter implements GestionPromocionUseCasePo
     @Transactional
     public PromocionCultura actualizar(PromocionCultura dominio, String usuario) throws Exception {
         if(dominio.getId() == null) throw new Exception("ID obligatorio");
+
+        if (dominio.getTareasRealizadas() != null) {
+            for (PromocionCultura.DetalleTarea tarea : dominio.getTareasRealizadas()) {
+                if (tarea.getFechaInicio() == null) {
+                    tarea.setFechaInicio(dominio.getFechaInicio());
+                }
+            }
+        }
+
         dominio.setUsuarioRegistro(usuario);
         return persistencePort.actualizar(dominio);
     }

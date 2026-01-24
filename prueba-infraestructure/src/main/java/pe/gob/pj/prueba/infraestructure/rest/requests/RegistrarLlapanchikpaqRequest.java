@@ -110,6 +110,6 @@ public class RegistrarLlapanchikpaqRequest implements Serializable {
     @Data
     public static class TareaRequest {
         @NotBlank private String tareaId;
-        @NotNull private LocalDate fechaInicio;
+        private LocalDate fechaInicio;
     }
 }

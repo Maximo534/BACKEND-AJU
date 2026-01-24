@@ -55,6 +55,15 @@ public class GestionFortalecimientoUseCaseAdapter implements GestionFortalecimie
     public FortalecimientoCapacidades registrar(FortalecimientoCapacidades dominio, MultipartFile anexo, List<MultipartFile> videos, List<MultipartFile> fotos, String usuario) throws Exception {
 
         validarDatos(dominio);
+
+        if (dominio.getTareasRealizadas() != null) {
+            for (FortalecimientoCapacidades.DetalleTarea tarea : dominio.getTareasRealizadas()) {
+                if (tarea.getFechaInicio() == null) {
+                    tarea.setFechaInicio(dominio.getFechaInicio());
+                }
+            }
+        }
+
         if (dominio.getResolucionAdminPlan() == null) dominio.setResolucionAdminPlan("NINGUNO");
 
         // Generar ID
@@ -110,7 +119,13 @@ public class GestionFortalecimientoUseCaseAdapter implements GestionFortalecimie
         log.info("Actualizando FFC ID: {} por: {}", dominio.getId(), usuarioOperacion);
 
         validarDatos(dominio);
-
+        if (dominio.getTareasRealizadas() != null) {
+            for (FortalecimientoCapacidades.DetalleTarea tarea : dominio.getTareasRealizadas()) {
+                if (tarea.getFechaInicio() == null) {
+                    tarea.setFechaInicio(dominio.getFechaInicio());
+                }
+            }
+        }
         if (dominio.getResolucionAdminPlan() == null || dominio.getResolucionAdminPlan().isBlank()) dominio.setResolucionAdminPlan("NINGUNO");
         if (dominio.getInstitucionesAliadas() == null || dominio.getInstitucionesAliadas().isBlank()) dominio.setInstitucionesAliadas("NINGUNA");
 

@@ -52,7 +52,13 @@ public class GestionLlapanchikpaqUseCaseAdapter implements GestionLlapanchikpaqU
     @Override
     @Transactional(rollbackFor = Exception.class)
     public LlapanchikpaqJusticia registrar(LlapanchikpaqJusticia dominio, MultipartFile anexo, List<MultipartFile> fotos, String usuario) throws Exception {
-
+        if (dominio.getTareas() != null) {
+            for (var tarea : dominio.getTareas()) {
+                if (tarea.getFechaInicio() == null) {
+                    tarea.setFechaInicio(dominio.getFechaInicio());
+                }
+            }
+        }
         //Generar ID
         String ultimoId = persistencePort.obtenerUltimoId();
         long siguiente = 1;
@@ -99,6 +105,13 @@ public class GestionLlapanchikpaqUseCaseAdapter implements GestionLlapanchikpaqU
     @Transactional(rollbackFor = Exception.class)
     public LlapanchikpaqJusticia actualizar(LlapanchikpaqJusticia dominio, String usuario) throws Exception {
         log.info("Actualizando LLJ ID: {} por: {}", dominio.getId(), usuario);
+        if (dominio.getTareas() != null) {
+            for (var tarea : dominio.getTareas()) {
+                if (tarea.getFechaInicio() == null) {
+                    tarea.setFechaInicio(dominio.getFechaInicio());
+                }
+            }
+        }
         dominio.setUsuarioRegistro(usuario);
         return persistencePort.actualizar(dominio);
     }

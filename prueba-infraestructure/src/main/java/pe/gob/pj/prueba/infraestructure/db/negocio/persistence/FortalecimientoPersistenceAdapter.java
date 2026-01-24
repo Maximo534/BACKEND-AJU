@@ -75,7 +75,7 @@ public class FortalecimientoPersistenceAdapter implements FortalecimientoPersist
             if (entidad.getId() != null) {
                 String id = entidad.getId();
                 if (entidad.getParticipantes() != null) entidad.getParticipantes().forEach(d -> d.setEventoId(id));
-                if (entidad.getTareas() != null) entidad.getTareas().forEach(d -> d.setEventoId(id));
+                if (entidad.getTareasRealizadas() != null) entidad.getTareasRealizadas().forEach(d -> d.setEventoId(id));
             }
 
             MovEventoFcEntity guardado = repository.save(entidad);
@@ -120,18 +120,18 @@ public class FortalecimientoPersistenceAdapter implements FortalecimientoPersist
                 });
             }
 
-            if (entidadDb.getTareas() != null) {
-                entidadDb.getTareas().clear();
+            if (entidadDb.getTareasRealizadas() != null) {
+                entidadDb.getTareasRealizadas().clear();
             } else {
-                entidadDb.setTareas(new ArrayList<>());
+                entidadDb.setTareasRealizadas(new ArrayList<>());
             }
 
-            if (entidadDb.getTareas() != null) entidadDb.getTareas().clear();
-            if (dominio.getTareas() != null) {
-                dominio.getTareas().forEach(t -> {
+            if (entidadDb.getTareasRealizadas() != null) entidadDb.getTareasRealizadas().clear();
+            if (dominio.getTareasRealizadas() != null) {
+                dominio.getTareasRealizadas().forEach(t -> {
                     var entityTarea = mapper.toEntityTarea(t);
                     entityTarea.setEventoId(entidadDb.getId());
-                    entidadDb.getTareas().add(entityTarea);
+                    entidadDb.getTareasRealizadas().add(entityTarea);
                 });
             }
 

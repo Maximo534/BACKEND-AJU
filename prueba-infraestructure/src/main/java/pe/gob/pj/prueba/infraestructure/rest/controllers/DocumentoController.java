@@ -97,7 +97,7 @@ public class DocumentoController {
 
     @PostMapping(consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
     public ResponseEntity<GlobalResponse> registrar(
-            @Valid @ModelAttribute RegistrarDocumentoRequest request,
+            @RequestPart("data") @Valid  RegistrarDocumentoRequest request,
             @RequestParam("archivo") MultipartFile archivo) {
 
         GlobalResponse res = new GlobalResponse();
@@ -142,7 +142,7 @@ public class DocumentoController {
 
     @PutMapping(consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
     public ResponseEntity<GlobalResponse> actualizar(
-            @Valid @ModelAttribute RegistrarDocumentoRequest request,
+            @RequestPart("data") @Valid  RegistrarDocumentoRequest request,
             @RequestParam(value = "archivo", required = false) MultipartFile archivo) { // Archivo OPCIONAL
 
         GlobalResponse res = new GlobalResponse();

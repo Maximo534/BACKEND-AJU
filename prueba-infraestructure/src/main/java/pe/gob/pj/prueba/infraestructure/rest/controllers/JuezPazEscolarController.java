@@ -86,7 +86,7 @@ public class JuezPazEscolarController {
 
     @PostMapping(consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
     public ResponseEntity<GlobalResponse> registrar(
-            @Valid @ModelAttribute RegistrarJuezRequest request,
+            @RequestPart("data") @Valid  RegistrarJuezRequest request,
             @RequestPart(value = "resolucion", required = false) MultipartFile resolucion
     ) {
         GlobalResponse res = new GlobalResponse();
@@ -107,7 +107,7 @@ public class JuezPazEscolarController {
     }
 
     @PutMapping(consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
-    public ResponseEntity<GlobalResponse> actualizar(@Valid @ModelAttribute RegistrarJuezRequest request) {
+    public ResponseEntity<GlobalResponse> actualizar(@RequestPart("data") @Valid  RegistrarJuezRequest request) {
         GlobalResponse res = new GlobalResponse();
         try {
             if (request.getId() == null || request.getId().isBlank()) throw new Exception("ID obligatorio");

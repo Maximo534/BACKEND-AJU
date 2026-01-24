@@ -8,8 +8,6 @@ import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import pe.gob.pj.prueba.infraestructure.db.negocio.entities.*;
-import pe.gob.pj.prueba.infraestructure.db.negocio.entities.masters.MaeActividadOperativaEntity;
-import pe.gob.pj.prueba.infraestructure.db.negocio.entities.masters.MaeIndicadorEntity;
 import pe.gob.pj.prueba.infraestructure.db.negocio.entities.masters.MaeTareaEntity;
 import pe.gob.pj.prueba.infraestructure.db.negocio.repositories.MovEventoFcRepository;
 import pe.gob.pj.prueba.infraestructure.db.negocio.repositories.masters.*;
@@ -155,8 +153,8 @@ public class ReporteFortalecimientoService {
             document.add(Chunk.NEWLINE);
             document.add(new Paragraph("VI. ACTIVIDAD OPERATIVA REALIZADA: ", FONT_BOLD_8));
 
-            if (entity.getTareas() != null && !entity.getTareas().isEmpty()) {
-                List<MaeTareaEntity> tareas = entity.getTareas().stream()
+            if (entity.getTareasRealizadas() != null && !entity.getTareasRealizadas().isEmpty()) {
+                List<MaeTareaEntity> tareas = entity.getTareasRealizadas().stream()
                         .map(MovEventoTareaEntity::getTareaMaestra).filter(Objects::nonNull).collect(Collectors.toList());
 
                 // Lista de Actividades

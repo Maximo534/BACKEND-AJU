@@ -83,7 +83,7 @@ public class PromocionCulturaController implements Serializable {
 
     @PostMapping(consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
     public ResponseEntity<GlobalResponse> registrar(
-            @Valid @ModelAttribute RegistrarPromocionRequest request,
+            @RequestPart("data") @Valid  RegistrarPromocionRequest request,
             @RequestPart(value = "anexo", required = false) MultipartFile anexo,
             @RequestPart(value = "videos", required = false) List<MultipartFile> videos,
             @RequestPart(value = "fotos", required = false) List<MultipartFile> fotos
@@ -107,7 +107,7 @@ public class PromocionCulturaController implements Serializable {
     }
 
     @PutMapping(consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
-    public ResponseEntity<GlobalResponse> actualizar(@Valid @ModelAttribute RegistrarPromocionRequest request) {
+    public ResponseEntity<GlobalResponse> actualizar(@RequestPart("data") @Valid  RegistrarPromocionRequest request) {
         GlobalResponse res = new GlobalResponse();
         try {
             if (request.getId() == null) throw new Exception("ID obligatorio");

@@ -110,7 +110,7 @@ public class JusticiaPazController {
 
     @PostMapping( consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
     public ResponseEntity<GlobalResponse> registrar(
-            @Valid @ModelAttribute RegistrarCasoRequest request, // ✅ @Valid
+            @RequestPart("data") @Valid  RegistrarCasoRequest request,
             @RequestPart(value = "acta", required = false) MultipartFile acta,
             @RequestPart(value = "fotos", required = false) List<MultipartFile> fotos
     ) {
@@ -133,7 +133,7 @@ public class JusticiaPazController {
     }
 
     @PutMapping(consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
-    public ResponseEntity<GlobalResponse> actualizar(@Valid @ModelAttribute RegistrarCasoRequest request) {
+    public ResponseEntity<GlobalResponse> actualizar(@RequestPart("data") @Valid RegistrarCasoRequest request) {
         GlobalResponse res = new GlobalResponse();
         try {
             if (request.getId() == null || request.getId().isBlank()) {

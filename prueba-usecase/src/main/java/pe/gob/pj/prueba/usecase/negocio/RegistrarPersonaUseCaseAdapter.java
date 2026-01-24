@@ -12,7 +12,7 @@ import pe.gob.pj.prueba.domain.exceptions.negocio.PersonaYaExisteException;
 import pe.gob.pj.prueba.domain.exceptions.negocio.UsuarioNoEsDePoderJudicialExcepcion;
 import pe.gob.pj.prueba.domain.model.negocio.Persona;
 import pe.gob.pj.prueba.domain.model.negocio.query.ConsultarPersonaQuery;
-import pe.gob.pj.prueba.domain.port.client.consultasiga.ConsultaUsuarioEstadoPort;
+//import pe.gob.pj.prueba.domain.port.client.consultasiga.ConsultaUsuarioEstadoPort;
 import pe.gob.pj.prueba.domain.port.persistence.negocio.PersonaReadPersistencePort;
 import pe.gob.pj.prueba.domain.port.persistence.negocio.PersonaWritePersistencePort;
 import pe.gob.pj.prueba.domain.port.usecase.negocio.RegistrarPersonaUseCasePort;
@@ -25,20 +25,20 @@ public class RegistrarPersonaUseCaseAdapter implements RegistrarPersonaUseCasePo
 
   PersonaWritePersistencePort personaWritePersistencePort;
   PersonaReadPersistencePort personaReadPersistencePort;
-  ConsultaUsuarioEstadoPort consultaUsuarioEstadoPort;
+//  ConsultaUsuarioEstadoPort consultaUsuarioEstadoPort;
 
   @Override
   @Transactional(transactionManager = "txManagerNegocio", propagation = Propagation.REQUIRES_NEW,
       readOnly = false, rollbackFor = {Exception.class, SQLException.class})
   public Integer registrarPersona(String cuo, Persona persona) {
 
-    var personaSiga =
-        consultaUsuarioEstadoPort.consultarPorDocumento(cuo, persona.getNumeroDocumento());
-
-    if (Objects.isNull(personaSiga.getData())) {
-      throw new UsuarioNoEsDePoderJudicialExcepcion(persona.getUsuario());
-    }
-
+//    var personaSiga =
+//        consultaUsuarioEstadoPort.consultarPorDocumento(cuo, persona.getNumeroDocumento());
+//
+//    if (Objects.isNull(personaSiga.getData())) {
+//      throw new UsuarioNoEsDePoderJudicialExcepcion(persona.getUsuario());
+//    }
+//
     if (!personaReadPersistencePort.buscarPersona(cuo,
         ConsultarPersonaQuery.builder().documentoIdentidad(persona.getNumeroDocumento()).build())
         .isEmpty()) {

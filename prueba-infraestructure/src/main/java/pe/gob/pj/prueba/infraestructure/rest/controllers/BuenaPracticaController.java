@@ -96,7 +96,7 @@ public class BuenaPracticaController {
 
     @PostMapping(consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
     public ResponseEntity<GlobalResponse> registrar(
-            @Valid @ModelAttribute RegistrarBuenaPracticaRequest request,
+            @RequestPart("data") @Valid  RegistrarBuenaPracticaRequest request,
             @RequestPart(value = "anexo", required = false) MultipartFile anexo,
             @RequestPart(value = "ppt", required = false) MultipartFile ppt,
             @RequestPart(value = "fotos", required = false) List<MultipartFile> fotos,
@@ -126,7 +126,7 @@ public class BuenaPracticaController {
     }
 
     @PutMapping(consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
-    public ResponseEntity<GlobalResponse> actualizar(@Valid @ModelAttribute RegistrarBuenaPracticaRequest request) {
+    public ResponseEntity<GlobalResponse> actualizar(@RequestPart("data") @Valid  RegistrarBuenaPracticaRequest request) {
         GlobalResponse res = new GlobalResponse();
         try {
             if (request.getId() == null || request.getId().isBlank()) {

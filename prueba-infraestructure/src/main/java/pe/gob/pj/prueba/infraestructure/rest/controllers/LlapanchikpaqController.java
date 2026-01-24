@@ -112,7 +112,7 @@ public class LlapanchikpaqController implements Serializable {
 
     @PostMapping(consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
     public ResponseEntity<GlobalResponse> registrar(
-            @Valid @ModelAttribute RegistrarLlapanchikpaqRequest request,
+            @RequestPart("data") @Valid  RegistrarLlapanchikpaqRequest request,
             @RequestPart(value = "anexo", required = false) MultipartFile anexo,
             @RequestPart(value = "fotos", required = false) List<MultipartFile> fotos
     ) {
@@ -137,7 +137,7 @@ public class LlapanchikpaqController implements Serializable {
     }
 
     @PutMapping(consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
-    public ResponseEntity<GlobalResponse> actualizar(@Valid @ModelAttribute RegistrarLlapanchikpaqRequest request) {
+    public ResponseEntity<GlobalResponse> actualizar(@RequestPart("data") @Valid  RegistrarLlapanchikpaqRequest request) {
         GlobalResponse res = new GlobalResponse();
         try {
             if (request.getId() == null || request.getId().isBlank()) {

@@ -84,7 +84,7 @@ public class JusticiaItineranteController implements Serializable {
 
     @PostMapping(consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
     public ResponseEntity<GlobalResponse> registrar(
-            @Valid @ModelAttribute RegistrarFjiRequest request,
+            @RequestPart("data") @Valid RegistrarFjiRequest request,
 
             @RequestPart(value = "anexo", required = false) MultipartFile anexo,
             @RequestPart(value = "videos", required = false) List<MultipartFile> videos,
@@ -137,7 +137,7 @@ public class JusticiaItineranteController implements Serializable {
     }
 
     @PutMapping(consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
-    public ResponseEntity<GlobalResponse> actualizar(@Valid @ModelAttribute RegistrarFjiRequest request) { // ✅ Agregado @Valid
+    public ResponseEntity<GlobalResponse> actualizar(@RequestPart("data") @Valid RegistrarFjiRequest request) {
         GlobalResponse res = new GlobalResponse();
         try {
 

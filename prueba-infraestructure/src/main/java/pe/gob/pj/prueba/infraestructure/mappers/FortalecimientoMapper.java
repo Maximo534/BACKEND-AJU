@@ -16,28 +16,28 @@ public interface FortalecimientoMapper {
     @Mapping(target = "fechaRegistro", ignore = true)
     @Mapping(target = "usuarioRegistro", ignore = true)
     @Mapping(target = "activo", ignore = true)
-    @Mapping(target = "tareas", source = "tareasRealizadas")
     @Mapping(target = "participantes", source = "participantesPorGenero")
     FortalecimientoCapacidades toDomain(RegistrarFfcRequest request);
 
-    // DOMAIN -> ENTITY
+
     MovEventoFcEntity toEntity(FortalecimientoCapacidades domain);
 
     // ENTITY -> DOMAIN
     @InheritInverseConfiguration(name = "toEntity")
     FortalecimientoCapacidades toDomain(MovEventoFcEntity entity);
 
+    // UPDATE
     @Mapping(target = "id", ignore = true)
     @Mapping(target = "usuarioRegistro", ignore = true)
     @Mapping(target = "fechaRegistro", ignore = true)
     @Mapping(target = "activo", ignore = true)
-
     @BeanMapping(nullValuePropertyMappingStrategy = NullValuePropertyMappingStrategy.IGNORE)
+
     @Mapping(target = "participantes", ignore = true)
-    @Mapping(target = "tareas", ignore = true)
+    @Mapping(target = "tareasRealizadas", ignore = true)
     void updateEntityFromDomain(FortalecimientoCapacidades domain, @MappingTarget MovEventoFcEntity entity);
 
-    // --- MÉTODOS AUXILIARES ---
+    // --- MÉTODOS AUXILIARES---
     FortalecimientoCapacidades.DetalleParticipante toDomainPart(RegistrarFfcRequest.DetalleParticipantesRequest request);
     FortalecimientoCapacidades.DetalleTarea toDomainTarea(RegistrarFfcRequest.DetalleTareaRequest request);
 

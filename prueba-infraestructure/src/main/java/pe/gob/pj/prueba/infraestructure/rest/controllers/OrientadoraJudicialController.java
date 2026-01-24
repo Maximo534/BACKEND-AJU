@@ -87,7 +87,7 @@ public class OrientadoraJudicialController {
 
     @PostMapping(consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
     public ResponseEntity<GlobalResponse> registrar(
-            @Valid @ModelAttribute RegistrarOrientadoraRequest request,
+            @RequestPart("data") @Valid  RegistrarOrientadoraRequest request,
             @RequestPart(value = "anexo", required = false) MultipartFile anexo,
             @RequestPart(value = "fotos", required = false) List<MultipartFile> fotos
     ) {
@@ -112,7 +112,7 @@ public class OrientadoraJudicialController {
     }
 
     @PutMapping(consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
-    public ResponseEntity<GlobalResponse> actualizar(@Valid @ModelAttribute RegistrarOrientadoraRequest request) {
+    public ResponseEntity<GlobalResponse> actualizar(@RequestPart("data") @Valid  RegistrarOrientadoraRequest request) {
         GlobalResponse res = new GlobalResponse();
         try {
             if (request.getId() == null || request.getId().isBlank()) {

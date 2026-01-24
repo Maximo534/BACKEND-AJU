@@ -54,7 +54,7 @@ public class FortalecimientoCapacidades implements Serializable {
     private String activo;
 
     private List<DetalleParticipante> participantes;
-    private List<DetalleTarea> tareas;
+    private List<DetalleTarea> tareasRealizadas;
 
     private String search;
     private List<Archivo> archivosGuardados;

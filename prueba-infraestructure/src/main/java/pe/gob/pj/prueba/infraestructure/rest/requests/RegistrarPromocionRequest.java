@@ -139,6 +139,6 @@ public class RegistrarPromocionRequest implements Serializable {
     @Data
     public static class DetalleTareaRequest implements Serializable {
         @NotBlank private String tareaId;
-        @NotNull private LocalDate fechaInicio;
+        private LocalDate fechaInicio;
     }
 }

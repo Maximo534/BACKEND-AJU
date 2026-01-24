@@ -172,7 +172,6 @@ public class RegistrarFjiRequest implements Serializable {
         @NotBlank(message = "El ID de la tarea es obligatorio.")
         private String tareaId;
 
-        @NotNull(message = "Fecha inicio obligatoria.")
         private LocalDate fechaInicio;
     }
 }
