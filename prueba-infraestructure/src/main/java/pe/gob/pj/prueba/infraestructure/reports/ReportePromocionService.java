@@ -10,8 +10,6 @@ import org.springframework.transaction.annotation.Transactional;
 import pe.gob.pj.prueba.infraestructure.db.negocio.entities.MovPromocionCulturaEntity;
 import pe.gob.pj.prueba.infraestructure.db.negocio.entities.MovPromCulturaDetalleEntity;
 import pe.gob.pj.prueba.infraestructure.db.negocio.entities.MovPromCulturaTareaEntity;
-import pe.gob.pj.prueba.infraestructure.db.negocio.entities.masters.MaeActividadOperativaEntity;
-import pe.gob.pj.prueba.infraestructure.db.negocio.entities.masters.MaeIndicadorEntity;
 import pe.gob.pj.prueba.infraestructure.db.negocio.entities.masters.MaeTareaEntity;
 import pe.gob.pj.prueba.infraestructure.db.negocio.repositories.MovPromocionCulturaRepository;
 import pe.gob.pj.prueba.infraestructure.db.negocio.repositories.masters.*;
@@ -153,7 +151,7 @@ public class ReportePromocionService {
             document.add(new Paragraph("Número Aproximado de Asistentes a la Actividad", FONT_NORMAL_8));
             document.add(Chunk.NEWLINE);
 
-            crearTablaBeneficiarios(document, entity.getParticipantes());
+            crearTablaBeneficiarios(document, entity.getPersonasBeneficiadas());
 
             // --- TEXTOS ---
             agregarBloqueTexto(document, "III. DESCRIPCIÓN DE LA ACTIVIDAD REALIZADA:", entity.getDescripcionActividad());

@@ -28,7 +28,6 @@ public class RegistrarPromocionRequest implements Serializable {
     @Size(max = 100)
     private String tipoActividadOtros;
 
-    @NotBlank(message = "Otros tipo actividad obligatorio")
     @Size(max = 02)
     private String areaRiesgo;
 
@@ -90,9 +89,6 @@ public class RegistrarPromocionRequest implements Serializable {
     @Size(max = 5)
     private String ejeId;
 
-    @NotBlank(message = "Actividad operativa obligatoria")
-    private String actividadOperativaId;
-
     // Indicadores
     @NotBlank(message = "Lengua nativa obligatorio")
     private String seDictoLenguaNativa;
@@ -120,15 +116,15 @@ public class RegistrarPromocionRequest implements Serializable {
 
     // Listas
     @Valid
-    @NotEmpty(message = "Debe haber participantes")
-    private List<DetalleParticipantesRequest> participantesPorGenero;
+    @NotEmpty(message = "Debe haber personas Beneficiadas")
+    private List<DetallePBResponse> personasBeneficiadas;
 
     @Valid
     @NotEmpty(message = "Debe haber tareas")
     private List<DetalleTareaRequest> tareasRealizadas;
 
     @Data
-    public static class DetalleParticipantesRequest implements Serializable {
+    public static class DetallePBResponse implements Serializable {
         @NotBlank private String descripcionRango;
         @NotBlank private String codigoRango;
         @NotNull @Min(0) private Integer cantidadFemenino;

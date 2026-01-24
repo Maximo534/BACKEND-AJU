@@ -67,7 +67,7 @@ public class PromocionCulturaResponse implements Serializable {
     private String estado;
 
     // Listas de Detalle
-    private List<DetalleParticipanteResponse> participantesPorGenero;
+    private List<DetallePBResponse> participantesPorGenero;
     private List<DetalleTareaResponse> tareasRealizadas;
 
     // Archivos Adjuntos
@@ -75,7 +75,7 @@ public class PromocionCulturaResponse implements Serializable {
 
     // --- DTOs Internos ---
     @Data @Builder @NoArgsConstructor @AllArgsConstructor
-    public static class DetalleParticipanteResponse implements Serializable {
+    public static class DetallePBResponse implements Serializable {
         private String descripcionRango;
         private String codigoRango;
         private Integer cantidadFemenino;

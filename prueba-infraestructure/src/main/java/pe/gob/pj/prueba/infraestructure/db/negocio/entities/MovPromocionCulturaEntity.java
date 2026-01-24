@@ -109,7 +109,7 @@ public class MovPromocionCulturaEntity implements Serializable {
 
     @OneToMany(cascade = CascadeType.ALL, fetch = FetchType.LAZY, orphanRemoval = true)
     @JoinColumn(name = "c_actv_prom_cult_id", referencedColumnName = "c_actv_prom_cult_id", nullable = false, insertable = false, updatable = false)
-    private List<MovPromCulturaDetalleEntity> participantes = new ArrayList<>();
+    private List<MovPromCulturaDetalleEntity> personasBeneficiadas = new ArrayList<>();
 
     @OneToMany(cascade = CascadeType.ALL, fetch = FetchType.LAZY, orphanRemoval = true)
     @JoinColumn(name = "c_actv_prom_cult_id", referencedColumnName = "c_actv_prom_cult_id", nullable = false, insertable = false, updatable = false)
@@ -123,8 +123,11 @@ public class MovPromocionCulturaEntity implements Serializable {
 
         // integridad de IDs hijos
         if (this.id != null) {
-            if (this.participantes != null) this.participantes.forEach(p -> p.setPromocionCulturaId(this.id));
+            if (this.personasBeneficiadas != null) this.personasBeneficiadas.forEach(p -> p.setPromocionCulturaId(this.id));
             if (this.tareas != null) this.tareas.forEach(t -> t.setPromocionCulturaId(this.id));
+        }
+        if (this.areaRiesgo == null || this.areaRiesgo.isBlank()) {
+            this.areaRiesgo = "00";
         }
     }
 }

@@ -17,7 +17,6 @@ import pe.gob.pj.prueba.infraestructure.db.negocio.repositories.MovPromocionCult
 import pe.gob.pj.prueba.infraestructure.db.negocio.repositories.masters.MaeDistritoJudicialRepository;
 import pe.gob.pj.prueba.infraestructure.mappers.PromocionCulturaMapper;
 
-import java.time.LocalDate;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.stream.Collectors;
@@ -69,7 +68,7 @@ public class PromocionCulturaPersistenceAdapter implements PromocionCulturaPersi
             MovPromocionCulturaEntity entity = mapper.toEntity(dominio);
 
             if (entity.getId() != null) {
-                if (entity.getParticipantes() != null) entity.getParticipantes().forEach(p -> p.setPromocionCulturaId(entity.getId()));
+                if (entity.getPersonasBeneficiadas() != null) entity.getPersonasBeneficiadas().forEach(p -> p.setPromocionCulturaId(entity.getId()));
                 if (entity.getTareas() != null) entity.getTareas().forEach(t -> t.setPromocionCulturaId(entity.getId()));
             }
 
@@ -98,16 +97,16 @@ public class PromocionCulturaPersistenceAdapter implements PromocionCulturaPersi
 
             mapper.updateEntityFromDomain(dominio, entidadDb);
 
-            if (entidadDb.getParticipantes() != null) entidadDb.getParticipantes().clear();
-            else entidadDb.setParticipantes(new ArrayList<>());
+            if (entidadDb.getPersonasBeneficiadas() != null) entidadDb.getPersonasBeneficiadas().clear();
+            else entidadDb.setPersonasBeneficiadas(new ArrayList<>());
 
             repository.flush(); //Elimina viejos de BD
 
-            if (dominio.getParticipantesPorGenero() != null) {
-                dominio.getParticipantesPorGenero().forEach(p -> {
+            if (dominio.getPersonasBeneficiadas() != null) {
+                dominio.getPersonasBeneficiadas().forEach(p -> {
                     var entityPart = mapper.toEntityPart(p);
                     entityPart.setPromocionCulturaId(entidadDb.getId());
-                    entidadDb.getParticipantes().add(entityPart);
+                    entidadDb.getPersonasBeneficiadas().add(entityPart);
                 });
             }
 

@@ -63,10 +63,8 @@ public class PromocionCultura implements Serializable {
     private String activo;
 
 
-    private String actividadOperativaId;
-
     // Listas
-    private List<DetalleParticipante> participantesPorGenero;
+    private List<DetalleBeneficiada> personasBeneficiadas;
     private List<DetalleTarea> tareasRealizadas;
     private String search;
     private List<Archivo> archivosGuardados;
@@ -76,7 +74,7 @@ public class PromocionCultura implements Serializable {
     @Builder
     @NoArgsConstructor
     @AllArgsConstructor
-    public static class DetalleParticipante implements Serializable {
+    public static class DetalleBeneficiada implements Serializable {
 
         private String descripcionRango;
         private String codigoRango;

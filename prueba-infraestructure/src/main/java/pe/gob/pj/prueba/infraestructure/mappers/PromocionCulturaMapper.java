@@ -12,7 +12,7 @@ public interface PromocionCulturaMapper {
 
     // --- REQUEST -> DOMAIN ---
     @Mapping(target = "id", source = "id")
-    @Mapping(target = "participantesPorGenero", source = "participantesPorGenero")
+    @Mapping(target = "personasBeneficiadas", source = "personasBeneficiadas")
     @Mapping(target = "tareasRealizadas", source = "tareasRealizadas")
     @Mapping(target = "modalidad", source = "modalidadProyecto")
     @Mapping(target = "lenguaNativaDesc", source = "lenguaNativa")
@@ -20,7 +20,7 @@ public interface PromocionCulturaMapper {
     PromocionCultura toDomain(RegistrarPromocionRequest request);
 
     // --- DOMAIN -> ENTITY ---
-    @Mapping(target = "participantes", source = "participantesPorGenero")
+    @Mapping(target = "personasBeneficiadas", source = "personasBeneficiadas")
     @Mapping(target = "tareas", source = "tareasRealizadas")
     @Mapping(target = "modalidadProyecto", source = "modalidad")
     @Mapping(target = "lenguaNativaDesc", source = "lenguaNativaDesc")
@@ -36,15 +36,15 @@ public interface PromocionCulturaMapper {
     @Mapping(target = "usuarioRegistro", ignore = true)
     @Mapping(target = "fechaRegistro", ignore = true)
     @Mapping(target = "activo", ignore = true)
-    @Mapping(target = "participantes", ignore = true)
+    @Mapping(target = "personasBeneficiadas", ignore = true)
     @Mapping(target = "tareas", ignore = true)
     @Mapping(target = "modalidadProyecto", source = "modalidad")
     @Mapping(target = "lenguaNativaDesc", source = "lenguaNativaDesc")
     void updateEntityFromDomain(PromocionCultura domain, @MappingTarget MovPromocionCulturaEntity entity);
 
     @Mapping(target = "promocionCulturaId", ignore = true)
-    MovPromCulturaDetalleEntity toEntityPart(PromocionCultura.DetalleParticipante domainPart);
-    PromocionCultura.DetalleParticipante toDomainPart(MovPromCulturaDetalleEntity entityPart);
+    MovPromCulturaDetalleEntity toEntityPart(PromocionCultura.DetalleBeneficiada domainPart);
+    PromocionCultura.DetalleBeneficiada toDomainPart(MovPromCulturaDetalleEntity entityPart);
 
     @Mapping(target = "promocionCulturaId", ignore = true)
     MovPromCulturaTareaEntity toEntityTarea(PromocionCultura.DetalleTarea domainTarea);
