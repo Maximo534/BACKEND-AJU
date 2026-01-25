@@ -8,6 +8,10 @@ spring:
         "[transaction.coordinator_class]": jta
         "[jta.platform]": org.hibernate.service.jta.platform.internal.JBossAppServerJtaPlatform
     open-in-view: false
+  servlet:
+    multipart:
+      max-file-size: 200GB
+      max-request-size: 250GB
 
 
 springdoc:

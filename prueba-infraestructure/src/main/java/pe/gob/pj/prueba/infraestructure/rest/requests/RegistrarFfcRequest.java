@@ -126,6 +126,8 @@ public class RegistrarFfcRequest implements Serializable {
     public static class DetalleTareaRequest implements Serializable {
         @NotBlank(message = "El ID de la tarea es obligatorio")
         private String tareaId;
+
+        @NotNull(message = "La fecha de inicio de la tarea es obligatoria")
         private LocalDate fechaInicio;
     }
 }
