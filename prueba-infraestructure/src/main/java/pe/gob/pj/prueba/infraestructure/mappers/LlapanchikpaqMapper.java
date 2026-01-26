@@ -21,11 +21,11 @@ public interface LlapanchikpaqMapper {
     LlapanchikpaqJusticia toDomain(RegistrarLlapanchikpaqRequest request);
 
     // Dominio -> Entity
-    MovLlapanchikpaqJusticia toEntity(LlapanchikpaqJusticia domain);
+    MovLlapanchikpaqJusticiaEntity toEntity(LlapanchikpaqJusticia domain);
 
     // Entity -> Dominio
     @InheritInverseConfiguration(name = "toEntity")
-    LlapanchikpaqJusticia toDomain(MovLlapanchikpaqJusticia entity);
+    LlapanchikpaqJusticia toDomain(MovLlapanchikpaqJusticiaEntity entity);
 
     @BeanMapping(nullValuePropertyMappingStrategy = NullValuePropertyMappingStrategy.IGNORE)
     @Mapping(target = "id", ignore = true)
@@ -36,7 +36,7 @@ public interface LlapanchikpaqMapper {
     @Mapping(target = "atendidas", ignore = true)
     @Mapping(target = "casos", ignore = true)
     @Mapping(target = "tareas", ignore = true)
-    void updateEntityFromDomain(LlapanchikpaqJusticia domain, @MappingTarget MovLlapanchikpaqJusticia entity);
+    void updateEntityFromDomain(LlapanchikpaqJusticia domain, @MappingTarget MovLlapanchikpaqJusticiaEntity entity);
 
     // Helpers
     MovLljPersonasBeneficiadasEntity mapBeneficiada(LlapanchikpaqJusticia.DetalleBeneficiada d);
@@ -47,6 +47,7 @@ public interface LlapanchikpaqMapper {
     LlapanchikpaqJusticia.DetalleBeneficiada mapBeneficiadaToDomain(MovLljPersonasBeneficiadasEntity e);
     LlapanchikpaqJusticia.DetalleAtendida mapAtendidaToDomain(MovLljPersonasAtendidasEntity e);
     LlapanchikpaqJusticia.DetalleCaso mapCasoToDomain(MovLljCasosAtendidosEntity e);
+    @Mapping(target = "descripcion", expression = "java(e.getTareaMaestra() != null ? e.getTareaMaestra().getDescripcion() : null)")
     LlapanchikpaqJusticia.DetalleTarea mapTareaToDomain(MovLljTareaRealizadasEntity e);
 
     // Response

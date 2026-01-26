@@ -48,6 +48,7 @@ public interface PromocionCulturaMapper {
 
     @Mapping(target = "promocionCulturaId", ignore = true)
     MovPromCulturaTareaEntity toEntityTarea(PromocionCultura.DetalleTarea domainTarea);
+    @Mapping(target = "descripcion", expression = "java(entityTarea.getTareaMaestra() != null ? entityTarea.getTareaMaestra().getDescripcion() : null)")
     PromocionCultura.DetalleTarea toDomainTarea(MovPromCulturaTareaEntity entityTarea);
 
     @Mapping(target = "tipoActividad", source = "tipoActividad")

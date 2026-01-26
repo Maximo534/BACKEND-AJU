@@ -11,7 +11,7 @@ import pe.gob.pj.prueba.domain.model.negocio.LlapanchikpaqJusticia;
 import pe.gob.pj.prueba.domain.model.negocio.ResumenEstadistico;
 import pe.gob.pj.prueba.domain.port.persistence.negocio.LlapanchikpaqPersistencePort;
 import pe.gob.pj.prueba.infraestructure.db.negocio.entities.MovArchivosEntity;
-import pe.gob.pj.prueba.infraestructure.db.negocio.entities.MovLlapanchikpaqJusticia;
+import pe.gob.pj.prueba.infraestructure.db.negocio.entities.MovLlapanchikpaqJusticiaEntity;
 import pe.gob.pj.prueba.infraestructure.db.negocio.repositories.MovArchivosRepository;
 import pe.gob.pj.prueba.infraestructure.db.negocio.repositories.MovLlapanchikpaqJusticiaRepository;
 import pe.gob.pj.prueba.infraestructure.db.negocio.repositories.masters.MaeDistritoJudicialRepository;
@@ -68,7 +68,7 @@ public class LlapanchikpaqPersistenceAdapter implements LlapanchikpaqPersistence
     @Override
     @Transactional
     public LlapanchikpaqJusticia guardar(LlapanchikpaqJusticia dominio) throws Exception {
-        MovLlapanchikpaqJusticia entity = mapper.toEntity(dominio);
+        MovLlapanchikpaqJusticiaEntity entity = mapper.toEntity(dominio);
 
         // Asignar ID padre a hijos
         if (entity.getId() != null) {
@@ -79,7 +79,7 @@ public class LlapanchikpaqPersistenceAdapter implements LlapanchikpaqPersistence
             if (entity.getTareas() != null) entity.getTareas().forEach(h -> h.setLljId(idPadre));
         }
 
-        MovLlapanchikpaqJusticia saved = repository.save(entity);
+        MovLlapanchikpaqJusticiaEntity saved = repository.save(entity);
         LlapanchikpaqJusticia res = mapper.toDomain(saved);
 
         // ✅ Enriquecer nombre inline
@@ -100,7 +100,7 @@ public class LlapanchikpaqPersistenceAdapter implements LlapanchikpaqPersistence
     @Transactional
     public LlapanchikpaqJusticia actualizar(LlapanchikpaqJusticia dominio) throws Exception {
         // Buscar
-        MovLlapanchikpaqJusticia entityDb = repository.findById(dominio.getId())
+        MovLlapanchikpaqJusticiaEntity entityDb = repository.findById(dominio.getId())
                 .orElseThrow(() -> new Exception("No encontrado ID: " + dominio.getId()));
 
         // Actualizar campos simples
@@ -143,7 +143,7 @@ public class LlapanchikpaqPersistenceAdapter implements LlapanchikpaqPersistence
             });
         }
 
-        MovLlapanchikpaqJusticia saved = repository.save(entityDb);
+        MovLlapanchikpaqJusticiaEntity saved = repository.save(entityDb);
         LlapanchikpaqJusticia res = mapper.toDomain(saved);
 
         // ✅ Enriquecer nombre inline
@@ -158,7 +158,7 @@ public class LlapanchikpaqPersistenceAdapter implements LlapanchikpaqPersistence
     @Override
     @Transactional(readOnly = true)
     public LlapanchikpaqJusticia buscarPorId(String id) throws Exception {
-        MovLlapanchikpaqJusticia entity = repository.findById(id).orElse(null);
+        MovLlapanchikpaqJusticiaEntity entity = repository.findById(id).orElse(null);
         if (entity == null) return null;
 
         LlapanchikpaqJusticia dominio = mapper.toDomain(entity);

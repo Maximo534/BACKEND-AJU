@@ -87,5 +87,6 @@ public class PromocionCulturaResponse implements Serializable {
     public static class DetalleTareaResponse implements Serializable {
         private String tareaId;
         private LocalDate fechaInicio;
+        String descripcion;
     }
 }

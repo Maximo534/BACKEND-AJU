@@ -85,5 +85,6 @@ public class LlapanchikpaqJusticia implements Serializable {
     public static class DetalleTarea {
         private String tareaId;
         private LocalDate fechaInicio;
+        private String descripcion;
     }
 }

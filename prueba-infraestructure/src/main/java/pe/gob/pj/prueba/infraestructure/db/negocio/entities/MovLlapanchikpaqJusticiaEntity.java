@@ -13,7 +13,7 @@ import java.util.List;
 @Getter @Setter
 @Entity
 @Table(name = "mov_aju_llapanchikpaq_justicia", schema = EsquemaConstants.PRUEBA)
-public class MovLlapanchikpaqJusticia implements Serializable {
+public class MovLlapanchikpaqJusticiaEntity implements Serializable {
 
     @Id
     @Column(name = "c_llj_id", length = 17)

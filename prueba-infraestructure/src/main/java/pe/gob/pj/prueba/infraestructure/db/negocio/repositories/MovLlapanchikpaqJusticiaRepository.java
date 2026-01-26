@@ -6,15 +6,15 @@ import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
-import pe.gob.pj.prueba.infraestructure.db.negocio.entities.MovLlapanchikpaqJusticia;
+import pe.gob.pj.prueba.infraestructure.db.negocio.entities.MovLlapanchikpaqJusticiaEntity;
 
 import java.time.LocalDate;
 import java.util.List;
 
 @Repository
-public interface MovLlapanchikpaqJusticiaRepository extends JpaRepository<MovLlapanchikpaqJusticia, String> {
+public interface MovLlapanchikpaqJusticiaRepository extends JpaRepository<MovLlapanchikpaqJusticiaEntity, String> {
 
-    @Query("SELECT MAX(e.id) FROM MovLlapanchikpaqJusticia e WHERE e.id LIKE '%-LL'")
+    @Query("SELECT MAX(e.id) FROM MovLlapanchikpaqJusticiaEntity e WHERE e.id LIKE '%-LL'")
     String obtenerUltimoId();
 
     @Query(value = """
@@ -69,7 +69,7 @@ public interface MovLlapanchikpaqJusticiaRepository extends JpaRepository<MovLla
 
     // Gráfico
     @Query("SELECT e.distritoJudicialId, COUNT(e) " +
-            "FROM MovLlapanchikpaqJusticia e " +
+            "FROM MovLlapanchikpaqJusticiaEntity e " +
             "GROUP BY e.distritoJudicialId")
     List<Object[]> obtenerEstadisticasPorCorte();
 

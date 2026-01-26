@@ -44,6 +44,7 @@ public interface JusticiaItineranteMapper {
 
     MovJiTareasRealizadasEntity toEntityTR(JusticiaItinerante.DetalleTarea d);
     @InheritInverseConfiguration
+    @Mapping(target = "descripcion", expression = "java(e.getTareaMaestra() != null ? e.getTareaMaestra().getDescripcion() : null)")
     JusticiaItinerante.DetalleTarea toDomainTR(MovJiTareasRealizadasEntity e);
 
     // Update

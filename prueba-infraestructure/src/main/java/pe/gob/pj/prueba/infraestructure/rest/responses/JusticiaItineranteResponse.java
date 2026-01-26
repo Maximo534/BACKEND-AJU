@@ -97,5 +97,6 @@ public class JusticiaItineranteResponse implements Serializable {
     public static class DetalleTRResponse implements Serializable {
         private String tareaId;
         private LocalDate fechaInicio;
+        private String descripcion;
     }
 }

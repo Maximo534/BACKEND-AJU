@@ -49,6 +49,7 @@ public interface FortalecimientoMapper {
     MovEventoTareaEntity toEntityTarea(FortalecimientoCapacidades.DetalleTarea domain);
 
     @InheritInverseConfiguration
+    @Mapping(target = "descripcion", expression = "java(entity.getTareaMaestra() != null ? entity.getTareaMaestra().getDescripcion() : null)")
     FortalecimientoCapacidades.DetalleTarea toDomainTarea(MovEventoTareaEntity entity);
 
     // DOMAIN -> RESPONSE

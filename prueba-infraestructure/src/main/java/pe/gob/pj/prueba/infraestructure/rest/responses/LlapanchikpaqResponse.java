@@ -64,5 +64,5 @@ public class LlapanchikpaqResponse implements Serializable {
     @Data @Builder @NoArgsConstructor @AllArgsConstructor
     public static class DetalleCasoResponse { Integer materiaId; Integer cantidadDemandas; Integer cantidadAudiencias; Integer cantidadSentencias; Integer cantidadProcesos; Integer cantidadNotificaciones; Integer cantidadOrientaciones; }
     @Data @Builder @NoArgsConstructor @AllArgsConstructor
-    public static class DetalleTareaResponse { String tareaId; LocalDate fechaInicio; }
+    public static class DetalleTareaResponse { String tareaId; LocalDate fechaInicio;String descripcion;}
 }

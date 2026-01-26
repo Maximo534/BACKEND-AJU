@@ -105,5 +105,6 @@ public class JusticiaItinerante implements Serializable {
     public static class DetalleTarea implements Serializable {
         private String tareaId;
         private LocalDate fechaInicio;
+        private String descripcion;
     }
 }

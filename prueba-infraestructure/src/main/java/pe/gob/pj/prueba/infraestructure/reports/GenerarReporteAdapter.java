@@ -43,7 +43,7 @@ public class GenerarReporteAdapter implements GenerarReportePort {
 
     @Override
     public byte[] generarFichaLlj(String id) throws Exception {
-        return servicioLlj.generarFichaPdf(id);
+        return servicioLlj.generarFichaLlj(id);
     }
     @Override
     public byte[] generarFichaOJ(String id) throws Exception {
