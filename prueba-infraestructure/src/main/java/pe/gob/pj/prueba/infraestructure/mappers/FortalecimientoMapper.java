@@ -32,7 +32,7 @@ public interface FortalecimientoMapper {
 
     @BeanMapping(nullValuePropertyMappingStrategy = NullValuePropertyMappingStrategy.IGNORE)
     @Mapping(target = "participantes", ignore = true)
-    @Mapping(target = "tareas", ignore = true)
+    @Mapping(target = "tareasRealizadas", ignore = true)
     void updateEntityFromDomain(FortalecimientoCapacidades domain, @MappingTarget MovEventoFcEntity entity);
 
     // --- MÉTODOS AUXILIARES ---

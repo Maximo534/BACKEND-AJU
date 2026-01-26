@@ -102,7 +102,7 @@ public class RegistrarFfcRequest implements Serializable {
 
     @Valid
     @NotEmpty(message = "Debe registrar al menos una tarea realizada")
-    private List<DetalleTareaRequest> tareas;
+    private List<DetalleTareaRequest> tareasRealizadas;
 
     @Data
     public static class DetalleParticipantesRequest implements Serializable {
