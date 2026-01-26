@@ -16,8 +16,6 @@ public interface FortalecimientoMapper {
     @Mapping(target = "fechaRegistro", ignore = true)
     @Mapping(target = "usuarioRegistro", ignore = true)
     @Mapping(target = "activo", ignore = true)
-    @Mapping(target = "tareas", source = "tareasRealizadas")
-    @Mapping(target = "participantes", source = "participantesPorGenero")
     FortalecimientoCapacidades toDomain(RegistrarFfcRequest request);
 
     // DOMAIN -> ENTITY

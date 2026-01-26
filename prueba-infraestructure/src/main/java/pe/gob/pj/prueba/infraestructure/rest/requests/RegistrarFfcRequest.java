@@ -98,11 +98,11 @@ public class RegistrarFfcRequest implements Serializable {
 
     @Valid
     @NotEmpty(message = "Debe registrar al menos un detalle de participantes")
-    private List<DetalleParticipantesRequest> participantesPorGenero;
+    private List<DetalleParticipantesRequest> participantes;
 
     @Valid
     @NotEmpty(message = "Debe registrar al menos una tarea realizada")
-    private List<DetalleTareaRequest> tareasRealizadas;
+    private List<DetalleTareaRequest> tareas;
 
     @Data
     public static class DetalleParticipantesRequest implements Serializable {
@@ -127,7 +127,6 @@ public class RegistrarFfcRequest implements Serializable {
         @NotBlank(message = "El ID de la tarea es obligatorio")
         private String tareaId;
 
-        @NotNull(message = "La fecha de inicio de la tarea es obligatoria")
         private LocalDate fechaInicio;
     }
 }
