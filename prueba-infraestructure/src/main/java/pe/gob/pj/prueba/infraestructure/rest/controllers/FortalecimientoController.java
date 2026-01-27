@@ -4,6 +4,7 @@ import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.core.io.InputStreamResource;
+import org.springframework.core.io.Resource;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
@@ -217,4 +218,34 @@ public class FortalecimientoController {
             return ResponseEntity.internalServerError().build();
         }
     }
+
+    @GetMapping("/descargar/archivo/{nombre:.+}")
+    public ResponseEntity<Resource> descargarArchivo(@PathVariable String nombre) {
+        try {
+            RecursoArchivo recurso = useCase.descargarArchivoPorNombre(nombre);
+
+            String nombreLower = nombre.toLowerCase();
+            String contentType = "application/octet-stream"; // Default
+
+            if (nombreLower.endsWith(".jpg") || nombreLower.endsWith(".jpeg")) {
+                contentType = "image/jpeg";
+            } else if (nombreLower.endsWith(".png")) {
+                contentType = "image/png";
+            } else if (nombreLower.endsWith(".mp4")) {
+                contentType = "video/mp4";
+            } else if (nombreLower.endsWith(".pdf")) {
+                contentType = "application/pdf";
+            }
+
+            return ResponseEntity.ok()
+                    .contentType(MediaType.parseMediaType(contentType))
+                    .header(HttpHeaders.CONTENT_DISPOSITION, "inline; filename=\"" + recurso.getNombreFileName() + "\"")
+                    .body(new InputStreamResource(recurso.getStream()));
+
+        } catch (Exception e) {
+             log.error("Error descargando archivo: {}", nombre, e);
+            return ResponseEntity.notFound().build();
+        }
+    }
+
 }

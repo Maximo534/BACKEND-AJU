@@ -16,4 +16,5 @@ public interface GestionJusticiaItineranteUseCasePort {
     void eliminarArchivo(String nombreArchivo) throws Exception;
     RecursoArchivo descargarAnexo(String idEvento, String usuario) throws Exception;
     byte[] generarFichaPdf(String idEvento) throws Exception;
+    RecursoArchivo descargarArchivoPorNombre(String nombreArchivo) throws Exception;
 }

@@ -23,5 +23,5 @@ public interface GestionPromocionUseCasePort {
 
     RecursoArchivo descargarAnexo(String idEvento, String usuario) throws Exception;
     byte[] generarFichaPdf(String idEvento) throws Exception;
-
+    RecursoArchivo descargarArchivoPorNombre(String nombreArchivo) throws Exception;
 }

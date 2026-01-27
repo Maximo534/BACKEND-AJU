@@ -67,7 +67,7 @@ public class PromocionCulturaResponse implements Serializable {
     private String estado;
 
     // Listas de Detalle
-    private List<DetallePBResponse> participantesPorGenero;
+    private List<DetallePBResponse> personasBeneficiadas;
     private List<DetalleTareaResponse> tareasRealizadas;
 
     // Archivos Adjuntos

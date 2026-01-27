@@ -19,4 +19,5 @@ public interface GestionFortalecimientoUseCasePort {
     void agregarArchivo(String idEvento, MultipartFile archivo, String tipo, String usuario) throws Exception;
     RecursoArchivo descargarAnexo(String idEvento, String usuario) throws Exception;
     byte[] generarFichaPdf(String idEvento) throws Exception;
+    RecursoArchivo descargarArchivoPorNombre(String nombreArchivo) throws Exception;
 }
