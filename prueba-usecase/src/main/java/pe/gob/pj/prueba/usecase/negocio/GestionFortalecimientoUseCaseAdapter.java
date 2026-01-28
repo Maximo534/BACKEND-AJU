@@ -28,6 +28,7 @@ public class GestionFortalecimientoUseCaseAdapter implements GestionFortalecimie
     private final GestionArchivosUseCasePort gestorArchivos;
     private final GestionArchivosPersistencePort archivosPersistencePort;
 
+    private static final String MODULO_FFC = "evidencias_ffc";
 
     @Override
     @Transactional(readOnly = true)
@@ -48,7 +49,6 @@ public class GestionFortalecimientoUseCaseAdapter implements GestionFortalecimie
 
         validarDatos(dominio);
 
-        // Lógica de fechas en tareas
         if (dominio.getTareasRealizadas() != null) {
             for (FortalecimientoCapacidades.DetalleTarea tarea : dominio.getTareasRealizadas()) {
                 if (tarea.getFechaInicio() == null) {
@@ -59,7 +59,6 @@ public class GestionFortalecimientoUseCaseAdapter implements GestionFortalecimie
 
         if (dominio.getResolucionAdminPlan() == null) dominio.setResolucionAdminPlan("NINGUNO");
 
-        // Generar ID
         String ultimoId = persistencePort.obtenerUltimoId();
         long siguiente = 1;
         if (ultimoId != null && !ultimoId.isBlank()) {
@@ -69,7 +68,6 @@ public class GestionFortalecimientoUseCaseAdapter implements GestionFortalecimie
         String corte = (dominio.getDistritoJudicialId() != null) ? dominio.getDistritoJudicialId() : "00";
         dominio.setId(String.format("%06d-%s-%s-FC", siguiente, corte, anio));
 
-        // Auditoría
         dominio.setUsuarioRegistro(usuario);
         dominio.setFechaRegistro(LocalDate.now());
         dominio.setActivo("1");
@@ -77,20 +75,20 @@ public class GestionFortalecimientoUseCaseAdapter implements GestionFortalecimie
         FortalecimientoCapacidades registrado = persistencePort.guardar(dominio);
 
         if (anexo != null && !anexo.isEmpty()) {
-            gestorArchivos.subirArchivo(anexo, registrado.getDistritoJudicialId(), "ANEXO", registrado.getFechaInicio(), registrado.getId());
+            gestorArchivos.subirArchivo(anexo, registrado.getDistritoJudicialId(), "ANEXO", MODULO_FFC, registrado.getFechaInicio(), registrado.getId());
         }
 
         if (fotos != null) {
             for (MultipartFile f : fotos) {
                 if(!f.isEmpty())
-                    gestorArchivos.subirArchivo(f, registrado.getDistritoJudicialId(), "FOTO", registrado.getFechaInicio(), registrado.getId());
+                    gestorArchivos.subirArchivo(f, registrado.getDistritoJudicialId(), "FOTO", MODULO_FFC, registrado.getFechaInicio(), registrado.getId());
             }
         }
 
         if (videos != null) {
             for (MultipartFile v : videos) {
                 if(!v.isEmpty())
-                    gestorArchivos.subirArchivo(v, registrado.getDistritoJudicialId(), "VIDEO", registrado.getFechaInicio(), registrado.getId());
+                    gestorArchivos.subirArchivo(v, registrado.getDistritoJudicialId(), "VIDEO", MODULO_FFC, registrado.getFechaInicio(), registrado.getId());
             }
         }
 
@@ -135,7 +133,7 @@ public class GestionFortalecimientoUseCaseAdapter implements GestionFortalecimie
         FortalecimientoCapacidades evento = persistencePort.obtenerPorId(idEvento);
         if (evento == null) throw new Exception("No existe el evento: " + idEvento);
 
-        gestorArchivos.subirArchivo(archivo, evento.getDistritoJudicialId(), tipo, evento.getFechaInicio(), idEvento);
+        gestorArchivos.subirArchivo(archivo, evento.getDistritoJudicialId(), tipo, MODULO_FFC, evento.getFechaInicio(), idEvento);
     }
 
     @Override

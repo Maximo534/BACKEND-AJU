@@ -28,6 +28,8 @@ public class GestionPromocionUseCaseAdapter implements GestionPromocionUseCasePo
     private final GestionArchivosUseCasePort gestorArchivos;
     private final GestionArchivosPersistencePort archivosPersistencePort;
 
+    private static final String MODULO_CJ = "evidencias_apcj";
+
     @Override
     public Pagina<PromocionCultura> listar(String usuario, PromocionCultura filtros, int pagina, int tamanio) throws Exception {
         return persistencePort.listar(usuario, filtros, pagina, tamanio);
@@ -68,20 +70,20 @@ public class GestionPromocionUseCaseAdapter implements GestionPromocionUseCasePo
         PromocionCultura registrado = persistencePort.guardar(dominio);
 
         if (anexo != null && !anexo.isEmpty()) {
-            gestorArchivos.subirArchivo(anexo, registrado.getDistritoJudicialId(), "ANEXO", registrado.getFechaInicio(), registrado.getId());
+            gestorArchivos.subirArchivo(anexo, registrado.getDistritoJudicialId(), "ANEXO", MODULO_CJ, registrado.getFechaInicio(), registrado.getId());
         }
 
         if (fotos != null) {
             for (MultipartFile f : fotos) {
                 if(!f.isEmpty())
-                    gestorArchivos.subirArchivo(f, registrado.getDistritoJudicialId(), "FOTO", registrado.getFechaInicio(), registrado.getId());
+                    gestorArchivos.subirArchivo(f, registrado.getDistritoJudicialId(), "FOTO", MODULO_CJ, registrado.getFechaInicio(), registrado.getId());
             }
         }
 
         if (videos != null) {
             for (MultipartFile v : videos) {
                 if(!v.isEmpty())
-                    gestorArchivos.subirArchivo(v, registrado.getDistritoJudicialId(), "VIDEO", registrado.getFechaInicio(), registrado.getId());
+                    gestorArchivos.subirArchivo(v, registrado.getDistritoJudicialId(), "VIDEO", MODULO_CJ, registrado.getFechaInicio(), registrado.getId());
             }
         }
 
@@ -111,7 +113,7 @@ public class GestionPromocionUseCaseAdapter implements GestionPromocionUseCasePo
         PromocionCultura evento = persistencePort.obtenerPorId(idEvento);
         if (evento == null) throw new Exception("Evento no existe");
 
-        gestorArchivos.subirArchivo(archivo, evento.getDistritoJudicialId(), tipo, evento.getFechaInicio(), idEvento);
+        gestorArchivos.subirArchivo(archivo, evento.getDistritoJudicialId(), tipo, MODULO_CJ, evento.getFechaInicio(), idEvento);
     }
 
     @Override

@@ -22,5 +22,6 @@ public interface GestionBuenaPracticaUseCasePort {
     RecursoArchivo descargarArchivoPorTipo(String idEvento, String tipoArchivo) throws Exception;
     byte[] generarFichaPdf(String id) throws Exception;
     public List<ResumenEstadistico> obtenerResumenGrafico() throws Exception;
+    RecursoArchivo descargarArchivoPorNombre(String nombreArchivo) throws Exception;
 
 }

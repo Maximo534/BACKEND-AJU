@@ -18,5 +18,5 @@ public interface GestionLlapanchikpaqUseCasePort {
     void eliminarArchivo(String nombreArchivo) throws Exception;
     void agregarArchivo(String idEvento, MultipartFile archivo, String tipo, String usuario) throws Exception;
     RecursoArchivo descargarArchivoPorTipo(String id, String tipo) throws Exception;
-
+    RecursoArchivo descargarArchivoPorNombre(String nombreArchivo) throws Exception;
 }

@@ -35,7 +35,7 @@ public class GestionArchivosUseCaseAdapter implements GestionArchivosUseCasePort
     @Value("${ftp.ruta-base:/evidencias}") private String ftpRutaBase;
 
     @Override
-    public void subirArchivo(MultipartFile file, String distritoId, String tipo, LocalDate fecha, String idRegistro) throws Exception {
+    public void subirArchivo(MultipartFile file, String distritoId, String tipo, String modulo, LocalDate fecha, String idRegistro) throws Exception {
         String sessionKey = UUID.randomUUID().toString();
         try {
             ftpPort.iniciarSesion(sessionKey, ftpIp, ftpPuerto, ftpUsuario, ftpClave);
@@ -44,14 +44,16 @@ public class GestionArchivosUseCaseAdapter implements GestionArchivosUseCasePort
                 case "ANEXO" -> "fichas";
                 case "VIDEO" -> "videos";
                 case "FOTO" -> "fotos";
+                case "PPT" -> "ppts";
+                case "RESOLUCION_JPE" -> "resoluciones";
                 default -> "otros";
             };
 
             String anio = String.valueOf(fecha.getYear());
             String mes = String.format("%02d", fecha.getMonthValue());
 
-            // Ruta estandarizada: /evidencias/DISTRITO/evidencias_gen/CARPETA/ANIO/MES/ID
-            String rutaRelativa = String.format("%s/%s/evidencias_gen/%s/%s/%s/%s", ftpRutaBase, distritoId, carpeta, anio, mes, idRegistro);
+            String rutaRelativa = String.format("%s/%s/%s/%s/%s/%s/%s",
+                    ftpRutaBase, distritoId, modulo, carpeta, anio, mes, idRegistro);
 
             String ext = (file.getOriginalFilename() != null && file.getOriginalFilename().contains("."))
                     ? file.getOriginalFilename().substring(file.getOriginalFilename().lastIndexOf(".")) : "";
@@ -63,10 +65,8 @@ public class GestionArchivosUseCaseAdapter implements GestionArchivosUseCasePort
             }
 
             archivosPersistencePort.guardarReferenciaArchivo(Archivo.builder()
-                    .nombre(nombreFinal)
-                    .tipo(tipo.toLowerCase())
-                    .ruta(rutaRelativa)
-                    .numeroIdentificacion(idRegistro)
+                    .nombre(nombreFinal).tipo(tipo.toLowerCase())
+                    .ruta(rutaRelativa).numeroIdentificacion(idRegistro)
                     .build());
 
         } finally {

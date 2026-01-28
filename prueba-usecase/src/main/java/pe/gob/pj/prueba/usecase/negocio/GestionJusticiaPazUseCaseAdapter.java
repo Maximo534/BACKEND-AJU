@@ -2,7 +2,6 @@ package pe.gob.pj.prueba.usecase.negocio;
 
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.multipart.MultipartFile;
@@ -11,17 +10,14 @@ import pe.gob.pj.prueba.domain.model.common.RecursoArchivo;
 import pe.gob.pj.prueba.domain.model.negocio.Archivo;
 import pe.gob.pj.prueba.domain.model.negocio.JpeCasoAtendido;
 import pe.gob.pj.prueba.domain.model.negocio.ResumenEstadistico;
-import pe.gob.pj.prueba.domain.port.files.FtpPort;
 import pe.gob.pj.prueba.domain.port.output.GenerarReportePort;
 import pe.gob.pj.prueba.domain.port.persistence.negocio.GestionArchivosPersistencePort;
 import pe.gob.pj.prueba.domain.port.persistence.negocio.JusticiaPazPersistencePort;
-import pe.gob.pj.prueba.domain.port.usecase.negocio.GestionJuecesEscolaresUseCasePort;
+import pe.gob.pj.prueba.domain.port.usecase.negocio.GestionArchivosUseCasePort;
 import pe.gob.pj.prueba.domain.port.usecase.negocio.GestionJusticiaPazUseCasePort;
 
-import java.io.InputStream;
 import java.time.LocalDate;
 import java.util.List;
-import java.util.UUID;
 
 @Slf4j
 @Service
@@ -29,15 +25,10 @@ import java.util.UUID;
 public class GestionJusticiaPazUseCaseAdapter implements GestionJusticiaPazUseCasePort {
 
     private final JusticiaPazPersistencePort persistencePort;
-    private final GestionArchivosPersistencePort archivosPersistencePort;
-    private final FtpPort ftpPort;
     private final GenerarReportePort reportePort;
-
-    @Value("${ftp.ip}") private String ftpIp;
-    @Value("${ftp.puerto}") private Integer ftpPuerto;
-    @Value("${ftp.usuario}") private String ftpUsuario;
-    @Value("${ftp.clave}") private String ftpClave;
-    @Value("${ftp.ruta-base:/evidencias}") private String ftpRutaBase;
+    private final GestionArchivosUseCasePort gestorArchivos;
+    private final GestionArchivosPersistencePort archivosPersistencePort;
+    private static final String MODULO_JPE_CASOS = "evidencias_jpe_casos";
 
     @Override
     public Pagina<JpeCasoAtendido> listar(String usuario, JpeCasoAtendido filtros, int pagina, int tamanio) throws Exception {
@@ -55,33 +46,26 @@ public class GestionJusticiaPazUseCaseAdapter implements GestionJusticiaPazUseCa
         }
         String anio = String.valueOf(LocalDate.now().getYear());
         String corte = (dominio.getDistritoJudicialId() != null) ? dominio.getDistritoJudicialId() : "00";
-        dominio.setId(String.format("%06d-%s-%s-PE", siguiente, corte, anio));
 
+        dominio.setId(String.format("%06d-%s-%s-PE", siguiente, corte, anio));
         dominio.setUsuarioRegistro(usuario);
+
         JpeCasoAtendido registrado = persistencePort.guardar(dominio);
 
-        // Subida de Archivos
-        boolean hayArchivos = (acta != null && !acta.isEmpty()) || (fotos != null && !fotos.isEmpty());
-        if (hayArchivos) {
-            String sessionKey = UUID.randomUUID().toString();
-            try {
-                ftpPort.iniciarSesion(sessionKey, ftpIp, ftpPuerto, ftpUsuario, ftpClave);
+        LocalDate fecha = LocalDate.now();
 
-                if (acta != null && !acta.isEmpty()) {
-                    uploadFile(acta, registrado, "ACTA_JPE", sessionKey);
-                }
+        if (acta != null && !acta.isEmpty()) {
+            gestorArchivos.subirArchivo(acta, corte, "ANEXO", MODULO_JPE_CASOS, fecha, registrado.getId());
+        }
 
-                if (fotos != null) {
-                    for (MultipartFile f : fotos) {
-                        if (!f.isEmpty()) uploadFile(f, registrado, "FOTO_JPE", sessionKey);
-                    }
+        if (fotos != null) {
+            for (MultipartFile f : fotos) {
+                if (!f.isEmpty()) {
+                    gestorArchivos.subirArchivo(f, corte, "FOTO", MODULO_JPE_CASOS, fecha, registrado.getId());
                 }
-            } catch (Exception e) {
-                log.error("Error archivos Caso JPE", e);
-            } finally {
-                ftpPort.finalizarSession(sessionKey);
             }
         }
+
         return registrado;
     }
 
@@ -99,80 +83,33 @@ public class GestionJusticiaPazUseCaseAdapter implements GestionJusticiaPazUseCa
         JpeCasoAtendido caso = persistencePort.buscarPorId(idCaso);
         if (caso == null) throw new Exception("Caso no encontrado");
 
-        String sessionKey = UUID.randomUUID().toString();
-        try {
-            ftpPort.iniciarSesion(sessionKey, ftpIp, ftpPuerto, ftpUsuario, ftpClave);
-            uploadFile(archivo, caso, tipo, sessionKey);
-        } finally {
-            ftpPort.finalizarSession(sessionKey);
-        }
+        String corte = (caso.getDistritoJudicialId() != null) ? caso.getDistritoJudicialId() : "00";
+        LocalDate fecha = (caso.getFechaRegistro() != null) ? caso.getFechaRegistro() : LocalDate.now();
+        gestorArchivos.subirArchivo(archivo, corte, tipo, MODULO_JPE_CASOS, fecha, idCaso);
     }
 
     @Override
     public RecursoArchivo descargarArchivoPorTipo(String idCaso, String tipoArchivo) throws Exception {
-        // Buscar en BD
         List<Archivo> archivos = archivosPersistencePort.listarArchivosPorEvento(idCaso);
+
         Archivo encontrado = archivos.stream()
-                .filter(a -> a.getTipo().equalsIgnoreCase(tipoArchivo))
+                .filter(a -> a.getTipo().equalsIgnoreCase(tipoArchivo) ||
+                        (tipoArchivo.equalsIgnoreCase("ACTA") && a.getTipo().equalsIgnoreCase("ANEXO")))
                 .findFirst()
                 .orElseThrow(() -> new Exception("Archivo no encontrado: " + tipoArchivo));
 
-        // Preparar temporal
-        java.nio.file.Path tempFile = java.nio.file.Files.createTempFile("jpe_" + tipoArchivo + "_" + idCaso, ".tmp");
-        String sessionKey = UUID.randomUUID().toString();
+        return gestorArchivos.descargarPorNombre(encontrado.getNombre());
+    }
 
-        // Descarga FTP segura
-        ftpPort.iniciarSesion(sessionKey, ftpIp, ftpPuerto, ftpUsuario, ftpClave);
-
-        try {
-            String rutaCompleta = encontrado.getRuta() + "/" + encontrado.getNombre();
-            InputStream ftpStream = ftpPort.downloadFileStream(sessionKey, rutaCompleta);
-
-            if (ftpStream == null) {
-                throw new Exception("El archivo no existe en el servidor FTP.");
-            }
-
-            try (java.io.OutputStream tempStream = java.nio.file.Files.newOutputStream(tempFile)) {
-                ftpStream.transferTo(tempStream);
-            }
-            ftpStream.close();
-
-        } catch (Exception e) {
-            java.nio.file.Files.deleteIfExists(tempFile);
-            throw e;
-        } finally {
-            ftpPort.finalizarSession(sessionKey);
-        }
-
-        InputStream autoDeleteStream = new java.io.FileInputStream(tempFile.toFile()) {
-            @Override public void close() throws java.io.IOException {
-                super.close();
-                java.nio.file.Files.deleteIfExists(tempFile);
-            }
-        };
-
-        return RecursoArchivo.builder()
-                .stream(autoDeleteStream)
-                .nombreFileName(encontrado.getNombre())
-                .build();
+    @Override
+    public RecursoArchivo descargarArchivoPorNombre(String nombreArchivo) throws Exception {
+        return gestorArchivos.descargarPorNombre(nombreArchivo);
     }
 
     @Override
     @Transactional
     public void eliminarArchivo(String nombreArchivo) throws Exception {
-        Archivo archivo = archivosPersistencePort.buscarPorNombre(nombreArchivo);
-        if (archivo == null) throw new Exception("Archivo no existe");
-
-        String sessionKey = UUID.randomUUID().toString();
-        ftpPort.iniciarSesion(sessionKey, ftpIp, ftpPuerto, ftpUsuario, ftpClave);
-        try {
-            ftpPort.deleteFileFTP(archivo.getRuta() + "/" + archivo.getNombre());
-        } catch (Exception e) {
-            log.warn("Error borrado físico FTP: " + e.getMessage());
-        } finally {
-            ftpPort.finalizarSession(sessionKey);
-        }
-        archivosPersistencePort.eliminarReferenciaArchivo(nombreArchivo);
+        gestorArchivos.eliminarPorNombre(nombreArchivo);
     }
 
     @Override
@@ -188,33 +125,5 @@ public class GestionJusticiaPazUseCaseAdapter implements GestionJusticiaPazUseCa
     @Override
     public List<ResumenEstadistico> obtenerResumenGrafico() throws Exception {
         return persistencePort.obtenerResumenGrafico();
-    }
-    private void uploadFile(MultipartFile file, JpeCasoAtendido caso, String tipo, String sessionKey) throws Exception {
-        String carpeta = switch (tipo.toUpperCase()) {
-            case "ACTA_JPE" -> "actas";
-            case "FOTO_JPE" -> "fotos";
-            default -> "otros";
-        };
-
-        String anio = String.valueOf(caso.getFechaRegistro() != null ? caso.getFechaRegistro().getYear() : LocalDate.now().getYear());
-        // Ruta: /evidencias/jpe/casos/CARPETA/ANIO
-        String rutaRelativa = String.format("%s/jpe/casos/%s/%s", ftpRutaBase, carpeta, anio);
-
-        String ext = obtenerExtension(file.getOriginalFilename());
-        // Nombre único
-        String nombreFinal = caso.getId() + "_" + tipo + "_" + System.currentTimeMillis() + "_" + UUID.randomUUID().toString().substring(0,4) + ext;
-
-        if (!ftpPort.uploadFileFTP(sessionKey, rutaRelativa + "/" + nombreFinal, file.getInputStream(), tipo)) {
-            throw new Exception("Fallo FTP Caso");
-        }
-
-        archivosPersistencePort.guardarReferenciaArchivo(Archivo.builder()
-                .nombre(nombreFinal).tipo(tipo)
-                .ruta(rutaRelativa)
-                .numeroIdentificacion(caso.getId())
-                .build());
-    }
-    private String obtenerExtension(String nombre) {
-        return (nombre != null && nombre.contains(".")) ? nombre.substring(nombre.lastIndexOf(".")) : "";
     }
 }

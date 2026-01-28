@@ -8,7 +8,8 @@ import org.springframework.context.annotation.Configuration;
     TimeoutProperty.class,
     AlfrescoProperty.class, 
     CaptchaProperty.class, 
-    ConsultaSigaProperty.class})
+//    ConsultaSigaProperty.class
+})
 public class PropertiesConfig {
 
 }

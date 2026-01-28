@@ -4,6 +4,7 @@ import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.core.io.InputStreamResource;
+import org.springframework.core.io.Resource;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
@@ -265,4 +266,45 @@ public class BuenaPracticaController {
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(res);
         }
     }
+
+    @GetMapping("/descargar/archivo/{nombre:.+}")
+    public ResponseEntity<Resource> descargarArchivo(@PathVariable String nombre) {
+        try {
+            RecursoArchivo recurso = useCase.descargarArchivoPorNombre(nombre);
+
+            String nombreLower = nombre.toLowerCase();
+            String contentType = "application/octet-stream";
+
+            // Imágenes
+            if (nombreLower.endsWith(".jpg") || nombreLower.endsWith(".jpeg")) {
+                contentType = "image/jpeg";
+            } else if (nombreLower.endsWith(".png")) {
+                contentType = "image/png";
+            }
+            // Videos
+            else if (nombreLower.endsWith(".mp4")) {
+                contentType = "video/mp4";
+            }
+            // Documentos PDF
+            else if (nombreLower.endsWith(".pdf")) {
+                contentType = "application/pdf";
+            }
+            else if (nombreLower.endsWith(".pptx")) {
+                contentType = "application/vnd.openxmlformats-officedocument.presentationml.presentation";
+            }
+            else if (nombreLower.endsWith(".ppt")) {
+                contentType = "application/vnd.ms-powerpoint";
+            }
+
+            return ResponseEntity.ok()
+                    .contentType(MediaType.parseMediaType(contentType))
+                    .header(HttpHeaders.CONTENT_DISPOSITION, "inline; filename=\"" + recurso.getNombreFileName() + "\"")
+                    .body(new InputStreamResource(recurso.getStream()));
+
+        } catch (Exception e) {
+            log.error("Error descargando archivo BP: {}", nombre, e);
+            return ResponseEntity.notFound().build();
+        }
+    }
+
 }

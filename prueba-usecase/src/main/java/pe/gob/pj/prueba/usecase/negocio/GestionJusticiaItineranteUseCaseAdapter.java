@@ -28,6 +28,8 @@ public class GestionJusticiaItineranteUseCaseAdapter implements GestionJusticiaI
     private final GestionArchivosUseCasePort gestorArchivos;
     private final GestionArchivosPersistencePort archivosPersistencePort;
 
+    private static final String MODULO_JI = "evidencias_fji";
+
     @Override
     @Transactional(readOnly = true)
     public Pagina<JusticiaItinerante> listar(String usuario, JusticiaItinerante filtros, int pagina, int tamanio) throws Exception {
@@ -67,22 +69,21 @@ public class GestionJusticiaItineranteUseCaseAdapter implements GestionJusticiaI
 
         JusticiaItinerante registrado = persistencePort.guardar(dominio);
 
-        // --- SUBIDA DE ARCHIVOS (Centralizada) ---
         if (anexo != null && !anexo.isEmpty()) {
-            gestorArchivos.subirArchivo(anexo, registrado.getDistritoJudicialId(), "ANEXO", registrado.getFechaInicio(), registrado.getId());
+            gestorArchivos.subirArchivo(anexo, registrado.getDistritoJudicialId(), "ANEXO", MODULO_JI, registrado.getFechaInicio(), registrado.getId());
         }
 
         if (fotos != null) {
             for (MultipartFile f : fotos) {
                 if (!f.isEmpty())
-                    gestorArchivos.subirArchivo(f, registrado.getDistritoJudicialId(), "FOTO", registrado.getFechaInicio(), registrado.getId());
+                    gestorArchivos.subirArchivo(f, registrado.getDistritoJudicialId(), "FOTO", MODULO_JI, registrado.getFechaInicio(), registrado.getId());
             }
         }
 
         if (videos != null) {
             for (MultipartFile v : videos) {
                 if (!v.isEmpty())
-                    gestorArchivos.subirArchivo(v, registrado.getDistritoJudicialId(), "VIDEO", registrado.getFechaInicio(), registrado.getId());
+                    gestorArchivos.subirArchivo(v, registrado.getDistritoJudicialId(), "VIDEO", MODULO_JI, registrado.getFechaInicio(), registrado.getId());
             }
         }
 
@@ -125,14 +126,12 @@ public class GestionJusticiaItineranteUseCaseAdapter implements GestionJusticiaI
         JusticiaItinerante evento = persistencePort.obtenerPorId(idEvento);
         if (evento == null) throw new Exception("No se encontró el evento con ID: " + idEvento);
 
-        // ✅ Delegamos al servicio común
-        gestorArchivos.subirArchivo(archivo, evento.getDistritoJudicialId(), tipoArchivo, evento.getFechaInicio(), idEvento);
+        gestorArchivos.subirArchivo(archivo, evento.getDistritoJudicialId(), tipoArchivo, MODULO_JI, evento.getFechaInicio(), idEvento);
     }
 
     @Override
     @Transactional
     public void eliminarArchivo(String nombreArchivo) throws Exception {
-        // ✅ Delegamos al servicio común
         gestorArchivos.eliminarPorNombre(nombreArchivo);
     }
 
@@ -150,7 +149,7 @@ public class GestionJusticiaItineranteUseCaseAdapter implements GestionJusticiaI
                 .findFirst()
                 .orElseThrow(() -> new Exception("No existe anexo para este evento."));
 
-        // 2. Descargar usando el servicio común (ya tiene toda la lógica de streams)
+        // 2. Descargar usando el servicio común
         return gestorArchivos.descargarPorNombre(archivoAnexo.getNombre());
     }
 

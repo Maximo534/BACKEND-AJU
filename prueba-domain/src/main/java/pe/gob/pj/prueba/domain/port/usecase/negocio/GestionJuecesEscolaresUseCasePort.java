@@ -17,4 +17,5 @@ public interface GestionJuecesEscolaresUseCasePort {
     void eliminarArchivo(String nombreArchivo) throws Exception;
     RecursoArchivo descargarResolucion(String id) throws Exception;
     boolean existeDniEnColegio(String dni, String colegioId);
+    RecursoArchivo descargarArchivoPorNombre(String nombreArchivo) throws Exception;
 }

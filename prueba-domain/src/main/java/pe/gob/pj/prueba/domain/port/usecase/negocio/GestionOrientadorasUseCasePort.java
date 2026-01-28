@@ -17,4 +17,5 @@ public interface GestionOrientadorasUseCasePort {
     RecursoArchivo descargarAnexo(String id, String tipoArchivo) throws Exception;
     public List<ResumenEstadistico> obtenerResumenGrafico() throws Exception;
     byte[] generarFichaPdf(String id) throws Exception;
+    RecursoArchivo descargarArchivoPorNombre(String nombreArchivo) throws Exception;
 }

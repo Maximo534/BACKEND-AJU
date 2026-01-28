@@ -2,7 +2,6 @@ package pe.gob.pj.prueba.usecase.negocio;
 
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.multipart.MultipartFile;
@@ -11,16 +10,14 @@ import pe.gob.pj.prueba.domain.model.common.RecursoArchivo;
 import pe.gob.pj.prueba.domain.model.negocio.Archivo;
 import pe.gob.pj.prueba.domain.model.negocio.OrientadoraJudicial;
 import pe.gob.pj.prueba.domain.model.negocio.ResumenEstadistico;
-import pe.gob.pj.prueba.domain.port.files.FtpPort;
 import pe.gob.pj.prueba.domain.port.output.GenerarReportePort;
 import pe.gob.pj.prueba.domain.port.persistence.negocio.GestionArchivosPersistencePort;
 import pe.gob.pj.prueba.domain.port.persistence.negocio.OrientadoraJudicialPersistencePort;
+import pe.gob.pj.prueba.domain.port.usecase.negocio.GestionArchivosUseCasePort;
 import pe.gob.pj.prueba.domain.port.usecase.negocio.GestionOrientadorasUseCasePort;
 
-import java.io.InputStream;
 import java.time.LocalDate;
 import java.util.List;
-import java.util.UUID;
 
 @Service
 @RequiredArgsConstructor
@@ -28,15 +25,11 @@ import java.util.UUID;
 public class GestionOrientadorasUseCaseAdapter implements GestionOrientadorasUseCasePort {
 
     private final OrientadoraJudicialPersistencePort persistencePort;
-    private final GestionArchivosPersistencePort archivosPersistencePort;
-    private final FtpPort ftpPort;
     private final GenerarReportePort reportePort;
+    private final GestionArchivosUseCasePort gestorArchivos;
+    private final GestionArchivosPersistencePort archivosPersistencePort;
 
-    @Value("${ftp.ip}") private String ftpIp;
-    @Value("${ftp.puerto}") private Integer ftpPuerto;
-    @Value("${ftp.usuario}") private String ftpUsuario;
-    @Value("${ftp.clave}") private String ftpClave;
-    @Value("${ftp.ruta-base:/evidencias}") private String ftpRutaBase;
+    private static final String MODULO_OJ = "evidencias_oj";
 
     @Override
     public Pagina<OrientadoraJudicial> listar(String usuario, OrientadoraJudicial filtros, int pagina, int tamanio) throws Exception {
@@ -69,30 +62,20 @@ public class GestionOrientadorasUseCaseAdapter implements GestionOrientadorasUse
         oj.setUsuarioRegistro(usuario);
         if(oj.getFechaAtencion() == null) oj.setFechaAtencion(LocalDate.now());
 
-        // Guardar Datos
         OrientadoraJudicial registrado = persistencePort.guardar(oj);
 
-        // Subir Archivos
-        String sessionKey = UUID.randomUUID().toString();
-        try {
-            ftpPort.iniciarSesion(sessionKey, ftpIp, ftpPuerto, ftpUsuario, ftpClave);
+        LocalDate fecha = (registrado.getFechaAtencion() != null) ? registrado.getFechaAtencion() : LocalDate.now();
 
-            // Subir Anexo
-            if (anexo != null && !anexo.isEmpty()) {
-                uploadFile(anexo, registrado, "ANEXO_OJ", sessionKey);
-            }
+        if (anexo != null && !anexo.isEmpty()) {
+            gestorArchivos.subirArchivo(anexo, corte, "ANEXO", MODULO_OJ, fecha, registrado.getId());
+        }
 
-            // Subir Fotos
-            if (fotos != null && !fotos.isEmpty()) {
-                for (MultipartFile foto : fotos) {
-                    if (foto != null && !foto.isEmpty()) {
-                        // Se reutiliza uploadFile
-                        uploadFile(foto, registrado, "FOTO_OJ", sessionKey);
-                    }
+        if (fotos != null && !fotos.isEmpty()) {
+            for (MultipartFile foto : fotos) {
+                if (foto != null && !foto.isEmpty()) {
+                    gestorArchivos.subirArchivo(foto, corte, "FOTO", MODULO_OJ, fecha, registrado.getId());
                 }
             }
-        } finally {
-            ftpPort.finalizarSession(sessionKey);
         }
 
         return registrado;
@@ -112,117 +95,38 @@ public class GestionOrientadorasUseCaseAdapter implements GestionOrientadorasUse
         OrientadoraJudicial oj = persistencePort.buscarPorId(idCaso);
         if(oj == null) throw new Exception("No existe registro");
 
-        String sessionKey = UUID.randomUUID().toString();
-        try {
-            ftpPort.iniciarSesion(sessionKey, ftpIp, ftpPuerto, ftpUsuario, ftpClave);
-            uploadFile(archivo, oj, tipo, sessionKey);
-        } finally {
-            ftpPort.finalizarSession(sessionKey);
-        }
+        String corte = (oj.getDistritoJudicialId() != null) ? oj.getDistritoJudicialId() : "00";
+        LocalDate fecha = (oj.getFechaAtencion() != null) ? oj.getFechaAtencion() : LocalDate.now();
+        gestorArchivos.subirArchivo(archivo, corte, tipo, MODULO_OJ, fecha, idCaso);
     }
 
     @Override
     @Transactional
     public void eliminarArchivo(String nombreArchivo) throws Exception {
-        Archivo archivo = archivosPersistencePort.buscarPorNombre(nombreArchivo);
-        if (archivo == null) throw new Exception("Archivo no existe");
-
-        String sessionKey = UUID.randomUUID().toString();
-        ftpPort.iniciarSesion(sessionKey, ftpIp, ftpPuerto, ftpUsuario, ftpClave);
-        try {
-            ftpPort.deleteFileFTP(archivo.getRuta() + "/" + archivo.getNombre());
-        } catch (Exception e) {
-            log.warn("Error borrado físico: {}", e.getMessage());
-        } finally {
-            ftpPort.finalizarSession(sessionKey);
-        }
-        archivosPersistencePort.eliminarReferenciaArchivo(nombreArchivo);
+        gestorArchivos.eliminarPorNombre(nombreArchivo);
     }
 
     @Override
     public RecursoArchivo descargarAnexo(String id, String tipoArchivo) throws Exception {
-        // Buscar metadatos en BD
         List<Archivo> archivos = archivosPersistencePort.listarArchivosPorEvento(id);
+
         Archivo encontrado = archivos.stream()
-                .filter(a -> a.getTipo().equalsIgnoreCase(tipoArchivo))
+                .filter(a -> a.getTipo().equalsIgnoreCase(tipoArchivo) ||
+                        (tipoArchivo.toUpperCase().contains("ANEXO") && a.getTipo().equalsIgnoreCase("ANEXO")))
                 .findFirst()
                 .orElseThrow(() -> new Exception("Archivo no encontrado: " + tipoArchivo));
 
-        // Preparar temporal
-        String sessionKey = UUID.randomUUID().toString();
-        java.nio.file.Path tempFile = java.nio.file.Files.createTempFile("oj_" + tipoArchivo, ".tmp");
-
-        //Descarga FTP segura
-        ftpPort.iniciarSesion(sessionKey, ftpIp, ftpPuerto, ftpUsuario, ftpClave);
-
-        try {
-            String rutaCompleta = encontrado.getRuta() + "/" + encontrado.getNombre();
-            InputStream is = ftpPort.downloadFileStream(sessionKey, rutaCompleta);
-
-            if (is == null) {
-                throw new Exception("El archivo no existe en el servidor FTP.");
-            }
-
-            try (java.io.OutputStream os = java.nio.file.Files.newOutputStream(tempFile)) {
-                is.transferTo(os);
-            }
-            is.close();
-
-        } catch (Exception e) {
-            java.nio.file.Files.deleteIfExists(tempFile);
-            throw e;
-        } finally {
-            ftpPort.finalizarSession(sessionKey);
-        }
-
-        //Retorno con auto-borrado
-        return RecursoArchivo.builder()
-                .stream(new java.io.FileInputStream(tempFile.toFile()) {
-                    @Override public void close() throws java.io.IOException {
-                        super.close();
-                        java.nio.file.Files.deleteIfExists(tempFile);
-                    }
-                })
-                .nombreFileName(encontrado.getNombre())
-                .build();
+        return gestorArchivos.descargarPorNombre(encontrado.getNombre());
     }
+
+    @Override
+    public RecursoArchivo descargarArchivoPorNombre(String nombreArchivo) throws Exception {
+        return gestorArchivos.descargarPorNombre(nombreArchivo);
+    }
+
     @Override
     public List<ResumenEstadistico> obtenerResumenGrafico() throws Exception {
         return persistencePort.obtenerResumenGrafico();
-    }
-
-    private void uploadFile(MultipartFile file, OrientadoraJudicial oj, String tipo, String sessionKey) throws Exception {
-        String carpeta = switch (tipo.toUpperCase()) {
-            case "ANEXO_OJ" -> "anexos";
-            case "FOTO_OJ" -> "fotos";
-            default -> "otros";
-        };
-
-        String anio = String.valueOf(oj.getFechaAtencion().getYear());
-        String rutaBase = String.format("%s/oj/%s/%s", ftpRutaBase, carpeta, anio);
-
-        String ext = obtenerExtension(file.getOriginalFilename());
-
-        // Usamos UUID parcial
-        String uniqueId = UUID.randomUUID().toString().substring(0,4);
-        String nombreFinal = oj.getId() + "_" + tipo + "_" + System.currentTimeMillis() + "_" + uniqueId + ext;
-
-        String rutaCompleta = rutaBase + "/" + nombreFinal;
-
-        if (!ftpPort.uploadFileFTP(sessionKey, rutaCompleta, file.getInputStream(), tipo)) {
-            throw new Exception("Fallo FTP al subir " + nombreFinal);
-        }
-
-        archivosPersistencePort.guardarReferenciaArchivo(Archivo.builder()
-                .nombre(nombreFinal)
-                .tipo(tipo)
-                .ruta(rutaBase)
-                .numeroIdentificacion(oj.getId())
-                .build());
-    }
-
-    private String obtenerExtension(String nombre) {
-        return (nombre != null && nombre.lastIndexOf(".") != -1) ? nombre.substring(nombre.lastIndexOf(".")) : "";
     }
 
     @Override
@@ -230,5 +134,4 @@ public class GestionOrientadorasUseCaseAdapter implements GestionOrientadorasUse
         if(persistencePort.buscarPorId(id) == null) throw new Exception("Evento no existe");
         return reportePort.generarFichaOJ(id);
     }
-
 }

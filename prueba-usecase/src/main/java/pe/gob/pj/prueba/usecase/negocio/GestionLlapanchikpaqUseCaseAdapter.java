@@ -2,7 +2,6 @@ package pe.gob.pj.prueba.usecase.negocio;
 
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.multipart.MultipartFile;
@@ -11,16 +10,14 @@ import pe.gob.pj.prueba.domain.model.common.RecursoArchivo;
 import pe.gob.pj.prueba.domain.model.negocio.Archivo;
 import pe.gob.pj.prueba.domain.model.negocio.LlapanchikpaqJusticia;
 import pe.gob.pj.prueba.domain.model.negocio.ResumenEstadistico;
-import pe.gob.pj.prueba.domain.port.files.FtpPort;
 import pe.gob.pj.prueba.domain.port.output.GenerarReportePort;
 import pe.gob.pj.prueba.domain.port.persistence.negocio.GestionArchivosPersistencePort;
 import pe.gob.pj.prueba.domain.port.persistence.negocio.LlapanchikpaqPersistencePort;
+import pe.gob.pj.prueba.domain.port.usecase.negocio.GestionArchivosUseCasePort;
 import pe.gob.pj.prueba.domain.port.usecase.negocio.GestionLlapanchikpaqUseCasePort;
 
-import java.io.InputStream;
 import java.time.LocalDate;
 import java.util.List;
-import java.util.UUID;
 
 @Service
 @RequiredArgsConstructor
@@ -30,13 +27,9 @@ public class GestionLlapanchikpaqUseCaseAdapter implements GestionLlapanchikpaqU
     private final LlapanchikpaqPersistencePort persistencePort;
     private final GestionArchivosPersistencePort archivosPersistencePort;
     private final GenerarReportePort reportePort;
-    private final FtpPort ftpPort;
+    private final GestionArchivosUseCasePort gestorArchivos;
 
-    @Value("${ftp.ip}") private String ftpIp;
-    @Value("${ftp.puerto}") private Integer ftpPuerto;
-    @Value("${ftp.usuario}") private String ftpUsuario;
-    @Value("${ftp.clave}") private String ftpClave;
-    @Value("${ftp.ruta-base:/evidencias}") private String ftpRutaBase;
+    private static final String MODULO_LLJ = "evidencias_llj";
 
     @Override
     public Pagina<LlapanchikpaqJusticia> listar(String usuario, LlapanchikpaqJusticia filtros, int pagina, int tamanio) throws Exception {
@@ -59,7 +52,7 @@ public class GestionLlapanchikpaqUseCaseAdapter implements GestionLlapanchikpaqU
                 }
             }
         }
-        //Generar ID
+        // Generar ID
         String ultimoId = persistencePort.obtenerUltimoId();
         long siguiente = 1;
         if (ultimoId != null && !ultimoId.isBlank()) {
@@ -76,26 +69,17 @@ public class GestionLlapanchikpaqUseCaseAdapter implements GestionLlapanchikpaqU
 
         LlapanchikpaqJusticia registrado = persistencePort.guardar(dominio);
 
-        //Archivos
-        boolean hayArchivos = (anexo != null && !anexo.isEmpty()) || (fotos != null && !fotos.isEmpty());
-        if (hayArchivos) {
-            String sessionKey = UUID.randomUUID().toString();
-            try {
-                ftpPort.iniciarSesion(sessionKey, ftpIp, ftpPuerto, ftpUsuario, ftpClave);
+        LocalDate fecha = (registrado.getFechaInicio() != null) ? registrado.getFechaInicio() : LocalDate.now();
 
-                if (anexo != null && !anexo.isEmpty())
-                    uploadFile(anexo, registrado, "ANEXO_LLJ", sessionKey);
+        if (anexo != null && !anexo.isEmpty()) {
+            gestorArchivos.subirArchivo(anexo, corte, "ANEXO", MODULO_LLJ, fecha, registrado.getId());
+        }
 
-                if (fotos != null) {
-                    for (MultipartFile f : fotos) {
-                        if (!f.isEmpty()) uploadFile(f, registrado, "FOTO_LLJ", sessionKey);
-                    }
+        if (fotos != null) {
+            for (MultipartFile f : fotos) {
+                if (!f.isEmpty()) {
+                    gestorArchivos.subirArchivo(f, corte, "FOTO", MODULO_LLJ, fecha, registrado.getId());
                 }
-            } catch (Exception e) {
-                log.error("Error archivos LLJ", e);
-                 throw new Exception("Error carga archivos: " + e.getMessage());
-            } finally {
-                ftpPort.finalizarSession(sessionKey);
             }
         }
         return registrado;
@@ -126,85 +110,34 @@ public class GestionLlapanchikpaqUseCaseAdapter implements GestionLlapanchikpaqU
         LlapanchikpaqJusticia evento = persistencePort.buscarPorId(idEvento);
         if (evento == null) throw new Exception("ID no válido");
 
-        String sessionKey = UUID.randomUUID().toString();
-        try {
-            ftpPort.iniciarSesion(sessionKey, ftpIp, ftpPuerto, ftpUsuario, ftpClave);
-            uploadFile(archivo, evento, tipo, sessionKey);
-        } catch (Exception e) {
-            log.error("Error agregando archivo LLJ", e);
-            throw new Exception("Error al subir: " + e.getMessage());
-        } finally {
-            ftpPort.finalizarSession(sessionKey);
-        }
+        String corte = (evento.getDistritoJudicialId() != null) ? evento.getDistritoJudicialId() : "00";
+        LocalDate fecha = (evento.getFechaInicio() != null) ? evento.getFechaInicio() : LocalDate.now();
+
+        gestorArchivos.subirArchivo(archivo, corte, tipo, MODULO_LLJ, fecha, idEvento);
     }
 
     @Override
     public RecursoArchivo descargarArchivoPorTipo(String id, String tipoArchivo) throws Exception {
-        // Buscar el archivo en BD
         List<Archivo> archivos = archivosPersistencePort.listarArchivosPorEvento(id);
+
         Archivo encontrado = archivos.stream()
-                .filter(a -> a.getTipo().equalsIgnoreCase(tipoArchivo))
+                .filter(a -> a.getTipo().toUpperCase().contains(tipoArchivo.toUpperCase()) ||
+                        (tipoArchivo.toUpperCase().contains("ANEXO") && a.getTipo().equalsIgnoreCase("ANEXO")))
                 .findFirst()
                 .orElseThrow(() -> new Exception("No se encontró archivo " + tipoArchivo));
 
-        // Crear archivo temporal
-        java.nio.file.Path tempFile = java.nio.file.Files.createTempFile("llj_" + tipoArchivo + "_" + id, ".tmp");
-        String sessionKey = UUID.randomUUID().toString();
+        return gestorArchivos.descargarPorNombre(encontrado.getNombre());
+    }
 
-        // Iniciar sesión y descargar
-        ftpPort.iniciarSesion(sessionKey, ftpIp, ftpPuerto, ftpUsuario, ftpClave);
-
-        try {
-            String rutaCompleta = encontrado.getRuta() + "/" + encontrado.getNombre();
-            InputStream ftpStream = ftpPort.downloadFileStream(sessionKey, rutaCompleta);
-
-            if (ftpStream == null) {
-                throw new Exception("El archivo no existe en el servidor FTP.");
-            }
-
-            try (java.io.OutputStream tempStream = java.nio.file.Files.newOutputStream(tempFile)) {
-                ftpStream.transferTo(tempStream);
-            }
-            ftpStream.close();
-
-        } catch (Exception e) {
-            java.nio.file.Files.deleteIfExists(tempFile);
-            throw e;
-        } finally {
-            ftpPort.finalizarSession(sessionKey);
-        }
-
-        InputStream autoDeleteStream = new java.io.FileInputStream(tempFile.toFile()) {
-            @Override public void close() throws java.io.IOException {
-                super.close();
-                java.nio.file.Files.deleteIfExists(tempFile);
-            }
-        };
-
-        return RecursoArchivo.builder()
-                .stream(autoDeleteStream)
-                .nombreFileName(encontrado.getNombre())
-                .build();
+    @Override
+    public RecursoArchivo descargarArchivoPorNombre(String nombreArchivo) throws Exception {
+        return gestorArchivos.descargarPorNombre(nombreArchivo);
     }
 
     @Override
     @Transactional
     public void eliminarArchivo(String nombreArchivo) throws Exception {
-        Archivo archivo = archivosPersistencePort.buscarPorNombre(nombreArchivo);
-        if (archivo == null) throw new Exception("Archivo no encontrado en BD");
-
-        String rutaCompleta = archivo.getRuta() + "/" + archivo.getNombre();
-        String sessionKey = UUID.randomUUID().toString();
-
-        ftpPort.iniciarSesion(sessionKey, ftpIp, ftpPuerto, ftpUsuario, ftpClave);
-        try {
-            ftpPort.deleteFileFTP(rutaCompleta);
-        } catch (Exception e) {
-            log.warn("Error borrado físico FTP: " + e.getMessage());
-        } finally {
-            ftpPort.finalizarSession(sessionKey);
-        }
-        archivosPersistencePort.eliminarReferenciaArchivo(nombreArchivo);
+        gestorArchivos.eliminarPorNombre(nombreArchivo);
     }
 
     @Override
@@ -216,39 +149,5 @@ public class GestionLlapanchikpaqUseCaseAdapter implements GestionLlapanchikpaqU
     public byte[] generarFichaPdf(String id) throws Exception {
         if(persistencePort.buscarPorId(id) == null) throw new Exception("Evento no existe");
         return reportePort.generarFichaLlj(id);
-    }
-
-    private void uploadFile(MultipartFile file, LlapanchikpaqJusticia evento, String tipo, String sessionKey) throws Exception {
-
-        String carpeta = switch (tipo.toUpperCase()) {
-            case "ANEXO_LLJ" -> "anexos";
-            case "FOTO_LLJ" -> "fotos";
-            case "VIDEO_LLJ" -> "videos";
-            default -> "otros";
-        };
-
-        // Ruta plana por año: /evidencias/llj/CARPETA/ANIO
-        String anio = String.valueOf(evento.getFechaInicio().getYear());
-        String rutaRelativa = String.format("%s/llj/%s/%s", ftpRutaBase, carpeta, anio);
-
-        String ext = obtenerExtension(file.getOriginalFilename());
-
-        // Nombre: ID_UUID.ext para evitar colisiones
-        String nombreFinal = evento.getId() + "_" + UUID.randomUUID().toString().replace("-", "").substring(0, 8) + ext;
-
-        if (!ftpPort.uploadFileFTP(sessionKey, rutaRelativa + "/" + nombreFinal, file.getInputStream(), "Carga " + tipo)) {
-            throw new Exception("Fallo FTP al subir " + nombreFinal);
-        }
-
-        archivosPersistencePort.guardarReferenciaArchivo(Archivo.builder()
-                .nombre(nombreFinal)
-                .tipo(tipo)
-                .ruta(rutaRelativa)
-                .numeroIdentificacion(evento.getId())
-                .build());
-    }
-
-    private String obtenerExtension(String nombre) {
-        return (nombre != null && nombre.contains(".")) ? nombre.substring(nombre.lastIndexOf(".")) : "";
     }
 }

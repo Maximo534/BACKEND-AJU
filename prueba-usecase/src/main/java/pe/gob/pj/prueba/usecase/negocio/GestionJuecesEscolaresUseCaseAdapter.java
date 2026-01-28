@@ -2,8 +2,6 @@ package pe.gob.pj.prueba.usecase.negocio;
 
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.apache.commons.lang3.RandomStringUtils; // Si tienes commons-lang, si no usamos lógica nativa
-import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.multipart.MultipartFile;
@@ -11,15 +9,13 @@ import pe.gob.pj.prueba.domain.model.common.Pagina;
 import pe.gob.pj.prueba.domain.model.common.RecursoArchivo;
 import pe.gob.pj.prueba.domain.model.negocio.Archivo;
 import pe.gob.pj.prueba.domain.model.negocio.JuezPazEscolar;
-import pe.gob.pj.prueba.domain.port.files.FtpPort;
 import pe.gob.pj.prueba.domain.port.persistence.negocio.GestionArchivosPersistencePort;
 import pe.gob.pj.prueba.domain.port.persistence.negocio.JuezPazEscolarPersistencePort;
+import pe.gob.pj.prueba.domain.port.usecase.negocio.GestionArchivosUseCasePort;
 import pe.gob.pj.prueba.domain.port.usecase.negocio.GestionJuecesEscolaresUseCasePort;
 
-import java.io.InputStream;
 import java.time.LocalDate;
 import java.util.List;
-import java.util.UUID;
 import java.util.concurrent.ThreadLocalRandom;
 
 @Slf4j
@@ -29,13 +25,8 @@ public class GestionJuecesEscolaresUseCaseAdapter implements GestionJuecesEscola
 
     private final JuezPazEscolarPersistencePort persistencePort;
     private final GestionArchivosPersistencePort archivosPersistencePort;
-    private final FtpPort ftpPort;
-
-    @Value("${ftp.ip}") private String ftpIp;
-    @Value("${ftp.puerto}") private Integer ftpPuerto;
-    @Value("${ftp.usuario}") private String ftpUsuario;
-    @Value("${ftp.clave}") private String ftpClave;
-    @Value("${ftp.ruta-base:/evidencias}") private String ftpRutaBase;
+    private final GestionArchivosUseCasePort gestorArchivos;
+    private static final String MODULO_JPE = "evidencias_jpe";
 
     @Override
     public Pagina<JuezPazEscolar> listar(JuezPazEscolar filtros, int pagina, int tamanio) throws Exception {
@@ -64,15 +55,7 @@ public class GestionJuecesEscolaresUseCaseAdapter implements GestionJuecesEscola
         JuezPazEscolar registrado = persistencePort.guardar(juez);
 
         if (resolucion != null && !resolucion.isEmpty()) {
-            String sessionKey = UUID.randomUUID().toString();
-            try {
-                ftpPort.iniciarSesion(sessionKey, ftpIp, ftpPuerto, ftpUsuario, ftpClave);
-                uploadFile(resolucion, registrado, "RESOLUCION_JPE", sessionKey);
-            } catch (Exception e) {
-                log.error("Error subiendo archivo", e);
-            } finally {
-                ftpPort.finalizarSession(sessionKey);
-            }
+            gestorArchivos.subirArchivo(resolucion, "00", "RESOLUCION_JPE", MODULO_JPE, registrado.getFechaRegistro(), registrado.getId());
         }
         return registrado;
     }
@@ -91,31 +74,14 @@ public class GestionJuecesEscolaresUseCaseAdapter implements GestionJuecesEscola
         JuezPazEscolar juez = persistencePort.buscarPorId(idJuez);
         if (juez == null) throw new Exception("Juez no encontrado");
 
-        String sessionKey = UUID.randomUUID().toString();
-        try {
-            ftpPort.iniciarSesion(sessionKey, ftpIp, ftpPuerto, ftpUsuario, ftpClave);
-            uploadFile(archivo, juez, tipo, sessionKey);
-        } finally {
-            ftpPort.finalizarSession(sessionKey);
-        }
+        LocalDate fecha = (juez.getFechaRegistro() != null) ? juez.getFechaRegistro() : LocalDate.now();
+        gestorArchivos.subirArchivo(archivo, "00", tipo, MODULO_JPE, fecha, idJuez);
     }
 
     @Override
     @Transactional
     public void eliminarArchivo(String nombreArchivo) throws Exception {
-        Archivo archivo = archivosPersistencePort.buscarPorNombre(nombreArchivo);
-        if (archivo == null) throw new Exception("Archivo no encontrado");
-
-        String sessionKey = UUID.randomUUID().toString();
-        ftpPort.iniciarSesion(sessionKey, ftpIp, ftpPuerto, ftpUsuario, ftpClave);
-        try {
-            ftpPort.deleteFileFTP(archivo.getRuta() + "/" + archivo.getNombre());
-        } catch (Exception e) {
-            log.warn("Fallo borrado físico FTP: " + e.getMessage());
-        } finally {
-            ftpPort.finalizarSession(sessionKey);
-        }
-        archivosPersistencePort.eliminarReferenciaArchivo(nombreArchivo);
+        gestorArchivos.eliminarPorNombre(nombreArchivo);
     }
 
     @Override
@@ -126,82 +92,21 @@ public class GestionJuecesEscolaresUseCaseAdapter implements GestionJuecesEscola
                 .findFirst()
                 .orElseThrow(() -> new Exception("Este registro no tiene resolución adjunta."));
 
-        java.nio.file.Path tempFile = java.nio.file.Files.createTempFile("res_jpe_" + id, ".tmp");
-        String sessionKey = UUID.randomUUID().toString();
-
-        ftpPort.iniciarSesion(sessionKey, ftpIp, ftpPuerto, ftpUsuario, ftpClave);
-
-        try {
-            String rutaCompleta = res.getRuta() + "/" + res.getNombre();
-            InputStream ftpStream = ftpPort.downloadFileStream(sessionKey, rutaCompleta);
-
-            if (ftpStream == null) {
-                throw new Exception("El archivo no se encuentra en el servidor FTP.");
-            }
-
-            try (java.io.OutputStream tempStream = java.nio.file.Files.newOutputStream(tempFile)) {
-                ftpStream.transferTo(tempStream);
-            }
-            ftpStream.close();
-
-        } catch (Exception e) {
-            java.nio.file.Files.deleteIfExists(tempFile);
-            throw new Exception("Error descargando del FTP: " + e.getMessage());
-        } finally {
-            ftpPort.finalizarSession(sessionKey);
-        }
-
-        InputStream autoDeleteStream = new java.io.FileInputStream(tempFile.toFile()) {
-            @Override
-            public void close() throws java.io.IOException {
-                super.close();
-                java.nio.file.Files.deleteIfExists(tempFile);
-            }
-        };
-
-        return RecursoArchivo.builder()
-                .stream(autoDeleteStream)
-                .nombreFileName(res.getNombre())
-                .build();
+        // 2. Descargamos por nombre físico
+        return gestorArchivos.descargarPorNombre(res.getNombre());
     }
 
     @Override
     public boolean existeDniEnColegio(String dni, String colegioId) {
         return persistencePort.existeDniEnColegio(dni, colegioId);
     }
-
+    @Override
+    public RecursoArchivo descargarArchivoPorNombre(String nombreArchivo) throws Exception {
+        return gestorArchivos.descargarPorNombre(nombreArchivo);
+    }
     private String generarIdCorto() {
         long timestamp = System.currentTimeMillis();
         int random = ThreadLocalRandom.current().nextInt(100, 999);
         return "J" + timestamp + random;
-    }
-
-    private void uploadFile(MultipartFile file, JuezPazEscolar juez, String tipo, String sessionKey) throws Exception {
-        String carpeta = switch (tipo.toUpperCase()) {
-            case "RESOLUCION_JPE" -> "resoluciones";
-            case "FOTO_JPE" -> "fotos";
-            default -> "otros";
-        };
-
-        String anio = String.valueOf(juez.getFechaRegistro() != null ? juez.getFechaRegistro().getYear() : LocalDate.now().getYear());
-        String rutaRelativa = String.format("%s/jpe/alumnos/%s/%s", ftpRutaBase, carpeta, anio);
-        String ext = obtenerExtension(file.getOriginalFilename());
-
-        String nombreFinal = juez.getId() + "_" + tipo + "_" + System.currentTimeMillis() + ext;
-
-        if (!ftpPort.uploadFileFTP(sessionKey, rutaRelativa + "/" + nombreFinal, file.getInputStream(), tipo)) {
-            throw new Exception("Error al subir archivo al FTP");
-        }
-
-        archivosPersistencePort.guardarReferenciaArchivo(Archivo.builder()
-                .nombre(nombreFinal)
-                .tipo(tipo)
-                .ruta(rutaRelativa)
-                .numeroIdentificacion(juez.getId())
-                .build());
-    }
-
-    private String obtenerExtension(String nombre) {
-        return (nombre != null && nombre.contains(".")) ? nombre.substring(nombre.lastIndexOf(".")) : "";
     }
 }

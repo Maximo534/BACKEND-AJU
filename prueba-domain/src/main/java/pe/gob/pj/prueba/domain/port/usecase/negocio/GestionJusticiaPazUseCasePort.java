@@ -18,4 +18,5 @@ public interface GestionJusticiaPazUseCasePort {
     JpeCasoAtendido buscarPorId(String id) throws Exception;
     byte[] generarFichaPdf(String id) throws Exception;
     List<ResumenEstadistico> obtenerResumenGrafico() throws Exception;
+    RecursoArchivo descargarArchivoPorNombre(String nombreArchivo) throws Exception;
 }

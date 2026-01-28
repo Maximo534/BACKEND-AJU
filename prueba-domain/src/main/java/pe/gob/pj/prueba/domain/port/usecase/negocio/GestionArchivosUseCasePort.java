@@ -9,8 +9,7 @@ import java.util.List;
 
 public interface GestionArchivosUseCasePort {
 
-    void subirArchivo(MultipartFile file, String distritoId, String tipoArchivo, LocalDate fechaEvento, String idRegistro) throws Exception;
-
+    void subirArchivo(MultipartFile file, String distritoId, String tipo, String modulo, LocalDate fecha, String idRegistro) throws Exception;
     RecursoArchivo descargarPorNombre(String nombreArchivo) throws Exception;
 
     void eliminarPorNombre(String nombreArchivo) throws Exception;
