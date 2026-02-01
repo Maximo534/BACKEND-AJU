@@ -43,7 +43,9 @@ public enum TipoError {
   USUARIO_NO_ES_DE_PODER_JUDICIAL("N006","El usuario %s no pertenece al Poder Judicial.",null),
   NUEVO_TOKEN_NO_VALIDO("N007","Ocurrió un error al generar nuevo token de seguridad.",null),
   MAESTRO_NO_ENCONTRADO("N008", "No se encontró información para el maestro solicitado.", null),
-  USUARIO_YA_REGISTRADO("N009", "El nombre de usuario (login) ya se encuentra registrado.", null);
+  USUARIO_YA_REGISTRADO("N009", "El nombre de usuario (login) ya se encuentra registrado.", null),
+  ACCESO_DENEGADO("N403", "No tiene privilegios suficientes para realizar esta acción.", null);
+  ;
 
   String codigo;
   String descripcionUsuario;

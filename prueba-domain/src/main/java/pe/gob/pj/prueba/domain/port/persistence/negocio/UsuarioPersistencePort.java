@@ -17,4 +17,10 @@ public interface UsuarioPersistencePort {
     boolean existeUsuarioPorLogin(String cuo, String login);
 
     void cambiarEstado(String cuo, Usuario usuario);
+
+    // Busca qué ID de perfil tiene el usuario que está intentando registrar (el creador)
+    Integer obtenerIdPerfilPorLogin(String login);
+
+    // Valida si el padre puede crear al hijo
+    boolean validarJerarquia(Integer idPerfilPadre, Integer idPerfilHijo);
 }

@@ -102,4 +102,14 @@ public class NegocioAdvise extends DefaultAdvise {
     return ResponseEntity.ok(handleResponse(peticion, TipoError.USUARIO_YA_REGISTRADO, ex));
   }
 
+  @ExceptionHandler({AccesoDenegadoException.class})
+  public ResponseEntity<GlobalResponse> handleAccesoDenegadoException(
+          AccesoDenegadoException ex, WebRequest request) {
+
+    var peticion = obtenerPeticionServicio(request, TipoError.ACCESO_DENEGADO);
+
+    guardarAuditoria(peticion);
+
+    return ResponseEntity.ok(handleResponse(peticion, TipoError.ACCESO_DENEGADO, ex));
+  }
 }

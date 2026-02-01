@@ -22,6 +22,7 @@ import pe.gob.pj.prueba.infraestructure.db.negocio.entities.MaePerfilEntity;
 import pe.gob.pj.prueba.infraestructure.db.negocio.entities.MovProgramacionEjeEntity;
 import pe.gob.pj.prueba.infraestructure.db.negocio.entities.MovUsuarioEntity;
 import pe.gob.pj.prueba.infraestructure.db.negocio.entities.MovUsuarioPerfilEntity;
+import pe.gob.pj.prueba.infraestructure.db.negocio.repositories.MaeRolJerarquiaRepository;
 import pe.gob.pj.prueba.infraestructure.db.negocio.repositories.MovProgramacionEjeRepository;
 import pe.gob.pj.prueba.infraestructure.db.negocio.repositories.MovUsuarioPerfilRepository;
 import pe.gob.pj.prueba.infraestructure.db.negocio.repositories.MovUsuarioRepository;
@@ -38,7 +39,7 @@ public class UsuarioPersistenceAdapter implements UsuarioPersistencePort {
     UsuarioMapper mapper;
     MovUsuarioPerfilRepository usuarioPerfilRepository;
     MovProgramacionEjeRepository programacionEjeRepository;
-
+    MaeRolJerarquiaRepository jerarquiaRepository;
     @Override
     public Pagina<Usuario> listar(String cuo, ListarUsuarioQuery query, int pagina, int tamanio) {
 
@@ -287,5 +288,26 @@ public class UsuarioPersistenceAdapter implements UsuarioPersistencePort {
         entityDb.setBAud("M");
 
         repository.save(entityDb);
+    }
+
+    @Override
+    public Integer obtenerIdPerfilPorLogin(String login) {
+        //Buscamos el usuario por su login
+        MovUsuarioEntity usuario = repository.findByActivoAndUsuario("1", login)
+                .orElseThrow(() -> new MaestroNoEncontradoException("El usuario creador no existe o no está activo."));
+
+        // Buscamos su perfil activo
+        //Si un usuario tiene múltiples perfiles, aquí tomamos el primero activo.
+        // Lo ideal sería que el ID del perfil viniera en el objeto 'usuario' desde el Controller/Token.
+        return usuarioPerfilRepository.findByUsuarioId(usuario.getId()).stream()
+                .filter(p -> "1".equals(p.getActivo()))
+                .findFirst()
+                .map(p -> p.getPerfil().getId())
+                .orElseThrow(() -> new MaestroNoEncontradoException("El usuario creador no tiene un perfil activo para realizar esta acción."));
+    }
+
+    @Override
+    public boolean validarJerarquia(Integer idPerfilPadre, Integer idPerfilHijo) {
+        return jerarquiaRepository.existeJerarquia(idPerfilPadre, idPerfilHijo);
     }
 }

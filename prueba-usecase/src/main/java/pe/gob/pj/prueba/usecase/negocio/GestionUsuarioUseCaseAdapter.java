@@ -7,6 +7,7 @@ import org.springframework.transaction.annotation.Transactional;
 
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import pe.gob.pj.prueba.domain.exceptions.negocio.AccesoDenegadoException;
 import pe.gob.pj.prueba.domain.exceptions.negocio.UsuarioDuplicadoException;
 import pe.gob.pj.prueba.domain.model.common.Pagina;
 import pe.gob.pj.prueba.domain.model.negocio.Usuario;
@@ -43,6 +44,24 @@ public class GestionUsuarioUseCaseAdapter implements GestionUsuarioUseCasePort {
 
         if (yaExiste) {
             throw new UsuarioDuplicadoException("El usuario '" + usuario.getNombreUsuario() + "' ya está en uso.");
+        }
+
+        String loginCreador = usuario.getUsuario();
+
+        //Obtener el ID del Perfil del Creador
+        Integer idPerfilCreador = persistencePort.obtenerIdPerfilPorLogin(loginCreador);
+
+        //Verificar permiso para cada perfil que se intenta asignar
+        if (usuario.getPerfiles() != null) {
+            for (var perfilNuevo : usuario.getPerfiles()) {
+
+                // Consultamos: ¿El perfil 5 (Distrital) puede crear el perfil 3 (Juez)?
+                boolean esJerarquiaValida = persistencePort.validarJerarquia(idPerfilCreador, perfilNuevo.getIdPerfil());
+                if (!esJerarquiaValida) {
+                    throw new AccesoDenegadoException(
+                            "Su perfil no tiene permisos para crear usuarios con el rol ID: " + perfilNuevo.getIdPerfil());
+                }
+            }
         }
 
         // REGLAS DE NEGOCIO
