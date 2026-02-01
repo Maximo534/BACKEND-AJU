@@ -26,7 +26,7 @@ import java.util.List;
 import java.util.stream.Collectors;
 
 @RestController
-@RequestMapping("/publico/v1/promocion-cultura")
+@RequestMapping("/promocion-cultura")
 @RequiredArgsConstructor
 @Slf4j
 public class PromocionCulturaController implements Serializable {

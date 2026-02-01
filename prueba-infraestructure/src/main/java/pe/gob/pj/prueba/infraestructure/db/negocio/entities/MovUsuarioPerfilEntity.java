@@ -42,13 +42,14 @@ public class MovUsuarioPerfilEntity implements Serializable {
   @SequenceGenerator(name = "SEQ_MOV_USUARIO_PERFIL", schema = EsquemaConstants.PRUEBA,
       sequenceName = "USEQ_MOV_USUARIO_PERFIL", initialValue = 1, allocationSize = 1)
   @GeneratedValue(strategy = GenerationType.SEQUENCE, generator = "SEQ_MOV_USUARIO_PERFIL")
-  @Column(name = "N_USUARIO_PERFIL", nullable = false)
+  @Column(name = "N_USUARIO_PERFIL_ID", nullable = false)
   Integer id;
   @ManyToOne(optional = false, cascade = CascadeType.PERSIST, fetch = FetchType.LAZY)
-  @JoinColumn(name = "N_USUARIO")
+  @JoinColumn(name = "N_USUARIO_ID")
   MovUsuarioEntity usuario;
-  @ManyToOne(optional = false, cascade = CascadeType.PERSIST, fetch = FetchType.LAZY)
-  @JoinColumn(name = "N_PERFIL")
+//  @ManyToOne(optional = false, cascade = CascadeType.PERSIST, fetch = FetchType.LAZY)
+  @ManyToOne(fetch = FetchType.LAZY)
+  @JoinColumn(name = "N_PERFIL_ID")
   MaePerfilEntity perfil;
 
   // Auditoria

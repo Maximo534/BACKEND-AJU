@@ -1,6 +1,8 @@
 package pe.gob.pj.prueba.infraestructure.db.negocio.persistence;
 
 import java.util.Objects;
+
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Component;
 import lombok.AccessLevel;
 import lombok.RequiredArgsConstructor;
@@ -20,6 +22,7 @@ import pe.gob.pj.prueba.infraestructure.db.negocio.repositories.MovUsuarioReposi
 @Component
 @FieldDefaults(level = AccessLevel.PRIVATE, makeFinal = true)
 @RequiredArgsConstructor
+@Slf4j
 public class AccesoReadPersistenceAdapter implements AccesoPersistenceReadPort {
 
   MovUsuarioRepository movUsuarioRepository;
@@ -30,26 +33,29 @@ public class AccesoReadPersistenceAdapter implements AccesoPersistenceReadPort {
     Usuario usuarioDTO = new Usuario();
     movUsuarioRepository.findByActivoAndUsuario(Estado.ACTIVO_NUMERICO.getNombre(), usuario)
         .ifPresent(movUsuario -> {
-          usuarioDTO.setIdUsuario(movUsuario.getId());
+          usuarioDTO.setId(movUsuario.getId());
+//          usuarioDTO.setIdUsuario(movUsuario.getId());
           usuarioDTO.setUsuario(movUsuario.getUsuario());
           usuarioDTO.setClave(movUsuario.getClave());
 
-          usuarioDTO.getPersona().setId(movUsuario.getPersona().getId());
-          usuarioDTO.getPersona().setPrimerApellido(movUsuario.getPersona().getPrimerApellido());
-          usuarioDTO.getPersona().setSegundoApellido(movUsuario.getPersona().getSegundoApellido());
-          usuarioDTO.getPersona().setNombres(movUsuario.getPersona().getNombres());
-          usuarioDTO.getPersona().setNumeroDocumento(movUsuario.getPersona().getNumeroDocumento());
-          usuarioDTO.getPersona().setTelefono(movUsuario.getPersona().getTelefono());
-          usuarioDTO.getPersona().setCorreo(movUsuario.getPersona().getCorreo());
-          usuarioDTO.getPersona()
-              .setIdTipoDocumento(movUsuario.getPersona().getTipoDocumento().getCodigo());
-          usuarioDTO.getPersona()
-              .setTipoDocumento(movUsuario.getPersona().getTipoDocumento().getAbreviatura());
-          usuarioDTO.getPersona().setFechaNacimiento(
-              ProjectUtils.convertDateToString(movUsuario.getPersona().getFechaNacimiento(),
-                  Formatos.FECHA_DD_MM_YYYY.getFormato()));
-          usuarioDTO.getPersona().setSexo(movUsuario.getPersona().getSexo());
-          usuarioDTO.getPersona().setActivo(movUsuario.getPersona().getActivo());
+          log.info("usuario ID {}",movUsuario.getId());
+
+//          usuarioDTO.getPersona().setId(movUsuario.getPersona().getId());
+//          usuarioDTO.getPersona().setPrimerApellido(movUsuario.getPersona().getPrimerApellido());
+//          usuarioDTO.getPersona().setSegundoApellido(movUsuario.getPersona().getSegundoApellido());
+//          usuarioDTO.getPersona().setNombres(movUsuario.getPersona().getNombres());
+//          usuarioDTO.getPersona().setNumeroDocumento(movUsuario.getPersona().getNumeroDocumento());
+//          usuarioDTO.getPersona().setTelefono(movUsuario.getPersona().getTelefono());
+//          usuarioDTO.getPersona().setCorreo(movUsuario.getPersona().getCorreo());
+//          usuarioDTO.getPersona()
+//              .setIdTipoDocumento(movUsuario.getPersona().getTipoDocumento().getCodigo());
+//          usuarioDTO.getPersona()
+//              .setTipoDocumento(movUsuario.getPersona().getTipoDocumento().getAbreviatura());
+//          usuarioDTO.getPersona().setFechaNacimiento(
+//              ProjectUtils.convertDateToString(movUsuario.getPersona().getFechaNacimiento(),
+//                  Formatos.FECHA_DD_MM_YYYY.getFormato()));
+//          usuarioDTO.getPersona().setSexo(movUsuario.getPersona().getSexo());
+//          usuarioDTO.getPersona().setActivo(movUsuario.getPersona().getActivo());
 
           movUsuario.getPerfils().forEach(perfilUsuario -> {
             if (perfilUsuario.getActivo().equalsIgnoreCase(Estado.ACTIVO_NUMERICO.getNombre())) {

@@ -1,20 +1,20 @@
 package pe.gob.pj.prueba.infraestructure.rest.responses;
 
 import java.io.Serializable;
-import com.fasterxml.jackson.annotation.JsonInclude; // 1. Importar esto
+import com.fasterxml.jackson.annotation.JsonInclude;
 import lombok.AccessLevel;
-import lombok.AllArgsConstructor; // 2. Importar esto para el Builder
-import lombok.Builder; // 3. Importar esto para facilitar el llenado
+import lombok.AllArgsConstructor;
+import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 import lombok.experimental.FieldDefaults;
-import pe.gob.pj.prueba.infraestructure.common.enums.TipoError;
+import pe.gob.pj.prueba.infraestructure.common.enums.TipoError; // IMPORTANTE
 
 @Data
-@Builder // ✅ Permite llenar los campos de paginación fácilmente
+@Builder
 @NoArgsConstructor
 @AllArgsConstructor
-@JsonInclude(JsonInclude.Include.NON_NULL) // ✅ CLAVE: Si no hay paginación, oculta estos campos
+@JsonInclude(JsonInclude.Include.NON_NULL)
 @FieldDefaults(level = AccessLevel.PRIVATE)
 public class GlobalResponse implements Serializable {
 
@@ -24,15 +24,13 @@ public class GlobalResponse implements Serializable {
   String descripcion;
   String codigoOperacion;
 
-  Object data; // Aquí irá la LISTA pura (Array)
+  Object data;
 
-  // --- CAMPOS DE PAGINACIÓN (Ahora al nivel raíz) ---
   Long totalRegistros;
   Integer totalPaginas;
   Integer paginaActual;
   Integer tamanioPagina;
 
-  // Puedes mantener tus constructores personalizados para respuestas simples
   public GlobalResponse(String codigoOperacion) {
     this.codigo = TipoError.OPERACION_EXITOSA.getCodigo();
     this.descripcion = TipoError.OPERACION_EXITOSA.getDescripcionUsuario();

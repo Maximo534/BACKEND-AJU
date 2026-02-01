@@ -75,10 +75,10 @@ public class PromocionCulturaPersistenceAdapter implements PromocionCulturaPersi
             MovPromocionCulturaEntity saved = repository.save(entity);
             PromocionCultura res = mapper.toDomain(saved);
 
-            if (res.getDistritoJudicialId() != null) {
-                repoCorte.findById(res.getDistritoJudicialId())
-                        .ifPresent(c -> res.setDistritoJudicialNombre(c.getNombreCorto()));
-            }
+//            if (res.getDistritoJudicialId() != null) {
+//                repoCorte.findById(res.getDistritoJudicialId())
+//                        .ifPresent(c -> res.setDistritoJudicialNombre(c.getNombreCorto()));
+//            }
 
             return res;
 
@@ -127,10 +127,10 @@ public class PromocionCulturaPersistenceAdapter implements PromocionCulturaPersi
             MovPromocionCulturaEntity saved = repository.save(entidadDb);
             PromocionCultura res = mapper.toDomain(saved);
 
-            if (res.getDistritoJudicialId() != null) {
-                repoCorte.findById(res.getDistritoJudicialId())
-                        .ifPresent(c -> res.setDistritoJudicialNombre(c.getNombreCorto()));
-            }
+//            if (res.getDistritoJudicialId() != null) {
+//                repoCorte.findById(res.getDistritoJudicialId())
+//                        .ifPresent(c -> res.setDistritoJudicialNombre(c.getNombreCorto()));
+//            }
 
             return res;
 
@@ -148,10 +148,10 @@ public class PromocionCulturaPersistenceAdapter implements PromocionCulturaPersi
 
         PromocionCultura dominio = mapper.toDomain(entidad);
 
-        if (dominio.getDistritoJudicialId() != null) {
-            repoCorte.findById(dominio.getDistritoJudicialId())
-                    .ifPresent(c -> dominio.setDistritoJudicialNombre(c.getNombreCorto()));
-        }
+//        if (dominio.getDistritoJudicialId() != null) {
+//            repoCorte.findById(dominio.getDistritoJudicialId())
+//                    .ifPresent(c -> dominio.setDistritoJudicialNombre(c.getNombreCorto()));
+//        }
 
         // Archivos
         List<MovArchivosEntity> archivos = repoArchivos.findByNumeroIdentificacion(id);

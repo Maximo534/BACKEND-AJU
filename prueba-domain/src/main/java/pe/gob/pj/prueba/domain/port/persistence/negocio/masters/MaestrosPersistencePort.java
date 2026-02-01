@@ -1,21 +1,35 @@
 package pe.gob.pj.prueba.domain.port.persistence.negocio.masters;
 
-import pe.gob.pj.prueba.domain.model.negocio.masters.*;
 import java.util.List;
 
-public interface MaestrosPersistencePort {
-    List<ActividadOperativa> listarActividades();
-    List<Indicador> listarIndicadoresPorActividad(String idActividad);
-    List<Tarea> listarTareasPorIndicador(String idIndicador);
-    List<DistritoJudicial> listarDistritosJudiciales();
-    List<Eje> listarEjes();
-    List<Materia> listarMaterias();
-    List<TipoVulnerabilidad> listarTiposVulnerabilidad();
-    List<Tambo> listarTambos(String idCorte);
-    List<Plan> buscarPlanes(String idCorte, String periodo);
-    List<Ubigeo> listarDepartamentos();
-    List<Ubigeo> listarProvincias(String idDepartamento);
-    List<Ubigeo> listarDistritos(String idProvincia);
-    List<TipoParticipante> listarTiposParticipantes();
+import pe.gob.pj.prueba.domain.model.negocio.Perfil;
+import pe.gob.pj.prueba.domain.model.negocio.masters.*;
 
+public interface MaestrosPersistencePort {
+
+    // --- PLANIFICACIÓN ---
+    List<ActividadOperativa> listarActividades(String cuo);
+    List<Indicador> listarIndicadoresPorActividad(String cuo, Long idActividad);
+    List<Tarea> listarTareasPorIndicador(String cuo, Long idIndicador);
+
+    // --- ORGANIZACIÓN JUDICIAL ---
+    List<DistritoJudicial> listarDistritosJudiciales(String cuo);
+    List<Sede> listarSedesPorCorte(String cuo, Long idCorte);
+    List<Instancia> listarInstanciasPorSede(String cuo, Long idSede);
+
+    // --- MAESTROS GENERALES ---
+    List<Eje> listarEjes(String cuo);
+    List<Materia> listarMaterias(String cuo);
+    List<TipoVulnerabilidad> listarTiposVulnerabilidad(String cuo);
+    List<Tambo> listarTambos(String cuo, Long idCorte);
+    List<Plan> buscarPlanes(String cuo, Long idCorte, String periodo);
+
+    // --- UBIGEO ---
+    List<Departamento> listarDepartamentos(String cuo);
+    List<Provincia> listarProvincias(String cuo, Long idDepartamento);
+    List<Distrito> listarDistritos(String cuo, Long idProvincia);
+
+    // --- PARTICIPANTES Y PERFILES ---
+    List<TipoParticipante> listarTiposParticipantes(String cuo);
+    List<Perfil> listarPerfilesPermitidos(String cuo, Integer idRolLogueado);
 }

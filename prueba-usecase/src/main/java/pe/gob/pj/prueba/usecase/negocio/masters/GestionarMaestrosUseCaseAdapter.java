@@ -1,69 +1,120 @@
 package pe.gob.pj.prueba.usecase.negocio.masters;
 
-import lombok.RequiredArgsConstructor;
+import java.sql.SQLException;
+import java.util.List;
+
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Propagation;
+import org.springframework.transaction.annotation.Transactional;
+
+import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
+import pe.gob.pj.prueba.domain.model.negocio.Perfil;
 import pe.gob.pj.prueba.domain.model.negocio.masters.*;
 import pe.gob.pj.prueba.domain.port.persistence.negocio.masters.MaestrosPersistencePort;
 import pe.gob.pj.prueba.domain.port.usecase.negocio.masters.GestionarMaestrosUseCasePort;
 
-import java.util.List;
-
+@Slf4j
 @Service
 @RequiredArgsConstructor
 public class GestionarMaestrosUseCaseAdapter implements GestionarMaestrosUseCasePort {
 
     private final MaestrosPersistencePort persistencePort;
+    private static final String TX_MANAGER = "txManagerNegocio";
 
     @Override
-    public List<ActividadOperativa> listarActividadesOperativas() {
-        return persistencePort.listarActividades();
+    @Transactional(transactionManager = TX_MANAGER, propagation = Propagation.REQUIRES_NEW, readOnly = true, rollbackFor = {Exception.class, SQLException.class})
+    public List<ActividadOperativa> listarActividadesOperativas(String cuo) {
+        return persistencePort.listarActividades(cuo);
     }
+
     @Override
-    public List<Indicador> listarIndicadores(String idActividad) {
-        return persistencePort.listarIndicadoresPorActividad(idActividad);
+    @Transactional(transactionManager = TX_MANAGER, propagation = Propagation.REQUIRES_NEW, readOnly = true, rollbackFor = {Exception.class, SQLException.class})
+    public List<Indicador> listarIndicadores(String cuo, Long idActividad) {
+        return persistencePort.listarIndicadoresPorActividad(cuo, idActividad);
     }
+
     @Override
-    public List<Tarea> listarTareas(String idIndicador) {
-        return persistencePort.listarTareasPorIndicador(idIndicador);
+    @Transactional(transactionManager = TX_MANAGER, propagation = Propagation.REQUIRES_NEW, readOnly = true, rollbackFor = {Exception.class, SQLException.class})
+    public List<Tarea> listarTareas(String cuo, Long idIndicador) {
+        return persistencePort.listarTareasPorIndicador(cuo, idIndicador);
     }
+
     @Override
-    public List<DistritoJudicial> listarDistritosJudiciales() {
-        return persistencePort.listarDistritosJudiciales();
+    @Transactional(transactionManager = TX_MANAGER, propagation = Propagation.REQUIRES_NEW, readOnly = true, rollbackFor = {Exception.class, SQLException.class})
+    public List<DistritoJudicial> listarDistritosJudiciales(String cuo) {
+        return persistencePort.listarDistritosJudiciales(cuo);
     }
+
     @Override
-    public List<Eje> listarEjes() {
-        return persistencePort.listarEjes();
+    @Transactional(transactionManager = TX_MANAGER, propagation = Propagation.REQUIRES_NEW, readOnly = true, rollbackFor = {Exception.class, SQLException.class})
+    public List<Sede> listarSedesPorCorte(String cuo, Long idCorte) {
+        return persistencePort.listarSedesPorCorte(cuo, idCorte);
     }
+
     @Override
-    public List<Materia> listarMaterias() {
-        return persistencePort.listarMaterias();
+    @Transactional(transactionManager = TX_MANAGER, propagation = Propagation.REQUIRES_NEW, readOnly = true, rollbackFor = {Exception.class, SQLException.class})
+    public List<Instancia> listarInstanciasPorSede(String cuo, Long idSede) {
+        return persistencePort.listarInstanciasPorSede(cuo, idSede);
     }
+
     @Override
-    public List<TipoVulnerabilidad> listarTiposVulnerabilidad() {
-        return persistencePort.listarTiposVulnerabilidad();
+    @Transactional(transactionManager = TX_MANAGER, propagation = Propagation.REQUIRES_NEW, readOnly = true, rollbackFor = {Exception.class, SQLException.class})
+    public List<Eje> listarEjes(String cuo) {
+        return persistencePort.listarEjes(cuo);
     }
+
     @Override
-    public List<Tambo> listarTambos(String idCorte) {
-        return persistencePort.listarTambos(idCorte);
+    @Transactional(transactionManager = TX_MANAGER, propagation = Propagation.REQUIRES_NEW, readOnly = true, rollbackFor = {Exception.class, SQLException.class})
+    public List<Materia> listarMaterias(String cuo) {
+        return persistencePort.listarMaterias(cuo);
     }
+
     @Override
-    public List<Plan> buscarPlanes(String idCorte, String periodo) {
-        return persistencePort.buscarPlanes(idCorte, periodo);
+    @Transactional(transactionManager = TX_MANAGER, propagation = Propagation.REQUIRES_NEW, readOnly = true, rollbackFor = {Exception.class, SQLException.class})
+    public List<TipoVulnerabilidad> listarTiposVulnerabilidad(String cuo) {
+        return persistencePort.listarTiposVulnerabilidad(cuo);
     }
+
     @Override
-    public List<Ubigeo> listarDepartamentos() {
-        return persistencePort.listarDepartamentos();
+    @Transactional(transactionManager = TX_MANAGER, propagation = Propagation.REQUIRES_NEW, readOnly = true, rollbackFor = {Exception.class, SQLException.class})
+    public List<Tambo> listarTambos(String cuo, Long idCorte) {
+        return persistencePort.listarTambos(cuo, idCorte);
     }
+
     @Override
-    public List<Ubigeo> listarProvincias(String idDepartamento) {
-        return persistencePort.listarProvincias(idDepartamento);
+    @Transactional(transactionManager = TX_MANAGER, propagation = Propagation.REQUIRES_NEW, readOnly = true, rollbackFor = {Exception.class, SQLException.class})
+    public List<Plan> buscarPlanes(String cuo, Long idCorte, String periodo) {
+        return persistencePort.buscarPlanes(cuo, idCorte, periodo);
     }
+
     @Override
-    public List<Ubigeo> listarDistritos(String idProvincia) {
-        return persistencePort.listarDistritos(idProvincia);
+    @Transactional(transactionManager = TX_MANAGER, propagation = Propagation.REQUIRES_NEW, readOnly = true, rollbackFor = {Exception.class, SQLException.class})
+    public List<Departamento> listarDepartamentos(String cuo) {
+        return persistencePort.listarDepartamentos(cuo);
     }
+
     @Override
-    public List<TipoParticipante> listarTiposParticipantes() {
-        return persistencePort.listarTiposParticipantes();
+    @Transactional(transactionManager = TX_MANAGER, propagation = Propagation.REQUIRES_NEW, readOnly = true, rollbackFor = {Exception.class, SQLException.class})
+    public List<Provincia> listarProvincias(String cuo, Long idDepartamento) {
+        return persistencePort.listarProvincias(cuo, idDepartamento);
+    }
+
+    @Override
+    @Transactional(transactionManager = TX_MANAGER, propagation = Propagation.REQUIRES_NEW, readOnly = true, rollbackFor = {Exception.class, SQLException.class})
+    public List<Distrito> listarDistritos(String cuo, Long idProvincia) {
+        return persistencePort.listarDistritos(cuo, idProvincia);
+    }
+
+    @Override
+    @Transactional(transactionManager = TX_MANAGER, propagation = Propagation.REQUIRES_NEW, readOnly = true, rollbackFor = {Exception.class, SQLException.class})
+    public List<TipoParticipante> listarTiposParticipantes(String cuo) {
+        return persistencePort.listarTiposParticipantes(cuo);
+    }
+
+    @Override
+    @Transactional(transactionManager = TX_MANAGER, propagation = Propagation.REQUIRES_NEW, readOnly = true, rollbackFor = {Exception.class, SQLException.class})
+    public List<Perfil> listarPerfiles(String cuo, Integer idRolLogueado) {
+        return persistencePort.listarPerfilesPermitidos(cuo, idRolLogueado);
     }
 }

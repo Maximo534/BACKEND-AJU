@@ -78,10 +78,10 @@ public class JusticiaPazPersistenceAdapter implements JusticiaPazPersistencePort
         MovJpeCasoAtendidoEntity saved = casoRepository.save(entity);
         JpeCasoAtendido res = mapper.toDomain(saved);
 
-        if (res.getDistritoJudicialId() != null) {
-            repoCorte.findById(res.getDistritoJudicialId())
-                    .ifPresent(c -> res.setDistritoJudicialNombre(c.getNombre()));
-        }
+//        if (res.getDistritoJudicialId() != null) {
+//            repoCorte.findById(res.getDistritoJudicialId())
+//                    .ifPresent(c -> res.setDistritoJudicialNombre(c.getNombre()));
+//        }
         if (saved.getJuezEscolar() != null) {
             MaeJuezPazEscolarEntity juez = saved.getJuezEscolar();
             res.setJuezEscolarNombre(juez.getNombres() + " " + juez.getApePaterno() + " " + juez.getApeMaterno());
@@ -89,10 +89,10 @@ public class JusticiaPazPersistenceAdapter implements JusticiaPazPersistencePort
 
             if (juez.getInstitucionEducativa() != null) {
                 res.setInstitucionNombre(juez.getInstitucionEducativa().getNombre());
-                res.setInstitucionEducativaId(juez.getInstitucionEducativa().getId());
+//                res.setInstitucionEducativaId(juez.getInstitucionEducativa().getId());
                 if (juez.getInstitucionEducativa().getUgel() != null) {
                     res.setUgelNombre(juez.getInstitucionEducativa().getUgel().getNombre());
-                    res.setUgelId(juez.getInstitucionEducativa().getUgel().getId());
+//                    res.setUgelId(juez.getInstitucionEducativa().getUgel().getId());
                 }
             }
         }
@@ -117,10 +117,10 @@ public class JusticiaPazPersistenceAdapter implements JusticiaPazPersistencePort
         MovJpeCasoAtendidoEntity saved = casoRepository.save(entityDb);
         JpeCasoAtendido res = mapper.toDomain(saved);
 
-        if (res.getDistritoJudicialId() != null) {
-            repoCorte.findById(res.getDistritoJudicialId())
-                    .ifPresent(c -> res.setDistritoJudicialNombre(c.getNombre()));
-        }
+//        if (res.getDistritoJudicialId() != null) {
+//            repoCorte.findById(res.getDistritoJudicialId())
+//                    .ifPresent(c -> res.setDistritoJudicialNombre(c.getNombre()));
+//        }
         if (saved.getJuezEscolar() != null) {
             MaeJuezPazEscolarEntity juez = saved.getJuezEscolar();
             res.setJuezEscolarNombre(juez.getNombres() + " " + juez.getApePaterno() + " " + juez.getApeMaterno());
@@ -128,10 +128,10 @@ public class JusticiaPazPersistenceAdapter implements JusticiaPazPersistencePort
 
             if (juez.getInstitucionEducativa() != null) {
                 res.setInstitucionNombre(juez.getInstitucionEducativa().getNombre());
-                res.setInstitucionEducativaId(juez.getInstitucionEducativa().getId());
+//                res.setInstitucionEducativaId(juez.getInstitucionEducativa().getId());
                 if (juez.getInstitucionEducativa().getUgel() != null) {
                     res.setUgelNombre(juez.getInstitucionEducativa().getUgel().getNombre());
-                    res.setUgelId(juez.getInstitucionEducativa().getUgel().getId());
+//                    res.setUgelId(juez.getInstitucionEducativa().getUgel().getId());
                 }
             }
         }
@@ -147,10 +147,10 @@ public class JusticiaPazPersistenceAdapter implements JusticiaPazPersistencePort
 
         JpeCasoAtendido dominio = mapper.toDomain(entity);
 
-        if (dominio.getDistritoJudicialId() != null) {
-            repoCorte.findById(dominio.getDistritoJudicialId())
-                    .ifPresent(c -> dominio.setDistritoJudicialNombre(c.getNombre()));
-        }
+//        if (dominio.getDistritoJudicialId() != null) {
+//            repoCorte.findById(dominio.getDistritoJudicialId())
+//                    .ifPresent(c -> dominio.setDistritoJudicialNombre(c.getNombre()));
+//        }
         if (entity.getJuezEscolar() != null) {
             MaeJuezPazEscolarEntity juez = entity.getJuezEscolar();
             dominio.setJuezEscolarNombre(juez.getNombres() + " " + juez.getApePaterno() + " " + juez.getApeMaterno());
@@ -158,10 +158,10 @@ public class JusticiaPazPersistenceAdapter implements JusticiaPazPersistencePort
 
             if (juez.getInstitucionEducativa() != null) {
                 dominio.setInstitucionNombre(juez.getInstitucionEducativa().getNombre());
-                dominio.setInstitucionEducativaId(juez.getInstitucionEducativa().getId());
+//                dominio.setInstitucionEducativaId(juez.getInstitucionEducativa().getId());
                 if (juez.getInstitucionEducativa().getUgel() != null) {
                     dominio.setUgelNombre(juez.getInstitucionEducativa().getUgel().getNombre());
-                    dominio.setUgelId(juez.getInstitucionEducativa().getUgel().getId());
+//                    dominio.setUgelId(juez.getInstitucionEducativa().getUgel().getId());
                 }
             }
         }
@@ -191,8 +191,8 @@ public class JusticiaPazPersistenceAdapter implements JusticiaPazPersistencePort
         for (Object[] row : data) {
             String idCorte = (String) row[0];
             Long cant = (Long) row[1];
-            String nombre = repoCorte.findById(idCorte).map(c -> c.getNombre()).orElse(idCorte);
-            lista.add(ResumenEstadistico.builder().etiqueta(nombre).cantidad(cant).build());
+//            String nombre = repoCorte.findById(idCorte).map(c -> c.getNombre()).orElse(idCorte);
+//            lista.add(ResumenEstadistico.builder().etiqueta(nombre).cantidad(cant).build());
         }
         return lista;
     }

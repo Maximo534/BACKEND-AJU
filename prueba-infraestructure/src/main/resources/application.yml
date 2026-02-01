@@ -1,6 +1,6 @@
 spring:
   config:
-    import: "classpath:prueba-api.yml"
+    import: "classpath:acceso-justicia-api.yml"
   jpa:
     properties:
       hibernate:

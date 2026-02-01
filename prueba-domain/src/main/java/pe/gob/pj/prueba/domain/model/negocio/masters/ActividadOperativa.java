@@ -1,12 +1,21 @@
 package pe.gob.pj.prueba.domain.model.negocio.masters;
 
+import java.io.Serializable;
+import lombok.AccessLevel;
 import lombok.Builder;
 import lombok.Data;
+import lombok.EqualsAndHashCode;
+import lombok.experimental.FieldDefaults;
 
 @Data
 @Builder
-public class ActividadOperativa {
-    private String id;
-    private String descripcion;
-    private String activo;
+@EqualsAndHashCode(callSuper = false)
+@FieldDefaults(level = AccessLevel.PRIVATE)
+public class ActividadOperativa implements Serializable {
+
+    static final long serialVersionUID = 1L;
+
+    Long id;
+    String descripcion;
+    String activo;
 }

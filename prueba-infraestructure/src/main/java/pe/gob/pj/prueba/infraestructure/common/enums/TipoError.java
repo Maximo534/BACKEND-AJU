@@ -41,9 +41,10 @@ public enum TipoError {
   TIPO_DOCUMENTO_NO_EXISTE("N004","El tipo de documento de identidad no existe.",null),
   PERSONA_YA_REGISTRADA("N005","La persona con los datos proporcionados ya está registrada en el sistema.",null),
   USUARIO_NO_ES_DE_PODER_JUDICIAL("N006","El usuario %s no pertenece al Poder Judicial.",null),
-  NUEVO_TOKEN_NO_VALIDO("N007","Ocurrió un error al generar nuevo token de seguridad.",null)
-  ;
-  
+  NUEVO_TOKEN_NO_VALIDO("N007","Ocurrió un error al generar nuevo token de seguridad.",null),
+  MAESTRO_NO_ENCONTRADO("N008", "No se encontró información para el maestro solicitado.", null),
+  USUARIO_YA_REGISTRADO("N009", "El nombre de usuario (login) ya se encuentra registrado.", null);
+
   String codigo;
   String descripcionUsuario;
   String descripcionTecnica;

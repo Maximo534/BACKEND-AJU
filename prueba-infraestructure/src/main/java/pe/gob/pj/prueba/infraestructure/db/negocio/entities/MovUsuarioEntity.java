@@ -4,34 +4,19 @@ import java.io.Serializable;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
-import jakarta.persistence.CascadeType;
-import jakarta.persistence.Column;
-import jakarta.persistence.Entity;
-import jakarta.persistence.FetchType;
-import jakarta.persistence.GeneratedValue;
-import jakarta.persistence.GenerationType;
-import jakarta.persistence.Id;
-import jakarta.persistence.JoinColumn;
-import jakarta.persistence.ManyToOne;
-import jakarta.persistence.OneToMany;
-import jakarta.persistence.SequenceGenerator;
-import jakarta.persistence.Table;
+
+import jakarta.persistence.*;
+
 import lombok.AccessLevel;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
 import lombok.experimental.FieldDefaults;
+
 import pe.gob.pj.prueba.domain.common.enums.Estado;
 import pe.gob.pj.prueba.infraestructure.common.enums.OperacionBaseDatos;
 import pe.gob.pj.prueba.infraestructure.common.utils.EsquemaConstants;
 import pe.gob.pj.prueba.infraestructure.common.utils.InformacionRedUtils;
 
-/**
- * 
- * Clase que mapea las propiedades de la tabla indicada en el Table
- * 
- * @author oruizb
- * @version 1.0,07/02/2022
- */
 @Data
 @EqualsAndHashCode(callSuper = false)
 @FieldDefaults(level = AccessLevel.PRIVATE)
@@ -43,18 +28,41 @@ public class MovUsuarioEntity implements Serializable {
 
   @Id
   @SequenceGenerator(name = "SEQ_MOV_USUARIO", schema = EsquemaConstants.PRUEBA,
-      sequenceName = "USEQ_MOV_USUARIO", initialValue = 1, allocationSize = 1)
+          sequenceName = "USEQ_MOV_USUARIO", initialValue = 1, allocationSize = 1)
   @GeneratedValue(strategy = GenerationType.SEQUENCE, generator = "SEQ_MOV_USUARIO")
-  @Column(name = "N_USUARIO", nullable = false)
+  @Column(name = "N_USUARIO_ID", nullable = false)
   Integer id;
+
   @Column(name = "X_USUARIO", nullable = false)
-  String usuario;
+  String usuario; // Login
+
   @Column(name = "X_CLAVE", nullable = false)
   String clave;
 
-  @ManyToOne(optional = false, cascade = CascadeType.PERSIST, fetch = FetchType.LAZY)
-  @JoinColumn(name = "N_PERSONA")
-  MovPersonaEntity persona;
+  @Column(name = "X_CARGO")
+  String cargo;
+
+  @Column(name = "C_SIGLA")
+  String sigla;
+
+  @Column(name = "X_EMAIL")
+  String email;
+
+  @Column(name = "N_DISTRITO_JUD_ID")
+  Integer idDistritoJudicial;
+
+  @Column(name = "N_INSTANCIA_ID")
+  Integer idInstancia;
+
+  @Column(name = "X_NOMBRE_COMPLETO")
+  String nombreCompleto;
+
+  @Column(name = "X_RUTA_FOTO")
+  String rutaFoto;
+
+  @Column(name = "X_NOM_FOTO")
+  String nomFoto;
+  // ------------------------------------
 
   @OneToMany(mappedBy = "usuario", fetch = FetchType.LAZY)
   private List<MovUsuarioPerfilEntity> perfils = new ArrayList<>();
@@ -64,6 +72,7 @@ public class MovUsuarioEntity implements Serializable {
   LocalDateTime fAud = LocalDateTime.now();
   @Column(name = "B_AUD")
   String bAud = OperacionBaseDatos.INSERTAR.getNombre();
+
   @Column(name = "C_AUD_UID")
   String cAudId;
   @Column(name = "C_AUD_UIDRED")
@@ -74,7 +83,22 @@ public class MovUsuarioEntity implements Serializable {
   String cAudIp = InformacionRedUtils.getIp();
   @Column(name = "C_AUD_MCADDR")
   String cAudMcAddr = InformacionRedUtils.getMac();
+
   @Column(name = "L_ACTIVO", length = 1, nullable = false)
   String activo = Estado.ACTIVO_NUMERICO.getNombre();
+
+  @PrePersist
+  @PreUpdate
+  public void prePersist() {
+    if (this.rutaFoto == null || this.rutaFoto.isBlank()) {
+      this.rutaFoto = "-";
+    }
+    if (this.nomFoto == null || this.nomFoto.isBlank()) {
+      this.nomFoto = "-";
+    }
+    if (this.activo == null) {
+      this.activo = "1";
+    }
+  }
 
 }

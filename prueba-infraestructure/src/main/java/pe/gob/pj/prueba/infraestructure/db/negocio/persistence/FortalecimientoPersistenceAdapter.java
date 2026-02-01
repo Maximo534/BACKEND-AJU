@@ -82,10 +82,10 @@ public class FortalecimientoPersistenceAdapter implements FortalecimientoPersist
             FortalecimientoCapacidades res = mapper.toDomain(guardado);
 
             //  Enriquecer con nombre para devolver al front
-            if (res.getDistritoJudicialId() != null) {
-                repoDistrito.findById(res.getDistritoJudicialId())
-                        .ifPresent(d -> res.setDistritoJudicialNombre(d.getNombre()));
-            }
+//            if (res.getDistritoJudicialId() != null) {
+//                repoDistrito.findById(res.getDistritoJudicialId())
+//                        .ifPresent(d -> res.setDistritoJudicialNombre(d.getNombre()));
+//            }
 
             return res;
 
@@ -139,10 +139,10 @@ public class FortalecimientoPersistenceAdapter implements FortalecimientoPersist
             FortalecimientoCapacidades res = mapper.toDomain(guardado);
 
             // Enriquecer con nombre
-            if (res.getDistritoJudicialId() != null) {
-                repoDistrito.findById(res.getDistritoJudicialId())
-                        .ifPresent(d -> res.setDistritoJudicialNombre(d.getNombre()));
-            }
+//            if (res.getDistritoJudicialId() != null) {
+//                repoDistrito.findById(res.getDistritoJudicialId())
+//                        .ifPresent(d -> res.setDistritoJudicialNombre(d.getNombre()));
+//            }
 
             return res;
 
@@ -161,10 +161,10 @@ public class FortalecimientoPersistenceAdapter implements FortalecimientoPersist
         FortalecimientoCapacidades dominio = mapper.toDomain(entidad);
 
         // Enriquecer con nombre
-        if (dominio.getDistritoJudicialId() != null) {
-            repoDistrito.findById(dominio.getDistritoJudicialId())
-                    .ifPresent(d -> dominio.setDistritoJudicialNombre(d.getNombre()));
-        }
+//        if (dominio.getDistritoJudicialId() != null) {
+//            repoDistrito.findById(dominio.getDistritoJudicialId())
+//                    .ifPresent(d -> dominio.setDistritoJudicialNombre(d.getNombre()));
+//        }
 
         // Archivos
         List<MovArchivosEntity> archivos = repoArchivos.findByNumeroIdentificacion(id);

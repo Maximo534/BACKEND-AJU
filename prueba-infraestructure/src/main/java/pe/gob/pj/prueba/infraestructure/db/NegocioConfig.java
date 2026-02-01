@@ -37,7 +37,8 @@ public class NegocioConfig {
   @Bean(name = "cxNegocioDS")
   DataSource negocioDataSource() throws NamingException {
     return (DataSource) new InitialContext()
-        .lookup("java:jboss/datasources/servicioPruebaAPINegocio");
+//        .lookup("java:jboss/datasources/servicioPruebaAPINegocio");
+    .lookup("java:jboss/datasources/accesojuscticiaApiAccesooJusticia");
   }
 
   // Para EntityManager

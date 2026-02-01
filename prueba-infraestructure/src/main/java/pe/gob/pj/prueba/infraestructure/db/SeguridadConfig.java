@@ -39,7 +39,7 @@ public class SeguridadConfig {
   @Primary
   DataSource seguridadDataSource() throws NamingException {
     return (DataSource) new InitialContext()
-        .lookup("java:jboss/datasources/servicioPruebaAPISeguridad");
+        .lookup("java:jboss/datasources/accesojusticiaAPISeguridad");
   }
 
   @Bean(name = "seguridadEntityManagerFactory")

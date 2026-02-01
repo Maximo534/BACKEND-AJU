@@ -23,7 +23,7 @@ public class ReporteBuenaPracticaService {
     @Value("${app.frontend.url:http://localhost:4200}")
     private String baseUrl;
 
-    // --- FUENTES & ESTILOS (Estandarizados) ---
+    // --- FUENTES & ESTILOS---
     private static final Font FONT_TITULO = FontFactory.getFont(FontFactory.HELVETICA_BOLD, 11);
     private static final Font FONT_BOLD_12 = FontFactory.getFont(FontFactory.HELVETICA_BOLD, 12);
     private static final Font FONT_BOLD_10 = FontFactory.getFont(FontFactory.HELVETICA_BOLD, 10);

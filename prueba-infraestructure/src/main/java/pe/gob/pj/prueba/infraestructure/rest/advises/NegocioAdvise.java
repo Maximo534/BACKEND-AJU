@@ -8,12 +8,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import lombok.AccessLevel;
 import lombok.experimental.FieldDefaults;
 import pe.gob.pj.prueba.domain.exceptions.general.RolUsuarioTokenNoPermitidoException;
-import pe.gob.pj.prueba.domain.exceptions.negocio.CredencialesSinCoincidenciaException;
-import pe.gob.pj.prueba.domain.exceptions.negocio.OpcionesNoAsignadadException;
-import pe.gob.pj.prueba.domain.exceptions.negocio.PersonaYaExisteException;
-import pe.gob.pj.prueba.domain.exceptions.negocio.TipoDocumentoNoExisteException;
-import pe.gob.pj.prueba.domain.exceptions.negocio.UsuarioNoEsDePoderJudicialExcepcion;
-import pe.gob.pj.prueba.domain.exceptions.negocio.UsuarioSinPerfilAsignadoException;
+import pe.gob.pj.prueba.domain.exceptions.negocio.*;
 import pe.gob.pj.prueba.domain.port.usecase.auditoriageneral.AuditarPeticionUseCasePort;
 import pe.gob.pj.prueba.infraestructure.common.enums.TipoError;
 import pe.gob.pj.prueba.infraestructure.mappers.AuditoriaGeneralMapper;
@@ -86,5 +81,25 @@ public class NegocioAdvise extends DefaultAdvise {
         .ok(handleResponse(peticion, TipoError.NUEVO_TOKEN_NO_VALIDO, ex));
   }
 
+  @ExceptionHandler({MaestroNoEncontradoException.class})
+  ResponseEntity<GlobalResponse> handleMaestroNoEncontradoException(
+          MaestroNoEncontradoException ex, WebRequest request) {
+
+    var peticion = obtenerPeticionServicio(request, TipoError.MAESTRO_NO_ENCONTRADO);
+    guardarAuditoria(peticion);
+
+    return ResponseEntity.ok(handleResponse(peticion, TipoError.MAESTRO_NO_ENCONTRADO, ex));
+  }
+
+  @ExceptionHandler({UsuarioDuplicadoException.class})
+  ResponseEntity<GlobalResponse> handleUsuarioDuplicadoException(
+          UsuarioDuplicadoException ex, WebRequest request) {
+
+    var peticion = obtenerPeticionServicio(request, TipoError.USUARIO_YA_REGISTRADO);
+
+    guardarAuditoria(peticion);
+
+    return ResponseEntity.ok(handleResponse(peticion, TipoError.USUARIO_YA_REGISTRADO, ex));
+  }
 
 }

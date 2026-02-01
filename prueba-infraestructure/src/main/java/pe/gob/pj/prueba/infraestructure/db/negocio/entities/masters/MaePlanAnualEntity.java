@@ -1,37 +1,78 @@
 package pe.gob.pj.prueba.infraestructure.db.negocio.entities.masters;
 
-import jakarta.persistence.*;
-import lombok.Data;
-import pe.gob.pj.prueba.infraestructure.common.utils.EsquemaConstants;
-
 import java.io.Serializable;
+import java.time.LocalDateTime;
 
-@Entity
-@Table(name = "mae_aju_plan_anuales", schema = EsquemaConstants.PRUEBA)
+import jakarta.persistence.*;
+
+import lombok.AccessLevel;
+import lombok.Data;
+import lombok.EqualsAndHashCode;
+import lombok.experimental.FieldDefaults;
+
+import pe.gob.pj.prueba.domain.common.enums.Estado;
+import pe.gob.pj.prueba.infraestructure.common.enums.OperacionBaseDatos;
+import pe.gob.pj.prueba.infraestructure.common.utils.EsquemaConstants;
+import pe.gob.pj.prueba.infraestructure.common.utils.InformacionRedUtils;
+
 @Data
+@EqualsAndHashCode(callSuper = false)
+@FieldDefaults(level = AccessLevel.PRIVATE)
+@Entity
+@Table(name = "mae_plan_anual", schema = EsquemaConstants.PRUEBA)
 public class MaePlanAnualEntity implements Serializable {
 
-    private static final long serialVersionUID = 1L;
+    static final long serialVersionUID = 1L;
 
     @Id
-    @Column(name = "c_plan_id", length = 4)
-    private String id;
+    @SequenceGenerator(name = "SEQ_MAE_PLAN", schema = EsquemaConstants.PRUEBA, sequenceName = "useq_mae_plan_anual", initialValue = 1, allocationSize = 1)
+    @GeneratedValue(strategy = GenerationType.SEQUENCE, generator = "SEQ_MAE_PLAN")
+    @Column(name = "n_plan_id", nullable = false)
+    Long id;
 
     @Column(name = "x_descripcion", length = 100, nullable = false)
-    private String descripcion;
+    String descripcion;
 
     @Column(name = "c_periodo", length = 4, nullable = false)
-    private String periodo;
+    String periodo;
 
     @Column(name = "x_res_gap", length = 50, nullable = false)
-    private String resolucionGerencia;
+    String resolucionGerencia;
 
     @Column(name = "x_res_ap", length = 40, nullable = false)
-    private String resolucionAprobacion;
+    String resolucionAprobacion;
 
     @Column(name = "x_sigla", length = 80, nullable = false)
-    private String sigla;
+    String sigla;
 
-    @Column(name = "c_distrito_jud_id", length = 2, nullable = false)
-    private String distritoJudicialId;
+    @Column(name = "n_distrito_jud_id", nullable = false)
+    Long distritoJudicialId;
+
+    // --- AUDITORÍA ---
+    @Column(name = "l_activo", length = 1, nullable = false)
+    String activo = Estado.ACTIVO_NUMERICO.getNombre();
+
+    @Column(name = "f_registro", insertable = false, updatable = false)
+    LocalDateTime fRegistro;
+
+    @Column(name = "f_aud")
+    LocalDateTime fAud = LocalDateTime.now();
+
+    @Column(name = "b_aud")
+    String bAud = OperacionBaseDatos.INSERTAR.getNombre();
+
+    @Column(name = "c_aud_uid")
+    String cAudId;
+
+    @Column(name = "c_aud_uidred")
+    String cAudIdRed = InformacionRedUtils.getNombreRed();
+
+    @Column(name = "c_aud_pc")
+    String cAudPc = InformacionRedUtils.getPc();
+
+    @Column(name = "c_aud_ip")
+    String cAudIp = InformacionRedUtils.getIp();
+
+    @Column(name = "c_aud_mcaddr")
+    String cAudMcAddr = InformacionRedUtils.getMac();
 }

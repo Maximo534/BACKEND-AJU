@@ -6,6 +6,6 @@ import pe.gob.pj.prueba.infraestructure.db.negocio.entities.masters.MaeCategoria
 import java.util.List;
 
 @Repository
-public interface MaeCategoriaDocumentoRepository extends JpaRepository<MaeCategoriaDocumentoEntity, Integer> {
+public interface MaeCategoriaDocumentoRepository extends JpaRepository<MaeCategoriaDocumentoEntity, Long> {
     List<MaeCategoriaDocumentoEntity> findByActivo(String activo);
 }

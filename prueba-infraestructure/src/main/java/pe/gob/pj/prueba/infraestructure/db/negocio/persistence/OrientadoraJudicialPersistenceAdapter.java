@@ -68,11 +68,11 @@ public class OrientadoraJudicialPersistenceAdapter implements OrientadoraJudicia
         MovOrientadoraJudicialEntity saved = repository.save(entity);
         OrientadoraJudicial res = mapper.toDomain(saved);
 
-        // ✅ ENRIQUECIMIENTO INLINE
-        if (res.getDistritoJudicialId() != null) {
-            repoDistrito.findById(res.getDistritoJudicialId())
-                    .ifPresent(c -> res.setDistritoJudicialNombre(c.getNombreCorto()));
-        }
+        //  ENRIQUECIMIENTO INLINE
+//        if (res.getDistritoJudicialId() != null) {
+//            repoDistrito.findById(res.getDistritoJudicialId())
+//                    .ifPresent(c -> res.setDistritoJudicialNombre(c.getNombreCorto()));
+//        }
         return res;
     }
 
@@ -87,10 +87,10 @@ public class OrientadoraJudicialPersistenceAdapter implements OrientadoraJudicia
         MovOrientadoraJudicialEntity saved = repository.save(dbEntity);
         OrientadoraJudicial res = mapper.toDomain(saved);
 
-        if (res.getDistritoJudicialId() != null) {
-            repoDistrito.findById(res.getDistritoJudicialId())
-                    .ifPresent(c -> res.setDistritoJudicialNombre(c.getNombreCorto()));
-        }
+//        if (res.getDistritoJudicialId() != null) {
+//            repoDistrito.findById(res.getDistritoJudicialId())
+//                    .ifPresent(c -> res.setDistritoJudicialNombre(c.getNombreCorto()));
+//        }
         return res;
     }
 
@@ -101,10 +101,10 @@ public class OrientadoraJudicialPersistenceAdapter implements OrientadoraJudicia
         if (entity == null) return null;
 
         OrientadoraJudicial dominio = mapper.toDomain(entity);
-        if (dominio.getDistritoJudicialId() != null) {
-            repoDistrito.findById(dominio.getDistritoJudicialId())
-                    .ifPresent(c -> dominio.setDistritoJudicialNombre(c.getNombreCorto()));
-        }
+//        if (dominio.getDistritoJudicialId() != null) {
+//            repoDistrito.findById(dominio.getDistritoJudicialId())
+//                    .ifPresent(c -> dominio.setDistritoJudicialNombre(c.getNombreCorto()));
+//        }
 
         // Archivos
         List<MovArchivosEntity> archivos = repoArchivos.findByNumeroIdentificacion(id);
@@ -133,11 +133,11 @@ public class OrientadoraJudicialPersistenceAdapter implements OrientadoraJudicia
             String distritoId = (String) row[0];
             Long cantidad = (Long) row[1];
 
-            String nombreCorte = repoDistrito.findById(distritoId)
-                    .map(d -> d.getNombre()).orElse("Corte " + distritoId);
-
-            lista.add(ResumenEstadistico.builder()
-                    .etiqueta(nombreCorte).cantidad(cantidad).build());
+//            String nombreCorte = repoDistrito.findById(distritoId)
+//                    .map(d -> d.getNombre()).orElse("Corte " + distritoId);
+//
+//            lista.add(ResumenEstadistico.builder()
+//                    .etiqueta(nombreCorte).cantidad(cantidad).build());
         }
         return lista;
     }

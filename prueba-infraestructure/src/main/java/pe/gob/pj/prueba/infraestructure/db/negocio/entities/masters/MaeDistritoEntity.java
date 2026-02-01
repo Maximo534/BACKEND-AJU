@@ -1,34 +1,75 @@
 package pe.gob.pj.prueba.infraestructure.db.negocio.entities.masters;
 
-import jakarta.persistence.*;
-import lombok.Data;
-import pe.gob.pj.prueba.infraestructure.common.utils.EsquemaConstants;
-
 import java.io.Serializable;
+import java.time.LocalDateTime;
 
-@Entity
-@Table(name = "mae_aju_distritos", schema = EsquemaConstants.PRUEBA)
+import jakarta.persistence.*;
+
+import lombok.AccessLevel;
+import lombok.Data;
+import lombok.EqualsAndHashCode;
+import lombok.experimental.FieldDefaults;
+
+import pe.gob.pj.prueba.domain.common.enums.Estado;
+import pe.gob.pj.prueba.infraestructure.common.enums.OperacionBaseDatos;
+import pe.gob.pj.prueba.infraestructure.common.utils.EsquemaConstants;
+import pe.gob.pj.prueba.infraestructure.common.utils.InformacionRedUtils;
+
 @Data
+@EqualsAndHashCode(callSuper = false)
+@FieldDefaults(level = AccessLevel.PRIVATE)
+@Entity
+@Table(name = "mae_distrito", schema = EsquemaConstants.PRUEBA)
 public class MaeDistritoEntity implements Serializable {
 
-    private static final long serialVersionUID = 1L;
+    static final long serialVersionUID = 1L;
 
     @Id
-    @Column(name = "c_dist_id", length = 6)
-    private String id;
+    @SequenceGenerator(name = "SEQ_MAE_DIST", schema = EsquemaConstants.PRUEBA, sequenceName = "useq_mae_distrito", initialValue = 1, allocationSize = 1)
+    @GeneratedValue(strategy = GenerationType.SEQUENCE, generator = "SEQ_MAE_DIST")
+    @Column(name = "n_dist_id", nullable = false)
+    Long id;
+
+    @Column(name = "c_codigo", length = 6, nullable = false)
+    String codigo;
 
     @Column(name = "x_nombre", length = 45)
-    private String nombre;
+    String nombre;
 
     @Column(name = "x_lati_geog", columnDefinition = "TEXT")
-    private String latitud;
+    String latitud;
 
     @Column(name = "x_long_geog", columnDefinition = "TEXT")
-    private String longitud;
+    String longitud;
 
-    @Column(name = "c_prov_id", length = 4)
-    private String provinciaId;
+    @Column(name = "n_prov_id", nullable = false)
+    Long provinciaId;
 
-    @Column(name = "c_depa_id", length = 2)
-    private String departamentoId;
+    // --- AUDITORÍA ---
+    @Column(name = "l_activo", length = 1, nullable = false)
+    String activo = Estado.ACTIVO_NUMERICO.getNombre();
+
+    @Column(name = "f_registro", insertable = false, updatable = false)
+    LocalDateTime fRegistro;
+
+    @Column(name = "f_aud")
+    LocalDateTime fAud = LocalDateTime.now();
+
+    @Column(name = "b_aud")
+    String bAud = OperacionBaseDatos.INSERTAR.getNombre();
+
+    @Column(name = "c_aud_uid")
+    String cAudId;
+
+    @Column(name = "c_aud_uidred")
+    String cAudIdRed = InformacionRedUtils.getNombreRed();
+
+    @Column(name = "c_aud_pc")
+    String cAudPc = InformacionRedUtils.getPc();
+
+    @Column(name = "c_aud_ip")
+    String cAudIp = InformacionRedUtils.getIp();
+
+    @Column(name = "c_aud_mcaddr")
+    String cAudMcAddr = InformacionRedUtils.getMac();
 }

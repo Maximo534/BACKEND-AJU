@@ -82,11 +82,11 @@ public class LlapanchikpaqPersistenceAdapter implements LlapanchikpaqPersistence
         MovLlapanchikpaqJusticiaEntity saved = repository.save(entity);
         LlapanchikpaqJusticia res = mapper.toDomain(saved);
 
-        // ✅ Enriquecer nombre inline
-        if (res.getDistritoJudicialId() != null) {
-            repoCorte.findById(res.getDistritoJudicialId())
-                    .ifPresent(d -> res.setDistritoJudicialNombre(d.getNombre()));
-        }
+        // Enriquecer nombre inline
+//        if (res.getDistritoJudicialId() != null) {
+//            repoCorte.findById(res.getDistritoJudicialId())
+//                    .ifPresent(d -> res.setDistritoJudicialNombre(d.getNombre()));
+//        }
 
         return res;
     }
@@ -146,11 +146,11 @@ public class LlapanchikpaqPersistenceAdapter implements LlapanchikpaqPersistence
         MovLlapanchikpaqJusticiaEntity saved = repository.save(entityDb);
         LlapanchikpaqJusticia res = mapper.toDomain(saved);
 
-        // ✅ Enriquecer nombre inline
-        if (res.getDistritoJudicialId() != null) {
-            repoCorte.findById(res.getDistritoJudicialId())
-                    .ifPresent(d -> res.setDistritoJudicialNombre(d.getNombre()));
-        }
+        // Enriquecer nombre inline
+//        if (res.getDistritoJudicialId() != null) {
+//            repoCorte.findById(res.getDistritoJudicialId())
+//                    .ifPresent(d -> res.setDistritoJudicialNombre(d.getNombre()));
+//        }
 
         return res;
     }
@@ -164,10 +164,10 @@ public class LlapanchikpaqPersistenceAdapter implements LlapanchikpaqPersistence
         LlapanchikpaqJusticia dominio = mapper.toDomain(entity);
 
         // ✅ Enriquecer nombre inline
-        if (dominio.getDistritoJudicialId() != null) {
-            repoCorte.findById(dominio.getDistritoJudicialId())
-                    .ifPresent(d -> dominio.setDistritoJudicialNombre(d.getNombre()));
-        }
+//        if (dominio.getDistritoJudicialId() != null) {
+//            repoCorte.findById(dominio.getDistritoJudicialId())
+//                    .ifPresent(d -> dominio.setDistritoJudicialNombre(d.getNombre()));
+//        }
 
         // Archivos
         List<MovArchivosEntity> archivos = repoArchivos.findByNumeroIdentificacion(id);
@@ -191,8 +191,8 @@ public class LlapanchikpaqPersistenceAdapter implements LlapanchikpaqPersistence
         for(Object[] row : data) {
             String idCorte = (String) row[0];
             Long cant = (Long) row[1];
-            String nombre = repoCorte.findById(idCorte).map(c -> c.getNombre()).orElse(idCorte);
-            lista.add(ResumenEstadistico.builder().etiqueta(nombre).cantidad(cant).build());
+//            String nombre = repoCorte.findById(idCorte).map(c -> c.getNombre()).orElse(idCorte);
+//            lista.add(ResumenEstadistico.builder().etiqueta(nombre).cantidad(cant).build());
         }
         return lista;
     }

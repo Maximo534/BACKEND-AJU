@@ -1,16 +1,22 @@
 package pe.gob.pj.prueba.domain.model.negocio.masters;
 
-import lombok.AllArgsConstructor;
+import java.io.Serializable;
+import lombok.AccessLevel;
 import lombok.Builder;
 import lombok.Data;
-import lombok.NoArgsConstructor;
+import lombok.EqualsAndHashCode;
+import lombok.experimental.FieldDefaults;
 
 @Data
 @Builder
-@NoArgsConstructor
-@AllArgsConstructor
-public class TipoParticipante {
-    private Integer id;
-    private String descripcion;
-    private String detalle;
+@EqualsAndHashCode(callSuper = false)
+@FieldDefaults(level = AccessLevel.PRIVATE)
+public class TipoParticipante implements Serializable {
+
+    static final long serialVersionUID = 1L;
+
+    Long id;
+    String descripcion;
+    String detalle;
+    String activo;
 }

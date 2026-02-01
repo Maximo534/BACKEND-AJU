@@ -70,10 +70,10 @@ public class BuenaPracticaPersistenceAdapter implements BuenaPracticaPersistence
         BuenaPractica dominio = mapper.toDomain(entity);
 
         // Enriquecer con Nombre de Distrito Judicial
-        if (dominio.getDistritoJudicialId() != null) {
-            repoDistrito.findById(dominio.getDistritoJudicialId())
-                    .ifPresent(d -> dominio.setDistritoJudicialNombre(d.getNombre()));
-        }
+//        if (dominio.getDistritoJudicialId() != null) {
+//            repoDistrito.findById(dominio.getDistritoJudicialId())
+//                    .ifPresent(d -> dominio.setDistritoJudicialNombre(d.getNombre()));
+//        }
 
         // Enriquecer con archivos
         List<MovArchivosEntity> archivosEntities = repoArchivos.findByNumeroIdentificacion(id);
@@ -100,10 +100,10 @@ public class BuenaPracticaPersistenceAdapter implements BuenaPracticaPersistence
         BuenaPractica result = mapper.toDomain(saved);
 
         // Enriquecer con Nombre para devolverlo al Front
-        if (result.getDistritoJudicialId() != null) {
-            repoDistrito.findById(result.getDistritoJudicialId())
-                    .ifPresent(d -> result.setDistritoJudicialNombre(d.getNombre()));
-        }
+//        if (result.getDistritoJudicialId() != null) {
+//            repoDistrito.findById(result.getDistritoJudicialId())
+//                    .ifPresent(d -> result.setDistritoJudicialNombre(d.getNombre()));
+//        }
 
         return result;
     }
@@ -126,10 +126,10 @@ public class BuenaPracticaPersistenceAdapter implements BuenaPracticaPersistence
         BuenaPractica result = mapper.toDomain(saved);
 
         //  Enriquecer con Nombre para devolverlo al Front
-        if (result.getDistritoJudicialId() != null) {
-            repoDistrito.findById(result.getDistritoJudicialId())
-                    .ifPresent(d -> result.setDistritoJudicialNombre(d.getNombre()));
-        }
+//        if (result.getDistritoJudicialId() != null) {
+//            repoDistrito.findById(result.getDistritoJudicialId())
+//                    .ifPresent(d -> result.setDistritoJudicialNombre(d.getNombre()));
+//        }
 
         return result;
     }
@@ -148,11 +148,11 @@ public class BuenaPracticaPersistenceAdapter implements BuenaPracticaPersistence
             String distritoId = (String) row[0];
             Long cantidad = (Long) row[1];
 
-            String nombreCorte = repoDistrito.findById(distritoId)
-                    .map(d -> d.getNombre()).orElse("Corte " + distritoId);
-
-            lista.add(ResumenEstadistico.builder()
-                    .etiqueta(nombreCorte).cantidad(cantidad).build());
+//            String nombreCorte = repoDistrito.findById(distritoId)
+//                    .map(d -> d.getNombre()).orElse("Corte " + distritoId);
+//
+//            lista.add(ResumenEstadistico.builder()
+//                    .etiqueta(nombreCorte).cantidad(cantidad).build());
         }
         return lista;
     }

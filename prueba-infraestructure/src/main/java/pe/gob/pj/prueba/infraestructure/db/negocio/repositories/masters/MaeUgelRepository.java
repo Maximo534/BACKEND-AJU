@@ -6,6 +6,6 @@ import pe.gob.pj.prueba.infraestructure.db.negocio.entities.masters.MaeUgelEntit
 import java.util.List;
 
 @Repository
-public interface MaeUgelRepository extends JpaRepository<MaeUgelEntity, String> {
-    List<MaeUgelEntity> findByDistritoJudicialId(String distritoJudicialId);
+public interface MaeUgelRepository extends JpaRepository<MaeUgelEntity, Long> {
+    List<MaeUgelEntity> findByDistritoJudicialId(Long distritoJudicialId);
 }

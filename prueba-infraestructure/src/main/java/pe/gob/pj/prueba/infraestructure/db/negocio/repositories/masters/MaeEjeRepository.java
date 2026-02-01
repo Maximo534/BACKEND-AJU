@@ -3,6 +3,6 @@ import org.springframework.data.jpa.repository.JpaRepository;
 import pe.gob.pj.prueba.infraestructure.db.negocio.entities.masters.MaeEjeEntity;
 import java.util.List;
 
-public interface MaeEjeRepository extends JpaRepository<MaeEjeEntity, String> {
+public interface MaeEjeRepository extends JpaRepository<MaeEjeEntity, Long> {
     List<MaeEjeEntity> findByActivo(String activo);
 }

@@ -3,25 +3,34 @@ package pe.gob.pj.prueba.domain.model.negocio;
 import java.io.Serializable;
 import java.util.ArrayList;
 import java.util.List;
-
 import lombok.AccessLevel;
 import lombok.Data;
+import lombok.EqualsAndHashCode;
 import lombok.experimental.FieldDefaults;
+import pe.gob.pj.prueba.domain.model.Auditoria;
 
-/**
- * @author oruizb
- * @version 1.0
- */
 @Data
+@EqualsAndHashCode(callSuper = true)
 @FieldDefaults(level = AccessLevel.PRIVATE)
-public class Usuario implements Serializable {
+public class Usuario extends Auditoria implements Serializable {
 
 	static final long serialVersionUID = 1L;
-	
-	Integer idUsuario;
-	String usuario;
+
+	Integer id;
+
+	String nombreUsuario;
 	String clave;
-	Persona persona = new Persona();
+
+	String cargo;
+	String sigla;
+	String email;
+	Integer idDistritoJudicial;
+	Integer idInstancia;
+	String nombreCompleto;
+	String rutaFoto;
+	String nomFoto;
+	String activo;
+	Integer idEje;
+
 	List<PerfilUsuario> perfiles = new ArrayList<>();
-	
 }

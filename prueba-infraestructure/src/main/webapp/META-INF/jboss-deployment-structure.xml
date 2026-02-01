@@ -5,8 +5,8 @@
             <subsystem name="logging" />
         </exclude-subsystems>
 		<dependencies>
-			<module name="pe.gob.pj.prueba.api.property" export="true" />
-			<module name="pe.gob.pj.prueba.api.logging" export="true" />
+			<module name="pe.gob.pj.acceso-justicia.api.property" export="true" />
+			<module name="pe.gob.pj.acceso-justicia.api.logging" export="true" />
 		</dependencies>
 	</deployment>
 </jboss-deployment-structure>

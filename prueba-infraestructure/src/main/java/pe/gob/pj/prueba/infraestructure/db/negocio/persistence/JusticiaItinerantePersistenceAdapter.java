@@ -50,10 +50,10 @@ public class JusticiaItinerantePersistenceAdapter implements JusticiaItineranteP
                     JusticiaItinerante dominio = mapper.toDomain(entity);
 
                     // Nombre Distrito Judicial
-                    if (dominio.getDistritoJudicialId() != null) {
-                        repoDistrito.findById(dominio.getDistritoJudicialId())
-                                .ifPresent(d -> dominio.setDistritoJudicialNombre(d.getNombre()));
-                    }
+//                    if (dominio.getDistritoJudicialId() != null) {
+//                        repoDistrito.findById(dominio.getDistritoJudicialId())
+//                                .ifPresent(d -> dominio.setDistritoJudicialNombre(d.getNombre()));
+//                    }
 
                     // Archivos Adjuntos
                     List<MovArchivosEntity> archivosEntities = repoArchivos.findByNumeroIdentificacion(dominio.getId());
@@ -101,10 +101,10 @@ public class JusticiaItinerantePersistenceAdapter implements JusticiaItineranteP
             JusticiaItinerante resultado = mapper.toDomain(entidadGuardada);
 
             // Enriquecer con nombre para devolver al front
-            if (resultado.getDistritoJudicialId() != null) {
-                repoDistrito.findById(resultado.getDistritoJudicialId())
-                        .ifPresent(d -> resultado.setDistritoJudicialNombre(d.getNombre()));
-            }
+//            if (resultado.getDistritoJudicialId() != null) {
+//                repoDistrito.findById(resultado.getDistritoJudicialId())
+//                        .ifPresent(d -> resultado.setDistritoJudicialNombre(d.getNombre()));
+//            }
 
             return resultado;
 
@@ -128,10 +128,10 @@ public class JusticiaItinerantePersistenceAdapter implements JusticiaItineranteP
         JusticiaItinerante dominio = mapper.toDomain(entidad);
 
         // Enriquecer con nombre del distrito
-        if (dominio.getDistritoJudicialId() != null) {
-            repoDistrito.findById(dominio.getDistritoJudicialId())
-                    .ifPresent(d -> dominio.setDistritoJudicialNombre(d.getNombre()));
-        }
+//        if (dominio.getDistritoJudicialId() != null) {
+//            repoDistrito.findById(dominio.getDistritoJudicialId())
+//                    .ifPresent(d -> dominio.setDistritoJudicialNombre(d.getNombre()));
+//        }
 
         // Archivos
         List<MovArchivosEntity> archivosEntities = repoArchivos.findByNumeroIdentificacion(id);
@@ -206,10 +206,10 @@ public class JusticiaItinerantePersistenceAdapter implements JusticiaItineranteP
             JusticiaItinerante resultado = mapper.toDomain(actualizado);
 
             // Enriquecer con nombre para devolver al front
-            if (resultado.getDistritoJudicialId() != null) {
-                repoDistrito.findById(resultado.getDistritoJudicialId())
-                        .ifPresent(d -> resultado.setDistritoJudicialNombre(d.getNombre()));
-            }
+//            if (resultado.getDistritoJudicialId() != null) {
+//                repoDistrito.findById(resultado.getDistritoJudicialId())
+//                        .ifPresent(d -> resultado.setDistritoJudicialNombre(d.getNombre()));
+//            }
 
             return resultado;
 

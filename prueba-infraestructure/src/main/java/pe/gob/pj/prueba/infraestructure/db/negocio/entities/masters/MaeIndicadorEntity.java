@@ -1,29 +1,68 @@
 package pe.gob.pj.prueba.infraestructure.db.negocio.entities.masters;
 
-import jakarta.persistence.*;
-import lombok.Getter;
-import lombok.Setter;
-import pe.gob.pj.prueba.infraestructure.common.utils.EsquemaConstants;
-
 import java.io.Serializable;
+import java.time.LocalDateTime;
 
-@Getter
-@Setter
+import jakarta.persistence.*;
+
+import lombok.AccessLevel;
+import lombok.Data;
+import lombok.EqualsAndHashCode;
+import lombok.experimental.FieldDefaults;
+
+import pe.gob.pj.prueba.domain.common.enums.Estado;
+import pe.gob.pj.prueba.infraestructure.common.enums.OperacionBaseDatos;
+import pe.gob.pj.prueba.infraestructure.common.utils.EsquemaConstants;
+import pe.gob.pj.prueba.infraestructure.common.utils.InformacionRedUtils;
+
+@Data
+@EqualsAndHashCode(callSuper = false)
+@FieldDefaults(level = AccessLevel.PRIVATE)
 @Entity
-@Table(name = "mae_aju_indicadores", schema = EsquemaConstants.PRUEBA)
+@Table(name = "mae_indicador", schema = EsquemaConstants.PRUEBA)
 public class MaeIndicadorEntity implements Serializable {
 
+    static final long serialVersionUID = 1L;
+
     @Id
-    @Column(name = "c_indicador_id")
-    private String id;
+    @SequenceGenerator(name = "SEQ_MAE_INDICADOR", schema = EsquemaConstants.PRUEBA, sequenceName = "useq_mae_indicador", initialValue = 1, allocationSize = 1)
+    @GeneratedValue(strategy = GenerationType.SEQUENCE, generator = "SEQ_MAE_INDICADOR")
+    @Column(name = "n_indicador_id", nullable = false)
+    Long id;
 
-    @Column(name = "x_descripcion")
-    private String descripcion;
+    @Column(name = "x_descripcion", length = 300, nullable = false)
+    String descripcion;
 
-    @Column(name = "l_activo")
-    private String activo;
-
+    // Relación ManyToOne con Actividad
     @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "c_actividad_id")
-    private MaeActividadOperativaEntity actividad;
+    @JoinColumn(name = "n_actividad_id", nullable = false)
+    MaeActividadOperativaEntity actividad;
+
+    // --- AUDITORÍA ---
+    @Column(name = "l_activo", length = 1, nullable = false)
+    String activo = Estado.ACTIVO_NUMERICO.getNombre();
+
+    @Column(name = "f_registro", insertable = false, updatable = false)
+    LocalDateTime fRegistro;
+
+    @Column(name = "f_aud")
+    LocalDateTime fAud = LocalDateTime.now();
+
+    @Column(name = "b_aud")
+    String bAud = OperacionBaseDatos.INSERTAR.getNombre();
+
+    @Column(name = "c_aud_uid")
+    String cAudId;
+
+    @Column(name = "c_aud_uidred")
+    String cAudIdRed = InformacionRedUtils.getNombreRed();
+
+    @Column(name = "c_aud_pc")
+    String cAudPc = InformacionRedUtils.getPc();
+
+    @Column(name = "c_aud_ip")
+    String cAudIp = InformacionRedUtils.getIp();
+
+    @Column(name = "c_aud_mcaddr")
+    String cAudMcAddr = InformacionRedUtils.getMac();
 }

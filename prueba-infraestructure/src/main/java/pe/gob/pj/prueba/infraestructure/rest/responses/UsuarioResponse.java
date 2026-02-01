@@ -1,22 +1,45 @@
 package pe.gob.pj.prueba.infraestructure.rest.responses;
 
+import java.io.Serializable;
 import java.util.ArrayList;
 import java.util.List;
+
+import com.fasterxml.jackson.annotation.JsonInclude;
 import lombok.AccessLevel;
-import lombok.Getter;
+import lombok.Data;
 import lombok.NoArgsConstructor;
-import lombok.Setter;
 import lombok.experimental.FieldDefaults;
 
+@Data // @Data incluye @Getter, @Setter, @ToString, etc.
 @NoArgsConstructor
-@Getter @Setter
 @FieldDefaults(level = AccessLevel.PRIVATE)
-public class UsuarioResponse {
+@JsonInclude(JsonInclude.Include.NON_NULL)
+public class UsuarioResponse implements Serializable {
 
+  static final long serialVersionUID = 1L;
+
+  // --- Identificadores ---
+  Integer id;
   String usuario;
-  String clave;
-  PersonaResponse persona = new PersonaResponse();
+
+  // --- Datos Personales---
+  String nombreCompleto;
+  String cargo;
+  String sigla;
+  String email;
+
+  // IDs de ubicación
+  Integer idDistritoJudicial;
+  Integer idInstancia;
+
+  String rutaFoto;
+  String nomFoto;
+  String activo;
+
+  // --- Relaciones ---
   List<PerfilUsuarioResponse> perfiles = new ArrayList<>();
+
+  // --- Extras ---
 
   String token;
 }

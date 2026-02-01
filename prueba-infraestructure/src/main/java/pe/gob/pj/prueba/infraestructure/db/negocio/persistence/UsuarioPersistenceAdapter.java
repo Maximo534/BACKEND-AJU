@@ -1,0 +1,291 @@
+package pe.gob.pj.prueba.infraestructure.db.negocio.persistence;
+
+import java.util.ArrayList;
+import java.util.List;
+import java.util.stream.Collectors;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Sort;
+import org.springframework.stereotype.Component;
+import org.springframework.transaction.annotation.Transactional;
+
+import lombok.AccessLevel;
+import lombok.RequiredArgsConstructor;
+import lombok.experimental.FieldDefaults;
+import lombok.extern.slf4j.Slf4j;
+import pe.gob.pj.prueba.domain.exceptions.negocio.MaestroNoEncontradoException; // IMPORTANTE
+import pe.gob.pj.prueba.domain.model.common.Pagina;
+import pe.gob.pj.prueba.domain.model.negocio.Usuario;
+import pe.gob.pj.prueba.domain.model.negocio.query.ListarUsuarioQuery;
+import pe.gob.pj.prueba.domain.port.persistence.negocio.UsuarioPersistencePort;
+import pe.gob.pj.prueba.infraestructure.db.negocio.entities.MaePerfilEntity;
+import pe.gob.pj.prueba.infraestructure.db.negocio.entities.MovProgramacionEjeEntity;
+import pe.gob.pj.prueba.infraestructure.db.negocio.entities.MovUsuarioEntity;
+import pe.gob.pj.prueba.infraestructure.db.negocio.entities.MovUsuarioPerfilEntity;
+import pe.gob.pj.prueba.infraestructure.db.negocio.repositories.MovProgramacionEjeRepository;
+import pe.gob.pj.prueba.infraestructure.db.negocio.repositories.MovUsuarioPerfilRepository;
+import pe.gob.pj.prueba.infraestructure.db.negocio.repositories.MovUsuarioRepository;
+import pe.gob.pj.prueba.infraestructure.mappers.UsuarioMapper;
+
+@Slf4j
+@Component
+@RequiredArgsConstructor
+@FieldDefaults(level = AccessLevel.PRIVATE, makeFinal = true)
+public class UsuarioPersistenceAdapter implements UsuarioPersistencePort {
+
+
+    MovUsuarioRepository repository;
+    UsuarioMapper mapper;
+    MovUsuarioPerfilRepository usuarioPerfilRepository;
+    MovProgramacionEjeRepository programacionEjeRepository;
+
+    @Override
+    public Pagina<Usuario> listar(String cuo, ListarUsuarioQuery query, int pagina, int tamanio) {
+
+        Pageable pageable = PageRequest.of(pagina - 1, tamanio, Sort.by("n_usuario_id").descending());
+
+        if (query == null) query = ListarUsuarioQuery.builder().build();
+
+        // Llamamos al repositorio
+        var pageResult = repository.listar(
+                query.idUsuario(),
+                query.usuario(),
+                query.nombreCompleto(),
+                query.activo(),
+                pageable
+        );
+
+        var contenido = pageResult.getContent().stream()
+                .map(mapper::toUsuario)
+                .collect(Collectors.toList());
+
+        return Pagina.<Usuario>builder()
+                .contenido(contenido)
+                .totalRegistros(pageResult.getTotalElements())
+                .totalPaginas(pageResult.getTotalPages())
+                .paginaActual(pagina)
+                .tamanioPagina(tamanio)
+                .build();
+    }
+
+    @Override
+    @Transactional
+    public Usuario registrar(String cuo, Usuario usuario) {
+
+        // Guardar Usuario (Padre)
+        MovUsuarioEntity entity = mapper.toEntity(usuario);
+        MovUsuarioEntity savedUser = repository.save(entity);
+
+        // Guardar Perfil (Hijo)
+        if (usuario.getPerfiles() != null && !usuario.getPerfiles().isEmpty()) {
+
+            var perfilesEntity = usuario.getPerfiles().stream().map(p -> {
+                MovUsuarioPerfilEntity relacion = new MovUsuarioPerfilEntity();
+
+                // Relación con Usuario
+                relacion.setUsuario(savedUser);
+
+                // Relación con Perfil
+                MaePerfilEntity perfilMaestro = new MaePerfilEntity();
+                perfilMaestro.setId(p.getIdPerfil());
+                relacion.setPerfil(perfilMaestro);
+
+                // Auditoría Completa
+                relacion.setActivo("1");
+                relacion.setCAudId(usuario.getUsuario());
+                relacion.setCAudIp(usuario.getNumeroIp());
+                relacion.setCAudPc(usuario.getNombrePc());
+                relacion.setCAudMcAddr(usuario.getDireccionMac());
+                relacion.setCAudIdRed(usuario.getRed());
+
+                return relacion;
+            }).collect(Collectors.toList());
+
+            usuarioPerfilRepository.saveAll(perfilesEntity);
+        }
+        //GUARDAR ASIGNACIÓN DE EJE
+        if (usuario.getIdEje() != null) {
+
+            MovProgramacionEjeEntity progEje = new MovProgramacionEjeEntity();
+
+            progEje.setIdUsuario(savedUser.getId());
+            progEje.setIdEje(usuario.getIdEje());
+            progEje.setIdDistritoJudicial(usuario.getIdDistritoJudicial());
+            progEje.setPeriodo(String.valueOf(java.time.LocalDate.now().getYear()));
+
+            progEje.setActivo("1");
+            progEje.setFRegistro(java.time.LocalDateTime.now());
+            progEje.setCAudId(usuario.getUsuario());
+            progEje.setCAudIp(usuario.getNumeroIp());
+            progEje.setCAudPc(usuario.getNombrePc());
+            progEje.setCAudMcAddr(usuario.getDireccionMac());
+            progEje.setCAudIdRed(usuario.getRed());
+
+            programacionEjeRepository.save(progEje);
+        }
+
+        return mapper.toUsuario(savedUser);
+    }
+
+    @Override
+    @Transactional
+    public Usuario actualizar(String cuo, Usuario usuario) {
+
+        // 1. Obtener y actualizar Usuario Padre
+        MovUsuarioEntity entityDb = repository.findById(usuario.getId())
+                .orElseThrow(() -> new MaestroNoEncontradoException("Usuario no encontrado"));
+
+        mapper.updateEntity(usuario, entityDb);
+        MovUsuarioEntity savedUser = repository.save(entityDb);
+
+        // 2. ACTUALIZAR PERFIL (Estrategia: Merge/Desactivar)
+        if (usuario.getPerfiles() != null) {
+
+            // A. Traer todos los perfiles que el usuario YA TIENE en BD (Activos e Inactivos)
+            List<MovUsuarioPerfilEntity> perfilesEnBd = usuarioPerfilRepository.findByUsuarioId(savedUser.getId());
+
+            // B. Obtener los IDs que vienen del Front
+            List<Integer> idsNuevos = usuario.getPerfiles().stream()
+                    .map(p -> p.getIdPerfil())
+                    .toList();
+
+            // C. Procesar los que ya existen en BD
+            for (MovUsuarioPerfilEntity relacionDb : perfilesEnBd) {
+                if (idsNuevos.contains(relacionDb.getPerfil().getId())) {
+                    // CASO 1:  REACTIVAR (por si estaba en '0')
+                    relacionDb.setActivo("1");
+                    actualizarAuditoria(relacionDb, usuario);
+                } else {
+                    // CASO 2: DESACTIVAR ('0')
+                    relacionDb.setActivo("0");
+                    actualizarAuditoria(relacionDb, usuario);
+                }
+            }
+
+            // D. Detectar los NUEVOS
+            // Filtramos: De los nuevos, ¿cuáles NO están en la lista de BD?
+            List<Integer> idsEnBd = perfilesEnBd.stream()
+                    .map(e -> e.getPerfil().getId())
+                    .toList();
+
+            List<MovUsuarioPerfilEntity> nuevosAInsertar = new ArrayList<>();
+
+            for (Integer idNuevo : idsNuevos) {
+                if (!idsEnBd.contains(idNuevo)) {
+                    // CASO 3: INSERTAR
+                    MovUsuarioPerfilEntity nuevaRelacion = new MovUsuarioPerfilEntity();
+                    nuevaRelacion.setUsuario(savedUser);
+
+                    MaePerfilEntity perfilRef = new MaePerfilEntity();
+                    perfilRef.setId(idNuevo);
+                    nuevaRelacion.setPerfil(perfilRef);
+
+                    nuevaRelacion.setActivo("1");
+                    actualizarAuditoria(nuevaRelacion, usuario);
+
+                    nuevosAInsertar.add(nuevaRelacion);
+                }
+            }
+
+            usuarioPerfilRepository.saveAll(perfilesEnBd);
+            usuarioPerfilRepository.saveAll(nuevosAInsertar);
+        }
+
+        // 3. ACTUALIZAR EJE (Desactivar anteriores)
+        if (usuario.getIdEje() != null) {
+            String periodoActual = String.valueOf(java.time.LocalDate.now().getYear());
+
+            List<MovProgramacionEjeEntity> ejesEnBd = programacionEjeRepository
+                    .findByIdUsuarioAndPeriodo(savedUser.getId(), periodoActual);
+
+            boolean existeElNuevo = false;
+
+            //Recorrer BD: Desactivar lo viejo, Activar si coincide el nuevo
+            for (MovProgramacionEjeEntity ejeDb : ejesEnBd) {
+
+                // Verificamos si este registro coincide exactamente con el Eje y Distrito que queremos asignar
+                boolean esElMismoEje = ejeDb.getIdEje().equals(usuario.getIdEje()) &&
+                        ejeDb.getIdDistritoJudicial().equals(usuario.getIdDistritoJudicial());
+
+                if (esElMismoEje) {
+                    // Ya existía este registro -> Lo reactivamos
+                    ejeDb.setActivo("1");
+                    actualizarAuditoria(ejeDb, usuario);
+                    existeElNuevo = true;
+                } else {
+                    // Es un eje diferente (o distrito diferente) -> Lo desactivamos
+                    ejeDb.setActivo("0");
+                    actualizarAuditoria(ejeDb, usuario);
+                }
+            }
+            // Guardamos los cambios de estado
+            programacionEjeRepository.saveAll(ejesEnBd);
+
+            // C. Si no encontramos el registro en BD, lo creamos nuevo
+            if (!existeElNuevo) {
+                MovProgramacionEjeEntity nuevoEje = new MovProgramacionEjeEntity();
+
+                // PK Compuesta
+                nuevoEje.setIdUsuario(savedUser.getId());
+                nuevoEje.setIdEje(usuario.getIdEje());
+                nuevoEje.setIdDistritoJudicial(usuario.getIdDistritoJudicial());
+                nuevoEje.setPeriodo(periodoActual);
+
+                nuevoEje.setActivo("1");
+                actualizarAuditoria(nuevoEje, usuario);
+
+                programacionEjeRepository.save(nuevoEje);
+            }
+        }
+
+        return mapper.toUsuario(savedUser);
+    }
+
+    private void actualizarAuditoria(Object entity, Usuario usuario) {
+        if (entity instanceof MovUsuarioPerfilEntity e) {
+            e.setFAud(java.time.LocalDateTime.now());
+            e.setCAudId(usuario.getUsuario());
+            e.setCAudIp(usuario.getNumeroIp());
+            e.setCAudPc(usuario.getNombrePc());
+            e.setCAudMcAddr(usuario.getDireccionMac());
+            e.setCAudIdRed(usuario.getRed());
+            e.setBAud("M");
+        } else if (entity instanceof MovProgramacionEjeEntity e) {
+            e.setFRegistro(java.time.LocalDateTime.now()); // O fAud
+            e.setCAudId(usuario.getUsuario());
+            e.setCAudIp(usuario.getNumeroIp());
+            e.setCAudPc(usuario.getNombrePc());
+            e.setCAudMcAddr(usuario.getDireccionMac());
+            e.setCAudIdRed(usuario.getRed());
+            e.setBAud("M");
+        }
+    }
+
+    @Override
+    public Usuario buscarPorId(String cuo, Integer id) {
+        return repository.findById(id)
+                .map(mapper::toUsuario)
+                .orElse(null);
+    }
+
+    @Override
+    public boolean existeUsuarioPorLogin(String cuo, String login) {
+        return repository.existsByUsuario(login);
+    }
+
+    @Override
+    @Transactional
+    public void cambiarEstado(String cuo, Usuario usuario) {
+
+        MovUsuarioEntity entityDb = repository.findById(usuario.getId())
+                .orElseThrow(() -> new MaestroNoEncontradoException("Usuario no encontrado con ID: " + usuario.getId()));
+
+
+        mapper.updateEntity(usuario, entityDb);
+
+        entityDb.setFAud(java.time.LocalDateTime.now());
+        entityDb.setBAud("M");
+
+        repository.save(entityDb);
+    }
+}
