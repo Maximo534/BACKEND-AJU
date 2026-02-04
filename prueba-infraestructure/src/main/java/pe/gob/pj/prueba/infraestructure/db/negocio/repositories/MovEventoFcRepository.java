@@ -12,80 +12,43 @@ import java.time.LocalDate;
 import java.util.List;
 
 @Repository
-public interface MovEventoFcRepository extends JpaRepository<MovEventoFcEntity, String> {
+public interface MovEventoFcRepository extends JpaRepository<MovEventoFcEntity, Long> {
 
-    @Query("SELECT MAX(e.id) FROM MovEventoFcEntity e WHERE e.id LIKE '%-FC'")
-    String obtenerUltimoId();
+    boolean existsByCodigo(String codigo);
 
-    @Query(value = """
-        SELECT 
-            fc.c_evento_id AS id,
-            fc.f_inicio AS fechaInicio,
-            fc.f_fin AS fechaFin,
-            fc.c_tipo_evento AS tipoEvento,
-            fc.l_activo AS estado,
-            dj.x_nom_corto AS distritoJudicialNombre
-        FROM prueba.mov_aju_eventos fc 
-        INNER JOIN prueba.mae_aju_distrito_judiciales dj ON fc.c_distrito_jud_id = dj.c_distrito_jud_id 
-        WHERE fc.c_usuario_reg = :usuario
-          AND fc.l_activo = '1'
-          
-          -- FILTROS DE COMBOS
-          AND (:distrito IS NULL OR fc.c_distrito_jud_id = :distrito)
-          AND (:tipo IS NULL OR fc.c_tipo_evento = :tipo)
-          
-          -- FILTRO FECHAS
-          AND (CAST(:fecIni AS DATE) IS NULL OR fc.f_inicio >= :fecIni)
-          AND (CAST(:fecFin AS DATE) IS NULL OR fc.f_inicio <= :fecFin)
 
-          -- BUSCADOR GENERAL
-          AND (
-              :search IS NULL OR :search = '' OR
-              UPPER(fc.c_evento_id) LIKE UPPER(CONCAT('%', :search, '%')) OR
-              UPPER(fc.x_nombre_evento) LIKE UPPER(CONCAT('%', :search, '%')) OR
-              UPPER(dj.x_nom_corto) LIKE UPPER(CONCAT('%', :search, '%'))
-          )
-        ORDER BY fc.f_inicio DESC
-    """, countQuery = """
-        SELECT count(*) 
-        FROM prueba.mov_aju_eventos fc 
-        INNER JOIN prueba.mae_aju_distrito_judiciales dj ON fc.c_distrito_jud_id = dj.c_distrito_jud_id 
-        WHERE fc.c_usuario_reg = :usuario
-          AND fc.l_activo = '1'
-          AND (:distrito IS NULL OR fc.c_distrito_jud_id = :distrito)
-          AND (:tipo IS NULL OR fc.c_tipo_evento = :tipo)
-          AND (CAST(:fecIni AS DATE) IS NULL OR fc.f_inicio >= :fecIni)
-          AND (CAST(:fecFin AS DATE) IS NULL OR fc.f_inicio <= :fecFin)
-          AND (
-              :search IS NULL OR :search = '' OR
-              UPPER(fc.c_evento_id) LIKE UPPER(CONCAT('%', :search, '%')) OR
-              UPPER(fc.x_nombre_evento) LIKE UPPER(CONCAT('%', :search, '%')) OR
-              UPPER(dj.x_nom_corto) LIKE UPPER(CONCAT('%', :search, '%'))
-          )
-    """, nativeQuery = true)
-    Page<FortalecimientoProjection> listar(
-            @Param("usuario") String usuario,
+    @Query(value = "SELECT c_codigo FROM acjust.mov_evento " +
+            "WHERE c_codigo LIKE %:sufijoAnio " +
+            "AND n_distrito_jud_id = :distrito " +
+            "ORDER BY n_evento_id DESC LIMIT 1", nativeQuery = true)
+    String obtenerUltimoCodigo(@Param("distrito") Long distrito, @Param("sufijoAnio") String sufijoAnio);
+
+
+    @Query("SELECT e FROM MovEventoFcEntity e " +
+            "WHERE e.activo = '1' " +
+            "AND (:distrito IS NULL OR e.distritoJudicialId = :distrito) " +
+            "AND (:tipo IS NULL OR e.tipoEvento = :tipo) " +
+            "AND (cast(:fecIni as date) IS NULL OR e.fechaInicio >= :fecIni) " +
+            "AND (cast(:fecFin as date) IS NULL OR e.fechaInicio <= :fecFin) " +
+            "AND (:search IS NULL OR :search = '' OR " +
+            "     UPPER(e.codigo) LIKE UPPER(CONCAT('%', :search, '%')) OR " +
+            "     UPPER(e.nombreEvento) LIKE UPPER(CONCAT('%', :search, '%'))) " +
+            "ORDER BY e.id DESC")
+    Page<MovEventoFcEntity> listarCompleto(
             @Param("search") String search,
-            @Param("distrito") String distrito,
-            @Param("tipo") String tipoEvento,
+            @Param("distrito") Long distrito,
+            @Param("tipo") String tipo,
             @Param("fecIni") LocalDate fecIni,
             @Param("fecFin") LocalDate fecFin,
             Pageable pageable);
 
     @Query("SELECT EXTRACT(MONTH FROM e.fechaInicio) as mes, COUNT(e) as cantidad " +
-            "FROM MovEventoFcEntity e " +
+            "FROM MovJusticiaItineranteEntity e " +
             "WHERE e.activo = '1' " +
             "AND EXTRACT(YEAR FROM e.fechaInicio) = :anio " +
-            "AND e.usuarioRegistro = :usuario " +
+            "AND e.cAudId = :usuario " +
             "GROUP BY EXTRACT(MONTH FROM e.fechaInicio)")
     List<Object[]> contarPorMes(@Param("anio") int anio, @Param("usuario") String usuario);
 
-    interface FortalecimientoProjection {
-        String getId();
-        LocalDate getFechaInicio();
-        LocalDate getFechaFin();
-        String getTipoEvento();
-        String getEstado();
-        String getDistritoJudicialNombre();
-    }
 }
+

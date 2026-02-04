@@ -1,9 +1,9 @@
 package pe.gob.pj.prueba.domain.model.negocio;
 
-import lombok.AllArgsConstructor;
-import lombok.Builder;
-import lombok.Data;
-import lombok.NoArgsConstructor;
+import lombok.*;
+import lombok.experimental.FieldDefaults;
+import pe.gob.pj.prueba.domain.model.Auditoria;
+
 import java.io.Serializable;
 import java.time.LocalDate;
 import java.util.List;
@@ -12,86 +12,99 @@ import java.util.List;
 @Builder
 @NoArgsConstructor
 @AllArgsConstructor
-public class PromocionCultura implements Serializable {
+@EqualsAndHashCode(callSuper = true)
+@FieldDefaults(level = AccessLevel.PRIVATE)
+public class PromocionCultura extends Auditoria implements Serializable {
 
-    private String id;
-    private String distritoJudicialId;
-    private String distritoJudicialNombre;
-    // Datos Principales
-    private String nombreActividad;
-    private String tipoActividad;         // (Charla, Feria, etc.)
-    private String tipoActividadOtros;
-    private String areaRiesgo;
-    private String zonaIntervencion;
-    private String modalidad;
+    static final long serialVersionUID = 1L;
 
-    private String publicoObjetivo;
-    private String publicoObjetivoOtros;
+    // --- Identificadores ---
+    Long id;
+    String codigo;
 
-    private LocalDate fechaInicio;
-    private LocalDate fechaFin;
+    // --- FKs y Maestros ---
+    Long distritoJudicialId;
+    String distritoJudicialNombre;
 
-    // Autorizaciones
-    private String resolucionPlanAnual;
-    private String resolucionAdminPlan;
-    private String documentoAutoriza;
+    // --- Datos Principales ---
+    String nombreActividad;
+    String tipoActividad;
+    String tipoActividadOtros;
+    String areaRiesgo;
+    String zonaIntervencion;
+    String modalidad;
 
-    // Ubicación
-    private String lugarActividad;
-    private String departamentoId;
-    private String provinciaId;
-    private String distritoGeograficoId;
+    String publicoObjetivo;
+    String publicoObjetivoOtros;
 
-    // Clasificación
-    private String ejeId;
+    LocalDate fechaInicio;
+    LocalDate fechaFin;
 
-    // Indicadores Inclusivos
-    private String seDictoLenguaNativa;   //  (SI/NO)
-    private String lenguaNativaDesc;
+    // --- Autorizaciones ---
+    String resolucionPlanAnual;
+    String resolucionAdminPlan;
+    String documentoAutoriza;
 
-    private String participaronDiscapacitados; //  (SI/NO)
-    private Integer numeroDiscapacitados;
+    // --- Ubicación (Long) ---
+    String lugarActividad;
+    Long departamentoId;
+    Long provinciaId;
+    Long distritoGeograficoId;
 
-    // Descripciones
-    private String descripcionActividad;
-    private String institucionesAliadas;
-    private String observacion;
+    // --- Clasificación (Long) ---
+    Long ejeId;
 
-    // Auditoría
-    private LocalDate fechaRegistro;
-    private String usuarioRegistro;
-    private String activo;
+    // --- Indicadores ---
+    String seDictoLenguaNativa;
+    String lenguaNativaDesc;
 
+    String participaronDiscapacitados;
+    Integer numeroDiscapacitados;
 
-    // Listas
-    private List<DetalleBeneficiada> personasBeneficiadas;
-    private List<DetalleTarea> tareasRealizadas;
-    private String search;
-    private List<Archivo> archivosGuardados;
+    // --- Textos ---
+    String descripcionActividad;
+    String institucionesAliadas;
+    String observacion;
 
+    // --- Auditoría Negocio ---
+    LocalDate fechaRegistro;
+    Long usuarioRegistroId;
+    String activo;
+
+    // --- Listas ---
+    List<DetalleBeneficiada> personasBeneficiadas;
+    List<DetalleTarea> tareasRealizadas;
+
+    // --- Archivos ---
+    List<Archivo> archivosGuardados;
+
+    // --- CLASES INTERNAS ---
 
     @Data
     @Builder
     @NoArgsConstructor
     @AllArgsConstructor
+    @FieldDefaults(level = AccessLevel.PRIVATE)
     public static class DetalleBeneficiada implements Serializable {
+        static final long serialVersionUID = 1L;
 
-        private String descripcionRango;
-        private String codigoRango;
-
-        private Integer cantidadFemenino;
-        private Integer cantidadMasculino;
-        private Integer cantidadLgtbiq;
+        String descripcionRango;
+        String codigoRango;
+        Integer cantidadFemenino;
+        Integer cantidadMasculino;
+        Integer cantidadLgtbiq;
     }
 
     @Data
     @Builder
     @NoArgsConstructor
     @AllArgsConstructor
+    @FieldDefaults(level = AccessLevel.PRIVATE)
     public static class DetalleTarea implements Serializable {
-        private String tareaId;
-        private LocalDate fechaInicio;
-        private String descripcion;
-    }
+        static final long serialVersionUID = 1L;
 
+        Long tareaId;
+        LocalDate fechaInicio;
+        String descripcion;
+    }
 }

@@ -4,17 +4,19 @@ import org.springframework.web.multipart.MultipartFile;
 import pe.gob.pj.prueba.domain.model.common.Pagina;
 import pe.gob.pj.prueba.domain.model.common.RecursoArchivo;
 import pe.gob.pj.prueba.domain.model.negocio.JusticiaItinerante;
+import pe.gob.pj.prueba.domain.model.negocio.query.ListarJusticiaItineranteQuery;
+
 import java.util.List;
 
 public interface GestionJusticiaItineranteUseCasePort {
 
-    Pagina<JusticiaItinerante> listar(String usuario, JusticiaItinerante filtros, int pagina, int tamanio) throws Exception;
-    JusticiaItinerante registrar(JusticiaItinerante dominio, MultipartFile anexo, List<MultipartFile> videos, List<MultipartFile> fotos, String usuario) throws Exception;
-    JusticiaItinerante buscarPorId(String id) throws Exception;
-    JusticiaItinerante actualizar(JusticiaItinerante fji, String usuarioOperacion) throws Exception;
-    void agregarArchivo(String idEvento, MultipartFile archivo, String tipoArchivo, String usuarioOperacion) throws Exception;
-    void eliminarArchivo(String nombreArchivo) throws Exception;
-    RecursoArchivo descargarAnexo(String idEvento, String usuario) throws Exception;
-    byte[] generarFichaPdf(String idEvento) throws Exception;
-    RecursoArchivo descargarArchivoPorNombre(String nombreArchivo) throws Exception;
+    Pagina<JusticiaItinerante> listar(String cuo, ListarJusticiaItineranteQuery query, int pagina, int tamanio);
+    JusticiaItinerante registrar(String cuo, JusticiaItinerante dominio, MultipartFile anexo, List<MultipartFile> videos, List<MultipartFile> fotos) throws Exception;
+    JusticiaItinerante buscarPorId(String cuo, Long id);
+    JusticiaItinerante actualizar(String cuo, JusticiaItinerante dominio) throws Exception;
+    void agregarArchivo(String cuo, Long idEvento, MultipartFile archivo, String tipoArchivo, String usuarioOperacion) throws Exception;
+    void eliminarArchivo(String cuo, Long idArchivo, String usuarioOperacion) throws Exception;
+    RecursoArchivo descargarAnexo(String cuo, Long idEvento) throws Exception;
+    byte[] generarFichaPdf(String cuo, Long idEvento) throws Exception;
+    RecursoArchivo descargarArchivoPorId(Long idArchivo) throws Exception ;
 }

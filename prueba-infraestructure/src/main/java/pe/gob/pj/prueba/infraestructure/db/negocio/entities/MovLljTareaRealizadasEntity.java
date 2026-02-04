@@ -1,32 +1,37 @@
 package pe.gob.pj.prueba.infraestructure.db.negocio.entities;
 
 import jakarta.persistence.*;
-import lombok.Getter;
-import lombok.Setter;
+import lombok.AccessLevel;
+import lombok.Data;
+import lombok.experimental.FieldDefaults;
 import pe.gob.pj.prueba.infraestructure.common.utils.EsquemaConstants;
 import pe.gob.pj.prueba.infraestructure.db.negocio.entities.ids.MovLljTareaRealizadasId;
 import pe.gob.pj.prueba.infraestructure.db.negocio.entities.masters.MaeTareaEntity;
+
 import java.io.Serializable;
 import java.time.LocalDate;
 
-@Getter @Setter
+@Data
 @Entity
-@Table(name = "mov_aju_llj_tarea_realizadas", schema = EsquemaConstants.PRUEBA)
+@FieldDefaults(level = AccessLevel.PRIVATE)
+@Table(name = "mov_llj_tarea_realizadas", schema = EsquemaConstants.PRUEBA)
 @IdClass(MovLljTareaRealizadasId.class)
 public class MovLljTareaRealizadasEntity implements Serializable {
 
     @Id
-    @Column(name = "c_llj_id", length = 17)
-    private String lljId;
+    @Column(name = "n_llj_id")
+    Long lljId;
 
     @Id
-    @Column(name = "c_tarea_id", length = 15)
-    private String tareaId;
+    @Column(name = "n_tarea_id")
+    Long tareaId;
 
     @Column(name = "f_inicio")
-    private LocalDate fechaInicio;
+    LocalDate fechaInicio;
+
+    @Column(name = "l_activo") String activo = "1";
 
     @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "c_tarea_id", insertable = false, updatable = false)
-    private MaeTareaEntity tareaMaestra;
+    @JoinColumn(name = "n_tarea_id", insertable = false, updatable = false)
+    MaeTareaEntity tareaMaestra;
 }

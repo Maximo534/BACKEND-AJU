@@ -1,49 +1,85 @@
 package pe.gob.pj.prueba.infraestructure.db.negocio.entities;
 
 import jakarta.persistence.*;
-import lombok.Getter;
-import lombok.Setter;
+import lombok.AccessLevel;
+import lombok.Data;
+import lombok.EqualsAndHashCode;
+import lombok.experimental.FieldDefaults;
+import pe.gob.pj.prueba.domain.common.enums.Estado;
+import pe.gob.pj.prueba.infraestructure.common.enums.OperacionBaseDatos;
 import pe.gob.pj.prueba.infraestructure.common.utils.EsquemaConstants;
+import pe.gob.pj.prueba.infraestructure.common.utils.InformacionRedUtils;
 import pe.gob.pj.prueba.infraestructure.db.negocio.entities.ids.MovJiPersonasBeneficiadasId;
 import pe.gob.pj.prueba.infraestructure.db.negocio.entities.ids.TrimStringConverter;
 
 import java.io.Serializable;
+import java.time.LocalDateTime;
 
-@Getter
-@Setter
+@Data
+@EqualsAndHashCode(callSuper = false)
+@FieldDefaults(level = AccessLevel.PRIVATE)
 @Entity
-@Table(name = "mov_aju_ji_per_beneficiadas", schema = EsquemaConstants.PRUEBA)
+@Table(name = "mov_ji_persona_beneficiada", schema = EsquemaConstants.PRUEBA)
 @IdClass(MovJiPersonasBeneficiadasId.class)
 public class MovJiPersonasBeneficiadasEntity implements Serializable {
 
+    static final long serialVersionUID = 1L;
+
+    // --- CLAVE COMPUESTA ---
     @Id
-    @Column(name = "c_just_itin_id", length = 17)
-    @Convert(converter = TrimStringConverter.class)
-    private String justiciaItineranteId;
+    @Column(name = "n_just_itin_id")
+    Long justiciaItineranteId;
 
     @Id
     @Column(name = "x_desc_rango", length = 30)
     @Convert(converter = TrimStringConverter.class)
-    private String descripcionRango;
+    String descripcionRango;
 
     @Id
     @Column(name = "c_rango", length = 5)
     @Convert(converter = TrimStringConverter.class)
-    private String codigoRango;
+    String codigoRango;
 
+    // --- DATOS ---
     @Column(name = "n_cant_fem", nullable = false)
-    private Integer cantFemenino;
+    Integer cantFemenino = 0;
 
     @Column(name = "n_cant_mas", nullable = false)
-    private Integer cantMasculino;
+    Integer cantMasculino = 0;
 
     @Column(name = "n_cant_lgtbiq", nullable = false)
-    private Integer cantLgtbiq;
+    Integer cantLgtbiq = 0;
 
-    @PrePersist
-    public void prePersist() {
-        if(this.cantFemenino == null) this.cantFemenino = 0;
-        if(this.cantMasculino == null) this.cantMasculino = 0;
-        if(this.cantLgtbiq == null) this.cantLgtbiq = 0;
-    }
+    @Column(name = "l_activo", length = 1, nullable = false)
+    String activo = Estado.ACTIVO_NUMERICO.getNombre();
+
+    // --- RELACIÓN CON PADRE  ---
+    @ManyToOne(fetch = FetchType.LAZY)
+    @MapsId("justiciaItineranteId")
+    @JoinColumn(name = "n_just_itin_id")
+    private MovJusticiaItineranteEntity justiciaItinerante;
+
+    @Column(name = "f_registro", insertable = false, updatable = false)
+    LocalDateTime fRegistro;
+
+    @Column(name = "f_aud")
+    LocalDateTime fAud = LocalDateTime.now();
+
+    @Column(name = "b_aud")
+    String bAud = OperacionBaseDatos.INSERTAR.getNombre();
+
+    @Column(name = "c_aud_uid")
+    String cAudId;
+
+    @Column(name = "c_aud_uidred")
+    String cAudIdRed = InformacionRedUtils.getNombreRed();
+
+    @Column(name = "c_aud_pc")
+    String cAudPc = InformacionRedUtils.getPc();
+
+    @Column(name = "c_aud_ip")
+    String cAudIp = InformacionRedUtils.getIp();
+
+    @Column(name = "c_aud_mcaddr")
+    String cAudMcAddr = InformacionRedUtils.getMac();
 }

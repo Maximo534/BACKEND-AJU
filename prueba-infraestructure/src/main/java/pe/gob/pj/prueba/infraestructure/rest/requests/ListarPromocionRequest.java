@@ -1,17 +1,26 @@
 package pe.gob.pj.prueba.infraestructure.rest.requests;
 
+import lombok.AccessLevel;
 import lombok.Data;
+import lombok.experimental.FieldDefaults;
+import org.springframework.format.annotation.DateTimeFormat;
+
 import java.io.Serializable;
 import java.time.LocalDate;
 
 @Data
+@FieldDefaults(level = AccessLevel.PRIVATE)
 public class ListarPromocionRequest implements Serializable {
 
-    // BUSCADOR GENERAL (ID, Descripción, Corte)
-    private String search;
+    static final long serialVersionUID = 1L;
 
-    private String distritoJudicialId;
+    String search;
 
-    private LocalDate fechaInicio;
-    private LocalDate fechaFin;
+    // Filtros
+    Long distritoJudicialId;
+    @DateTimeFormat(pattern = "yyyy-MM-dd")
+    LocalDate fechaInicio;
+
+    @DateTimeFormat(pattern = "yyyy-MM-dd")
+    LocalDate fechaFin;
 }

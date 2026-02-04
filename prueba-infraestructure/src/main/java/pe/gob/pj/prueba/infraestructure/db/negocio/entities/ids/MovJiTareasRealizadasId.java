@@ -1,11 +1,16 @@
 package pe.gob.pj.prueba.infraestructure.db.negocio.entities.ids;
+
+import lombok.AllArgsConstructor;
+import lombok.Data;
+import lombok.EqualsAndHashCode;
+import lombok.NoArgsConstructor;
 import java.io.Serializable;
-import lombok.*;
 
 @Data
 @NoArgsConstructor
 @AllArgsConstructor
+@EqualsAndHashCode
 public class MovJiTareasRealizadasId implements Serializable {
-    private String justiciaItineranteId;
-    private String tareaId; //Cambiado a String (CHAR 15)
+    private Long justiciaItineranteId;
+    private Long tareaId;
 }

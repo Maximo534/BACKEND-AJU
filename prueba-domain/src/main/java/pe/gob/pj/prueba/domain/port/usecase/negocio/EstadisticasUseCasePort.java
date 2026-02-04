@@ -4,5 +4,5 @@ import pe.gob.pj.prueba.domain.model.negocio.DetalleGrafico;
 import pe.gob.pj.prueba.domain.model.negocio.EstadisticasData;
 
 public interface EstadisticasUseCasePort {
-    EstadisticasData obtenerEstadisticasCompletas(int anio) throws Exception;
+    EstadisticasData obtenerEstadisticasCompletas(String cuo, int anio);
 }

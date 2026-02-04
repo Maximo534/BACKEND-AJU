@@ -1,17 +1,21 @@
 package pe.gob.pj.prueba.infraestructure.db.negocio.persistence;
 
+import lombok.AccessLevel;
 import lombok.RequiredArgsConstructor;
+import lombok.experimental.FieldDefaults;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Component;
 import org.springframework.transaction.annotation.Transactional;
+import pe.gob.pj.prueba.domain.exceptions.negocio.MovimientoNoEncontradoException;
 import pe.gob.pj.prueba.domain.model.common.Pagina;
 import pe.gob.pj.prueba.domain.model.negocio.Archivo;
 import pe.gob.pj.prueba.domain.model.negocio.BuenaPractica;
 import pe.gob.pj.prueba.domain.model.negocio.ResumenEstadistico;
+import pe.gob.pj.prueba.domain.model.negocio.query.ListarBuenaPracticaQuery;
 import pe.gob.pj.prueba.domain.port.persistence.negocio.BuenaPracticaPersistencePort;
-import pe.gob.pj.prueba.infraestructure.db.negocio.entities.MovArchivosEntity;
+import pe.gob.pj.prueba.infraestructure.db.negocio.entities.MovArchivoEntity;
 import pe.gob.pj.prueba.infraestructure.db.negocio.entities.MovBuenaPracticaEntity;
 import pe.gob.pj.prueba.infraestructure.db.negocio.repositories.MovArchivosRepository;
 import pe.gob.pj.prueba.infraestructure.db.negocio.repositories.MovBuenaPracticaRepository;
@@ -22,138 +26,126 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.stream.Collectors;
 
+@Slf4j
 @Component
 @RequiredArgsConstructor
-@Slf4j
+@FieldDefaults(level = AccessLevel.PRIVATE, makeFinal = true)
 public class BuenaPracticaPersistenceAdapter implements BuenaPracticaPersistencePort {
 
-    private final MovBuenaPracticaRepository repository;
-    private final BuenaPracticaMapper mapper;
-    private final MovArchivosRepository repoArchivos;
-    private final MaeDistritoJudicialRepository repoDistrito;
+    MovBuenaPracticaRepository repository;
+    MaeDistritoJudicialRepository repoDistrito;
+    MovArchivosRepository repoArchivos;
+    BuenaPracticaMapper mapper;
 
     @Override
-    @Transactional(readOnly = true)
-    public Pagina<BuenaPractica> listar(String usuario, BuenaPractica filtros, int pagina, int tamanio) throws Exception {
+    public Pagina<BuenaPractica> listar(String cuo, ListarBuenaPracticaQuery query, int pagina, int tamanio) {
         Pageable pageable = PageRequest.of(pagina - 1, tamanio);
-        if (filtros == null) filtros = BuenaPractica.builder().build();
 
-        // El repositorio ya trae el nombre con un JOIN en la Query Nativa, así que aquí no hace falta buscarlo uno por uno.
-        var result = repository.listar(usuario, filtros.getSearch(), filtros.getDistritoJudicialId(),
-                filtros.getFechaInicio(), filtros.getFechaFin(), pageable);
+        var pageResult = repository.listarCompleto(
+                query.getSearch(),
+                query.getDistritoJudicialId(),
+                query.getFechaInicio(),
+                query.getFechaFin(),
+                pageable
+        );
 
-        List<BuenaPractica> contenido = result.getContent().stream()
-                .map(p -> BuenaPractica.builder()
-                        .id(p.getId())
-                        .distritoJudicialId(p.getDistritoJudicialId())
-                        .distritoJudicialNombre(p.getDistritoJudicialNombre())
-                        .titulo(p.getTitulo())
-                        .fechaInicio(p.getFechaInicio())
-                        .build())
+        List<BuenaPractica> contenido = pageResult.getContent().stream()
+                .map(entity -> {
+                    BuenaPractica dominio = mapper.toDomain(entity);
+                    return dominio;
+                })
                 .collect(Collectors.toList());
 
         return Pagina.<BuenaPractica>builder()
                 .contenido(contenido)
-                .totalRegistros(result.getTotalElements())
-                .totalPaginas(result.getTotalPages())
+                .totalRegistros(pageResult.getTotalElements())
+                .totalPaginas(pageResult.getTotalPages())
                 .paginaActual(pagina)
                 .tamanioPagina(tamanio)
                 .build();
     }
 
     @Override
-    @Transactional(readOnly = true)
-    public BuenaPractica buscarPorId(String id) throws Exception {
-        MovBuenaPracticaEntity entity = repository.findById(id)
-                .orElseThrow(() -> new Exception("No se encontró Buena Práctica con ID: " + id));
+    @Transactional
+    public BuenaPractica guardar(String cuo, BuenaPractica dominio) {
+        log.info("[{}] Guardando Buena Práctica: {}", cuo, dominio.getCodigo());
+        MovBuenaPracticaEntity entity = mapper.toEntity(dominio);
+        MovBuenaPracticaEntity saved = repository.save(entity);
+        return mapper.toDomain(saved);
+    }
 
-        BuenaPractica dominio = mapper.toDomain(entity);
+    @Override
+    @Transactional
+    public BuenaPractica actualizar(String cuo, BuenaPractica dominio) {
+        log.info("[{}] Actualizando Buena Práctica ID: {}", cuo, dominio.getId());
 
-        // Enriquecer con Nombre de Distrito Judicial
-//        if (dominio.getDistritoJudicialId() != null) {
-//            repoDistrito.findById(dominio.getDistritoJudicialId())
-//                    .ifPresent(d -> dominio.setDistritoJudicialNombre(d.getNombre()));
-//        }
+        MovBuenaPracticaEntity entityDb = repository.findById(dominio.getId())
+                .orElseThrow(() -> new MovimientoNoEncontradoException("No se encontró el registro con ID: " + dominio.getId()));
 
-        // Enriquecer con archivos
-        List<MovArchivosEntity> archivosEntities = repoArchivos.findByNumeroIdentificacion(id);
-        if (archivosEntities != null && !archivosEntities.isEmpty()) {
-            List<Archivo> listaArchivos = archivosEntities.stream()
-                    .map(a -> Archivo.builder()
-                            .nombre(a.getNombre())
-                            .tipo(a.getTipo())
-                            .ruta(a.getRuta())
-                            .numeroIdentificacion(a.getNumeroIdentificacion())
-                            .build())
-                    .collect(Collectors.toList());
-            dominio.setArchivosGuardados(listaArchivos);
+        mapper.updateEntityFromDomain(dominio, entityDb);
+
+
+        MovBuenaPracticaEntity saved = repository.save(entityDb);
+        return mapper.toDomain(saved);
+    }
+
+    @Override
+    public BuenaPractica obtenerPorId(String cuo, Long id) {
+        BuenaPractica dominio = repository.findById(id)
+                .map(mapper::toDomain)
+                .orElse(null);
+
+        if (dominio != null) {
+            cargarArchivosEnDominio(dominio);
         }
         return dominio;
     }
 
     @Override
-    @Transactional
-    public BuenaPractica guardar(BuenaPractica dominio) throws Exception {
-        MovBuenaPracticaEntity entity = mapper.toEntity(dominio);
-        MovBuenaPracticaEntity saved = repository.save(entity);
-
-        BuenaPractica result = mapper.toDomain(saved);
-
-        // Enriquecer con Nombre para devolverlo al Front
-//        if (result.getDistritoJudicialId() != null) {
-//            repoDistrito.findById(result.getDistritoJudicialId())
-//                    .ifPresent(d -> result.setDistritoJudicialNombre(d.getNombre()));
-//        }
-
-        return result;
+    public String obtenerUltimoCodigo(String cuo, Long distritoId, String anio) {
+        return repository.obtenerUltimoCodigo(distritoId, "-" + anio + "-BP");
     }
 
-    @Override
-    @Transactional
-    public BuenaPractica actualizar(BuenaPractica dominio) throws Exception {
-        if (dominio.getId() == null) throw new Exception("ID obligatorio para actualizar");
+    // --- PRIVADOS ---
 
-        // 1. Obtener
-        MovBuenaPracticaEntity entity = repository.findById(dominio.getId())
-                .orElseThrow(() -> new Exception("No existe BP con ID: " + dominio.getId()));
-
-        // 2. Actualizar campos
-        mapper.updateEntityFromDomain(dominio, entity);
-
-        // 3. Guardar
-        MovBuenaPracticaEntity saved = repository.save(entity);
-
-        BuenaPractica result = mapper.toDomain(saved);
-
-        //  Enriquecer con Nombre para devolverlo al Front
-//        if (result.getDistritoJudicialId() != null) {
-//            repoDistrito.findById(result.getDistritoJudicialId())
-//                    .ifPresent(d -> result.setDistritoJudicialNombre(d.getNombre()));
-//        }
-
-        return result;
-    }
-
-    @Override
-    public String obtenerUltimoId() throws Exception {
-        return repository.obtenerUltimoId();
+    private void cargarArchivosEnDominio(BuenaPractica dominio) {
+        List<MovArchivoEntity> archivosEntities = repoArchivos.findByNumeroIdentificacionAndActivo(dominio.getCodigo(), "1");
+        if (archivosEntities != null && !archivosEntities.isEmpty()) {
+            dominio.setArchivosGuardados(archivosEntities.stream()
+                    .map(a -> Archivo.builder()
+                            .id(a.getId())
+                            .nombre(a.getNombre())
+                            .tipo(a.getTipo())
+                            .ruta(a.getRuta())
+                            .numeroIdentificacion(a.getNumeroIdentificacion())
+                            .build())
+                    .collect(Collectors.toList()));
+        }
     }
 
     @Override
     public List<ResumenEstadistico> obtenerResumenGrafico() throws Exception {
-        List<Object[]> rawData = repository.obtenerEstadisticasHistoricas();
+        // La consulta JPQL devuelve Object[]: row[0] = distritoJudicialId (Long), row[1] = count (Long)
+        List<Object[]> rawData = repository.obtenerEstadisticasPorCorte();
         List<ResumenEstadistico> lista = new ArrayList<>();
 
         for (Object[] row : rawData) {
-            String distritoId = (String) row[0];
+            Long distritoId = (Long) row[0];
             Long cantidad = (Long) row[1];
 
-//            String nombreCorte = repoDistrito.findById(distritoId)
-//                    .map(d -> d.getNombre()).orElse("Corte " + distritoId);
-//
-//            lista.add(ResumenEstadistico.builder()
-//                    .etiqueta(nombreCorte).cantidad(cantidad).build());
+            // Buscamos el nombre de la corte en el maestro
+            String nombreCorte = repoDistrito.findById(distritoId)
+                    .map(d -> d.getNombreCorto())
+                    .orElse("Corte " + distritoId);
+
+            lista.add(ResumenEstadistico.builder()
+                    .etiqueta(nombreCorte)
+                    .cantidad(cantidad)
+                    .build());
         }
         return lista;
     }
+
 }
+
+

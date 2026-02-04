@@ -1,65 +1,65 @@
 package pe.gob.pj.prueba.infraestructure.db.negocio.persistence;
 
+import lombok.AccessLevel;
 import lombok.RequiredArgsConstructor;
+import lombok.experimental.FieldDefaults;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Component;
 import org.springframework.transaction.annotation.Transactional;
+import pe.gob.pj.prueba.domain.exceptions.negocio.MovimientoNoEncontradoException;
 import pe.gob.pj.prueba.domain.model.common.Pagina;
 import pe.gob.pj.prueba.domain.model.negocio.Archivo;
 import pe.gob.pj.prueba.domain.model.negocio.LlapanchikpaqJusticia;
 import pe.gob.pj.prueba.domain.model.negocio.ResumenEstadistico;
+import pe.gob.pj.prueba.domain.model.negocio.query.ListarLlapanchikpaqQuery;
 import pe.gob.pj.prueba.domain.port.persistence.negocio.LlapanchikpaqPersistencePort;
-import pe.gob.pj.prueba.infraestructure.db.negocio.entities.MovArchivosEntity;
+import pe.gob.pj.prueba.infraestructure.db.negocio.entities.MovArchivoEntity;
 import pe.gob.pj.prueba.infraestructure.db.negocio.entities.MovLlapanchikpaqJusticiaEntity;
 import pe.gob.pj.prueba.infraestructure.db.negocio.repositories.MovArchivosRepository;
 import pe.gob.pj.prueba.infraestructure.db.negocio.repositories.MovLlapanchikpaqJusticiaRepository;
 import pe.gob.pj.prueba.infraestructure.db.negocio.repositories.masters.MaeDistritoJudicialRepository;
 import pe.gob.pj.prueba.infraestructure.mappers.LlapanchikpaqMapper;
 
-import java.time.LocalDate;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.stream.Collectors;
 
+@Slf4j
 @Component
 @RequiredArgsConstructor
+@FieldDefaults(level = AccessLevel.PRIVATE, makeFinal = true)
 public class LlapanchikpaqPersistenceAdapter implements LlapanchikpaqPersistencePort {
 
-    private final MovLlapanchikpaqJusticiaRepository repository;
-    private final LlapanchikpaqMapper mapper;
-    private final MovArchivosRepository repoArchivos;
-    private final MaeDistritoJudicialRepository repoCorte;
+    MovLlapanchikpaqJusticiaRepository repository;
+    MaeDistritoJudicialRepository repoDistrito;
+    MovArchivosRepository repoArchivos;
+    LlapanchikpaqMapper mapper;
 
     @Override
-    @Transactional(readOnly = true)
-    public Pagina<LlapanchikpaqJusticia> listar(String usuario, LlapanchikpaqJusticia filtros, int pagina, int tamanio) throws Exception {
+    public Pagina<LlapanchikpaqJusticia> listar(String cuo, ListarLlapanchikpaqQuery query, int pagina, int tamanio) {
         Pageable pageable = PageRequest.of(pagina - 1, tamanio);
-        if (filtros == null) filtros = LlapanchikpaqJusticia.builder().build();
 
-        String search = filtros.getSearch();
-        String distrito = filtros.getDistritoJudicialId();
-        LocalDate fIni = filtros.getFechaInicio();
-        LocalDate fFin = filtros.getFechaFin();
+        var pageResult = repository.listar(
+                query.getSearch(),
+                query.getDistritoJudicialId(),
+                query.getFechaInicio(),
+                query.getFechaFin(),
+                pageable
+        );
 
-        // La Query Nativa ya trae el nombre del distrito (JOIN), no hace falta buscarlo manual.
-        var result = repository.listar(usuario, search, distrito, fIni, fFin, pageable);
-
-        List<LlapanchikpaqJusticia> contenido = result.getContent().stream()
-                .map(p -> LlapanchikpaqJusticia.builder()
-                        .id(p.getId())
-                        .fechaInicio(p.getFechaInicio())
-                        .lugarActividad(p.getLugarActividad())
-                        .descripcionActividad(p.getDescripcionActividad())
-                        .distritoJudicialNombre(p.getDistritoJudicialNombre()) // Viene de la BD
-                        .activo(p.getEstado())
-                        .build())
+        List<LlapanchikpaqJusticia> contenido = pageResult.getContent().stream()
+                .map(entity -> {
+                    LlapanchikpaqJusticia dominio = mapper.toDomain(entity);
+                    return dominio;
+                })
                 .collect(Collectors.toList());
 
         return Pagina.<LlapanchikpaqJusticia>builder()
                 .contenido(contenido)
-                .totalRegistros(result.getTotalElements())
-                .totalPaginas(result.getTotalPages())
+                .totalRegistros(pageResult.getTotalElements())
+                .totalPaginas(pageResult.getTotalPages())
                 .paginaActual(pagina)
                 .tamanioPagina(tamanio)
                 .build();
@@ -67,120 +67,100 @@ public class LlapanchikpaqPersistenceAdapter implements LlapanchikpaqPersistence
 
     @Override
     @Transactional
-    public LlapanchikpaqJusticia guardar(LlapanchikpaqJusticia dominio) throws Exception {
+    public LlapanchikpaqJusticia guardar(String cuo, LlapanchikpaqJusticia dominio) {
+        log.info("[{}] Guardando Llapanchikpaq: {}", cuo, dominio.getCodigo());
         MovLlapanchikpaqJusticiaEntity entity = mapper.toEntity(dominio);
-
-        // Asignar ID padre a hijos
-        if (entity.getId() != null) {
-            String idPadre = entity.getId();
-            if (entity.getBeneficiadas() != null) entity.getBeneficiadas().forEach(h -> h.setLljId(idPadre));
-            if (entity.getAtendidas() != null) entity.getAtendidas().forEach(h -> h.setLljId(idPadre));
-            if (entity.getCasos() != null) entity.getCasos().forEach(h -> h.setLljId(idPadre));
-            if (entity.getTareas() != null) entity.getTareas().forEach(h -> h.setLljId(idPadre));
-        }
-
         MovLlapanchikpaqJusticiaEntity saved = repository.save(entity);
-        LlapanchikpaqJusticia res = mapper.toDomain(saved);
-
-        // Enriquecer nombre inline
-//        if (res.getDistritoJudicialId() != null) {
-//            repoCorte.findById(res.getDistritoJudicialId())
-//                    .ifPresent(d -> res.setDistritoJudicialNombre(d.getNombre()));
-//        }
-
-        return res;
-    }
-
-    @Override
-    public String obtenerUltimoId() throws Exception {
-        return repository.obtenerUltimoId();
+        return mapper.toDomain(saved);
     }
 
     @Override
     @Transactional
-    public LlapanchikpaqJusticia actualizar(LlapanchikpaqJusticia dominio) throws Exception {
-        // Buscar
-        MovLlapanchikpaqJusticiaEntity entityDb = repository.findById(dominio.getId())
-                .orElseThrow(() -> new Exception("No encontrado ID: " + dominio.getId()));
+    public LlapanchikpaqJusticia actualizar(String cuo, LlapanchikpaqJusticia dominio) {
+        log.info("[{}] Actualizando Llapanchikpaq ID: {}", cuo, dominio.getId());
 
-        // Actualizar campos simples
+        MovLlapanchikpaqJusticiaEntity entityDb = repository.findById(dominio.getId())
+                .orElseThrow(() -> new MovimientoNoEncontradoException("No se encontró el registro con ID: " + dominio.getId()));
+
         mapper.updateEntityFromDomain(dominio, entityDb);
 
-        // Actualizar Listas (Orphan Removal manual: limpiar y agregar)
-        if (entityDb.getBeneficiadas() != null) entityDb.getBeneficiadas().clear();
-        if (dominio.getBeneficiadas() != null) {
-            dominio.getBeneficiadas().forEach(d -> {
-                var e = mapper.mapBeneficiada(d);
-                e.setLljId(entityDb.getId());
-                entityDb.getBeneficiadas().add(e);
-            });
-        }
-
-        if (entityDb.getAtendidas() != null) entityDb.getAtendidas().clear();
-        if (dominio.getAtendidas() != null) {
-            dominio.getAtendidas().forEach(d -> {
-                var e = mapper.mapAtendida(d);
-                e.setLljId(entityDb.getId());
-                entityDb.getAtendidas().add(e);
-            });
-        }
-
-        if (entityDb.getCasos() != null) entityDb.getCasos().clear();
-        if (dominio.getCasos() != null) {
-            dominio.getCasos().forEach(d -> {
-                var e = mapper.mapCaso(d);
-                e.setLljId(entityDb.getId());
-                entityDb.getCasos().add(e);
-            });
-        }
-
-        if (entityDb.getTareas() != null) entityDb.getTareas().clear();
-        if (dominio.getTareas() != null) {
-            dominio.getTareas().forEach(d -> {
-                var e = mapper.mapTarea(d);
-                e.setLljId(entityDb.getId());
-                entityDb.getTareas().add(e);
-            });
-        }
+        actualizarHijos(entityDb, dominio);
 
         MovLlapanchikpaqJusticiaEntity saved = repository.save(entityDb);
-        LlapanchikpaqJusticia res = mapper.toDomain(saved);
-
-        // Enriquecer nombre inline
-//        if (res.getDistritoJudicialId() != null) {
-//            repoCorte.findById(res.getDistritoJudicialId())
-//                    .ifPresent(d -> res.setDistritoJudicialNombre(d.getNombre()));
-//        }
-
-        return res;
+        return mapper.toDomain(saved);
     }
 
     @Override
-    @Transactional(readOnly = true)
-    public LlapanchikpaqJusticia buscarPorId(String id) throws Exception {
-        MovLlapanchikpaqJusticiaEntity entity = repository.findById(id).orElse(null);
-        if (entity == null) return null;
+    public LlapanchikpaqJusticia obtenerPorId(String cuo, Long id) {
+        LlapanchikpaqJusticia dominio = repository.findById(id)
+                .map(mapper::toDomain)
+                .orElse(null);
 
-        LlapanchikpaqJusticia dominio = mapper.toDomain(entity);
+        if (dominio != null) {
+            cargarArchivosEnDominio(dominio);
+        }
+        return dominio;
+    }
 
-        // ✅ Enriquecer nombre inline
-//        if (dominio.getDistritoJudicialId() != null) {
-//            repoCorte.findById(dominio.getDistritoJudicialId())
-//                    .ifPresent(d -> dominio.setDistritoJudicialNombre(d.getNombre()));
-//        }
+    @Override
+    public String obtenerUltimoCodigo(String cuo, Long distritoId, String anio) {
+        return repository.obtenerUltimoCodigo(distritoId, "-" + anio + "-LL");
+    }
 
-        // Archivos
-        List<MovArchivosEntity> archivos = repoArchivos.findByNumeroIdentificacion(id);
-        if(archivos != null && !archivos.isEmpty()) {
-            dominio.setArchivosGuardados(archivos.stream()
+    // --- PRIVADOS ---
+
+    private void cargarArchivosEnDominio(LlapanchikpaqJusticia dominio) {
+        List<MovArchivoEntity> archivosEntities = repoArchivos.findByNumeroIdentificacionAndActivo(dominio.getCodigo(), "1");
+        if (archivosEntities != null && !archivosEntities.isEmpty()) {
+            dominio.setArchivosGuardados(archivosEntities.stream()
                     .map(a -> Archivo.builder()
-                            .nombre(a.getNombre()).tipo(a.getTipo())
-                            .ruta(a.getRuta()).numeroIdentificacion(a.getNumeroIdentificacion())
+                            .id(a.getId())
+                            .nombre(a.getNombre())
+                            .tipo(a.getTipo())
+                            .ruta(a.getRuta())
+                            .numeroIdentificacion(a.getNumeroIdentificacion())
                             .build())
                     .collect(Collectors.toList()));
         }
+    }
 
-        return dominio;
+    private void actualizarHijos(MovLlapanchikpaqJusticiaEntity entityDb, LlapanchikpaqJusticia dominio) {
+        // 1. Beneficiadas
+        if (entityDb.getBeneficiadas() != null) entityDb.getBeneficiadas().clear();
+        if (dominio.getPersonasBeneficiadas() != null) {
+            dominio.getPersonasBeneficiadas().forEach(d -> {
+                var child = mapper.toEntityPB(d);
+                child.setLljId(entityDb.getId());
+                entityDb.getBeneficiadas().add(child);
+            });
+        }
+        // 2. Atendidas
+        if (entityDb.getAtendidas() != null) entityDb.getAtendidas().clear();
+        if (dominio.getPersonasAtendidas() != null) {
+            dominio.getPersonasAtendidas().forEach(d -> {
+                var child = mapper.toEntityPA(d);
+                child.setLljId(entityDb.getId());
+                entityDb.getAtendidas().add(child);
+            });
+        }
+        // 3. Casos
+        if (entityDb.getCasos() != null) entityDb.getCasos().clear();
+        if (dominio.getCasosAtendidos() != null) {
+            dominio.getCasosAtendidos().forEach(d -> {
+                var child = mapper.toEntityCA(d);
+                child.setLljId(entityDb.getId());
+                entityDb.getCasos().add(child);
+            });
+        }
+        // 4. Tareas
+        if (entityDb.getTareas() != null) entityDb.getTareas().clear();
+        if (dominio.getTareasRealizadas() != null) {
+            dominio.getTareasRealizadas().forEach(d -> {
+                var child = mapper.toEntityTR(d);
+                child.setLljId(entityDb.getId());
+                entityDb.getTareas().add(child);
+            });
+        }
     }
 
     @Override
@@ -189,11 +169,19 @@ public class LlapanchikpaqPersistenceAdapter implements LlapanchikpaqPersistence
         List<ResumenEstadistico> lista = new ArrayList<>();
 
         for(Object[] row : data) {
-            String idCorte = (String) row[0];
+            Long idCorte = (Long) row[0];
             Long cant = (Long) row[1];
-//            String nombre = repoCorte.findById(idCorte).map(c -> c.getNombre()).orElse(idCorte);
-//            lista.add(ResumenEstadistico.builder().etiqueta(nombre).cantidad(cant).build());
+
+            String nombreCorte = repoDistrito.findById(idCorte)
+                    .map(c -> c.getNombreCorto())
+                    .orElse("Corte " + idCorte);
+
+            lista.add(ResumenEstadistico.builder()
+                    .etiqueta(nombreCorte)
+                    .cantidad(cant)
+                    .build());
         }
         return lista;
     }
+
 }

@@ -3,7 +3,9 @@ package pe.gob.pj.prueba.domain.model.negocio;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
+import lombok.EqualsAndHashCode;
 import lombok.NoArgsConstructor;
+import pe.gob.pj.prueba.domain.model.Auditoria;
 
 import java.io.Serializable;
 import java.time.LocalDate;
@@ -14,14 +16,19 @@ import java.util.List;
 @Builder
 @NoArgsConstructor
 @AllArgsConstructor
-public class JusticiaItinerante implements Serializable {
+@EqualsAndHashCode(callSuper = true)
+public class JusticiaItinerante extends Auditoria implements Serializable {
 
     private static final long serialVersionUID = 1L;
 
-    // --- CABECERA ---
-    private String id;
-    private String distritoJudicialId;
+    // --- IDENTIFICADORES ---
+    private Long id;
+    private String codigo;
+
+    // --- DATOS GENERALES ---
+    private Long distritoJudicialId;
     private String distritoJudicialNombre;
+
     private LocalDate fechaInicio;
     private LocalDate fechaFin;
 
@@ -29,48 +36,52 @@ public class JusticiaItinerante implements Serializable {
     private String resolucionAdminPlan;
     private String documentoAutoriza;
 
-    private String ejeId;
+    private Long ejeId;
     private String publicoObjetivo;
     private String publicoObjetivoDetalle;
     private String lugarActividad;
 
-    // Ubigeo
-    private String departamentoId;
-    private String provinciaId;
-    private String distritoGeograficoId;
+    // --- UBIGEO---
+    private Long departamentoId;
+    private Long provinciaId;
+    private Long distritoId;
 
-    // Estadísticas
+    // --- ESTADÍSTICAS ---
     private Integer numMesasInstaladas;
     private Integer numServidores;
     private Integer numJueces;
+
     private String codigoAdcPueblosIndigenas;
     private String tambo;
     private String codigoSaeLenguaNativa;
     private String lenguaNativa;
 
-    // Textos
+    // --- TEXTOS ---
     private String descripcionActividad;
     private String institucionesAliadas;
     private String observaciones;
 
-    // Auditoría
-    private LocalDate fechaRegistro;
-    private String usuarioRegistro;
+    // --- AUDITORÍA DE NEGOCIO ---
+    private LocalDate fechaRegistroActividad;
+    private Long usuarioRegistroId;
     private String activo;
 
-    // --- LISTAS DE DETALLE (Usando las Clases Internas) ---
+    // --- LISTAS HIJAS (Detalles) ---
+    @Builder.Default
     private List<DetalleBeneficiada> personasBeneficiadas = new ArrayList<>();
+    @Builder.Default
     private List<DetalleAtendida> personasAtendidas = new ArrayList<>();
+    @Builder.Default
     private List<DetalleCaso> casosAtendidos = new ArrayList<>();
+    @Builder.Default
     private List<DetalleTarea> tareasRealizadas = new ArrayList<>();
+
+
+    // --- AUXILIARES ---
     private String search;
-    // Archivos (Estándar)
+    private LocalDate fRegistro;
     private List<Archivo> archivosGuardados;
 
-
-    // =========================================================
-    //    CLASES INTERNAS (ESTANDARIZADO)
-    // =========================================================
 
     @Data @Builder @NoArgsConstructor @AllArgsConstructor
     public static class DetalleBeneficiada implements Serializable {
@@ -83,7 +94,7 @@ public class JusticiaItinerante implements Serializable {
 
     @Data @Builder @NoArgsConstructor @AllArgsConstructor
     public static class DetalleAtendida implements Serializable {
-        private Integer tipoVulnerabilidadId;
+        private Long tipoVulnerabilidadId;
         private String rangoEdad;
         private Integer cantFemenino;
         private Integer cantMasculino;
@@ -92,7 +103,7 @@ public class JusticiaItinerante implements Serializable {
 
     @Data @Builder @NoArgsConstructor @AllArgsConstructor
     public static class DetalleCaso implements Serializable {
-        private Integer materiaId;
+        private Long materiaId;
         private Integer numDemandas;
         private Integer numAudiencias;
         private Integer numSentencias;
@@ -103,7 +114,7 @@ public class JusticiaItinerante implements Serializable {
 
     @Data @Builder @NoArgsConstructor @AllArgsConstructor
     public static class DetalleTarea implements Serializable {
-        private String tareaId;
+        private Long tareaId;
         private LocalDate fechaInicio;
         private String descripcion;
     }

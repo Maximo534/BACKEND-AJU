@@ -12,57 +12,26 @@ import java.time.LocalDate;
 import java.util.List;
 
 @Repository
-public interface MovLlapanchikpaqJusticiaRepository extends JpaRepository<MovLlapanchikpaqJusticiaEntity, String> {
+public interface MovLlapanchikpaqJusticiaRepository extends JpaRepository<MovLlapanchikpaqJusticiaEntity, Long> {
 
-    @Query("SELECT MAX(e.id) FROM MovLlapanchikpaqJusticiaEntity e WHERE e.id LIKE '%-LL'")
-    String obtenerUltimoId();
+    @Query(value = "SELECT c_codigo FROM acjust.mov_llapanchikpaq_justicia " +
+            "WHERE c_codigo LIKE %:sufijoAnio " +
+            "AND n_distrito_jud_id = :distrito " +
+            "ORDER BY n_llj_id DESC LIMIT 1", nativeQuery = true)
+    String obtenerUltimoCodigo(@Param("distrito") Long distrito, @Param("sufijoAnio") String sufijoAnio);
 
-    @Query(value = """
-        SELECT 
-            ll.c_llj_id AS id,
-            ll.f_inicio AS fechaInicio,
-            ll.l_activo AS estado,
-            ll.x_lugar_activ AS lugarActividad,
-            ll.t_desc_activ As descripcionActividad,
-            dj.x_nom_corto AS distritoJudicialNombre
-        FROM prueba.mov_aju_llapanchikpaq_justicia ll 
-        INNER JOIN prueba.mae_aju_distrito_judiciales dj ON ll.c_distrito_jud_id = dj.c_distrito_jud_id 
-        WHERE ll.c_usuario_reg = :usuario
-          
-          -- FILTRO COMBO
-          AND (:distrito IS NULL OR ll.c_distrito_jud_id = :distrito)
-          
-          -- FILTRO RANGO DE FECHAS (Sobre f_inicio)
-          AND (CAST(:fecIni AS DATE) IS NULL OR ll.f_inicio >= :fecIni)
-          AND (CAST(:fecFin AS DATE) IS NULL OR ll.f_inicio <= :fecFin)
-
-          -- BUSCADOR GENERAL
-          AND (
-              :search IS NULL OR :search = '' OR
-              UPPER(ll.c_llj_id) LIKE UPPER(CONCAT('%', :search, '%')) OR
-              UPPER(ll.x_lugar_activ) LIKE UPPER(CONCAT('%', :search, '%')) OR
-              UPPER(dj.x_nom_corto) LIKE UPPER(CONCAT('%', :search, '%'))
-          )
-        ORDER BY ll.f_inicio DESC
-    """, countQuery = """
-        SELECT count(*) 
-        FROM prueba.mov_aju_llapanchikpaq_justicia ll 
-        INNER JOIN prueba.mae_aju_distrito_judiciales dj ON ll.c_distrito_jud_id = dj.c_distrito_jud_id 
-        WHERE ll.c_usuario_reg = :usuario
-          AND (:distrito IS NULL OR ll.c_distrito_jud_id = :distrito)
-          AND (CAST(:fecIni AS DATE) IS NULL OR ll.f_inicio >= :fecIni)
-          AND (CAST(:fecFin AS DATE) IS NULL OR ll.f_inicio <= :fecFin)
-          AND (
-              :search IS NULL OR :search = '' OR
-              UPPER(ll.c_llj_id) LIKE UPPER(CONCAT('%', :search, '%')) OR
-              UPPER(ll.x_lugar_activ) LIKE UPPER(CONCAT('%', :search, '%')) OR
-              UPPER(dj.x_nom_corto) LIKE UPPER(CONCAT('%', :search, '%'))
-          )
-    """, nativeQuery = true)
-    Page<LlapanchikpaqResumenProjection> listar(
-            @Param("usuario") String usuario,
+    @Query("SELECT e FROM MovLlapanchikpaqJusticiaEntity e " +
+            "WHERE e.activo = '1' " +
+            "AND (:distrito IS NULL OR e.distritoJudicialId = :distrito) " +
+            "AND (cast(:fecIni as date) IS NULL OR e.fechaInicio >= :fecIni) " +
+            "AND (cast(:fecFin as date) IS NULL OR e.fechaInicio <= :fecFin) " +
+            "AND (:search IS NULL OR :search = '' OR " +
+            "     UPPER(e.codigo) LIKE UPPER(CONCAT('%', :search, '%')) OR " +
+            "     UPPER(e.lugarActividad) LIKE UPPER(CONCAT('%', :search, '%'))) " +
+            "ORDER BY e.id DESC")
+    Page<MovLlapanchikpaqJusticiaEntity> listar(
             @Param("search") String search,
-            @Param("distrito") String distrito,
+            @Param("distrito") Long distrito,
             @Param("fecIni") LocalDate fecIni,
             @Param("fecFin") LocalDate fecFin,
             Pageable pageable);
@@ -70,15 +39,9 @@ public interface MovLlapanchikpaqJusticiaRepository extends JpaRepository<MovLla
     // Gráfico
     @Query("SELECT e.distritoJudicialId, COUNT(e) " +
             "FROM MovLlapanchikpaqJusticiaEntity e " +
+            "WHERE e.activo = '1' " +
             "GROUP BY e.distritoJudicialId")
     List<Object[]> obtenerEstadisticasPorCorte();
-
-    interface LlapanchikpaqResumenProjection {
-        String getId();
-        LocalDate getFechaInicio();
-        String getDistritoJudicialNombre();
-        String getLugarActividad();
-        String getDescripcionActividad();
-        String getEstado();
-    }
 }
+
+

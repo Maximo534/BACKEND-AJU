@@ -1,71 +1,94 @@
 package pe.gob.pj.prueba.domain.model.negocio;
 
-import lombok.AllArgsConstructor;
-import lombok.Builder;
-import lombok.Data;
-import lombok.NoArgsConstructor;
+import lombok.*;
+import lombok.experimental.FieldDefaults;
+import pe.gob.pj.prueba.domain.model.Auditoria;
+
 import java.io.Serializable;
 import java.time.LocalDate;
 import java.util.List;
 
-@Data @Builder @NoArgsConstructor @AllArgsConstructor
-public class BuenaPractica implements Serializable {
-    private String id;
-    private String distritoJudicialId;
-    private String distritoJudicialNombre;
-    private String responsable;
-    private String email;
-    private String telefono;
-    private String integrantes;
-    private LocalDate fechaInicio;
-    private LocalDate fechaFin;
-    private String titulo;
-    private String categoria;
+@Data
+@Builder
+@NoArgsConstructor
+@AllArgsConstructor
+@EqualsAndHashCode(callSuper = true)
+@FieldDefaults(level = AccessLevel.PRIVATE)
+public class BuenaPractica extends Auditoria implements Serializable {
 
-    // Campos largos originales
-    private String problema;
-    private String causa;
-    private String consecuencia;
-    private String descripcionGeneral;
-    private String logro;
-    private String objetivo;
-    private String aliado;
-    private String dificultad;
-    private String norma;
+    static final long serialVersionUID = 1L;
 
-    private String desarrollo;
-    private String ejecucion;
-    private String actividad;
+    // --- Identificadores ---
+    Long id;
+    String codigo;
 
-    private String aporte;
-    private String resultado;
-    private String impacto;
-    private String publicoObjetivo;
+    // --- Maestros ---
+    Long distritoJudicialId;
+    String distritoJudicialNombre;
 
-    private String leccionAprendida;
-    private String infoAdicional;
+    // --- Contacto ---
+    String responsable;
+    String email;
+    String telefono;
+    String integrantes;
 
-    // Nuevos campos completos
-    private String aporteRelevante;
-    private String situacionAnterior;
-    private String situacionDespues;
-    private String impactoPrincipal;
-    private String mejora;
-    private String posibilidadReplica;
-    private String acciones;
-    private String objInstitucional;
-    private String politicaPublica;
-    private String importancia;
-    private String aspectosImplementacion;
-    private String aporteSociedad;
-    private String medidas;
-    private String normaInterna;
-    private String dificInterna;
-    private String dificExterna;
-    private String aliadoExt;
-    private String aliadoInt;
+    // --- General ---
+    LocalDate fechaInicio;
+    LocalDate fechaFin;
+    String titulo;
+    String categoria;
 
-    private String usuarioRegistro;
-    private String search;
-    private List<Archivo> archivosGuardados;
+    // --- ANÁLISIS ---
+    String problema;
+    String causa;
+    String consecuencia;
+    String descripcionGeneral;
+
+    // --- PLANIFICACIÓN ---
+    String logro;
+    String objetivo;
+    String aliado;
+    String dificultad;
+    String norma;
+
+    // --- EJECUCIÓN ---
+    String desarrollo;
+    String ejecucion;
+    String actividad;
+
+    // --- RESULTADOS ---
+    String aporte;
+    String resultado;
+    String impacto;
+    String publicoObjetivo;
+    String leccionAprendida;
+    String infoAdicional;
+
+    // --- CAMPOS ADICIONALES  ---
+    String aporteRelevante;
+    String situacionAnterior;
+    String situacionDespues;
+    String impactoPrincipal;
+    String mejora;
+    String posibilidadReplica;
+    String acciones;
+    String objInstitucional;
+    String politicaPublica;
+    String importancia;
+    String aspectosImplementacion;
+    String aporteSociedad;
+    String medidas;
+    String normaInterna;
+    String dificInterna;
+    String dificExterna;
+    String aliadoExt;
+    String aliadoInt;
+
+    // --- Auditoría Negocio ---
+    LocalDate fechaRegistro;
+    Long usuarioRegistroId;
+    String activo;
+
+    // --- Archivos ---
+    List<Archivo> archivosGuardados;
 }

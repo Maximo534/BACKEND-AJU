@@ -1,90 +1,122 @@
 package pe.gob.pj.prueba.domain.model.negocio;
 
-import lombok.AllArgsConstructor;
-import lombok.Builder;
-import lombok.Data;
-import lombok.NoArgsConstructor;
+import lombok.*;
+import lombok.experimental.FieldDefaults;
+import pe.gob.pj.prueba.domain.model.Auditoria;
+
 import java.io.Serializable;
 import java.time.LocalDate;
 import java.util.List;
 
-@Data @Builder @NoArgsConstructor @AllArgsConstructor
-public class LlapanchikpaqJusticia implements Serializable {
+@Data
+@Builder
+@NoArgsConstructor
+@AllArgsConstructor
+@EqualsAndHashCode(callSuper = true)
+@FieldDefaults(level = AccessLevel.PRIVATE)
+public class LlapanchikpaqJusticia extends Auditoria implements Serializable {
 
-    private String id;
-    private String distritoJudicialId;
-    private String distritoJudicialNombre;
-    private LocalDate fechaInicio;
-    private LocalDate fechaFin;
-    private String resolucionPlanAnual;
-    private String resolucionAdminPlan;
-    private String documentoAutoriza;
-    private String lugarActividad;
+    static final long serialVersionUID = 1L;
 
-    // Ubigeo
-    private String departamentoId;
-    private String provinciaId;
-    private String distritoGeograficoId;
+    // --- Identificadores ---
+    Long id;
+    String codigo;
 
-    // Datos Población
-    private Integer numMesasInstaladas;
-    private Integer numServidores;
-    private Integer numJueces;
-    private String usoLenguaNativa; // "SI"/"NO"
-    private String lenguaNativaDesc;
+    // --- FKs y Maestros  ---
+    Long distritoJudicialId;
+    String distritoJudicialNombre;
 
-    // Textos
-    private String derivacion;
-    private String descripcionActividad;
-    private String observacion;
+    // --- Datos Principales ---
+    LocalDate fechaInicio;
+    LocalDate fechaFin;
+    String lugarActividad;
 
-    // Auditoría
-    private LocalDate fechaRegistro;
-    private String usuarioRegistro;
-    private String activo;
+    String resolucionPlanAnual;
+    String resolucionAdminPlan;
+    String documentoAutoriza;
 
-    // --- LISTAS DETALLE ---
-    private List<DetalleBeneficiada> beneficiadas;
-    private List<DetalleAtendida> atendidas;
-    private List<DetalleCaso> casos;
-    private List<DetalleTarea> tareas;
-    private String search;
-    private List<Archivo> archivosGuardados;
-    // --- CLASES INTERNAS PARA DETALLES ---
+    // --- Ubicación ---
+    Long departamentoId;
+    Long provinciaId;
+    Long distritoGeograficoId;
 
-    @Data @Builder @NoArgsConstructor @AllArgsConstructor
-    public static class DetalleBeneficiada {
-        private String codigoRango;
-        private String descripcionRango;
-        private Integer cantFemenino;
-        private Integer cantMasculino;
-        private Integer cantLgtbiq;
+    // --- Clasificación ---
+    Long ejeId;
+
+    // --- Textos ---
+    String descripcionActividad;
+    String institucionesAliadas;
+    String observacion;
+
+    // --- Auditoría Negocio ---
+    LocalDate fechaRegistro;
+    Long usuarioRegistroId;
+    String activo;
+
+    // --- Listas de Detalle ---
+    List<DetalleBeneficiada> personasBeneficiadas;
+    List<DetalleAtendida> personasAtendidas;
+    List<DetalleCaso> casosAtendidos;
+    List<DetalleTarea> tareasRealizadas;
+
+    // --- Archivos ---
+    List<Archivo> archivosGuardados;
+
+    // --- CLASES INTERNAS ---
+
+    @Data
+    @Builder
+    @NoArgsConstructor
+    @AllArgsConstructor
+    @FieldDefaults(level = AccessLevel.PRIVATE)
+    public static class DetalleBeneficiada implements Serializable {
+        static final long serialVersionUID = 1L;
+        String codigoRango;
+        String descripcionRango;
+        Integer cantidadFemenino;
+        Integer cantidadMasculino;
+        Integer cantidadLgtbiq;
     }
 
-    @Data @Builder @NoArgsConstructor @AllArgsConstructor
-    public static class DetalleAtendida {
-        private Integer tipoVulnerabilidadId;
-        private String rangoEdad;
-        private Integer cantidadFemenino;
-        private Integer cantidadMasculino;
-        private Integer cantidadLgtbiq;
+    @Data
+    @Builder
+    @NoArgsConstructor
+    @AllArgsConstructor
+    @FieldDefaults(level = AccessLevel.PRIVATE)
+    public static class DetalleAtendida implements Serializable {
+        static final long serialVersionUID = 1L;
+        Long tipoVulnerabilidadId;
+        String rangoEdad;
+        Integer cantidadFemenino;
+        Integer cantidadMasculino;
+        Integer cantidadLgtbiq;
     }
 
-    @Data @Builder @NoArgsConstructor @AllArgsConstructor
-    public static class DetalleCaso {
-        private Integer materiaId;
-        private Integer cantidadDemandas;
-        private Integer cantidadAudiencias;
-        private Integer cantidadSentencias;
-        private Integer cantidadProcesos;
-        private Integer cantidadNotificaciones;
-        private Integer cantidadOrientaciones;
+    @Data
+    @Builder
+    @NoArgsConstructor
+    @AllArgsConstructor
+    @FieldDefaults(level = AccessLevel.PRIVATE)
+    public static class DetalleCaso implements Serializable {
+        static final long serialVersionUID = 1L;
+        Long materiaId;
+        Integer cantidadDemandas;
+        Integer cantidadAudiencias;
+        Integer cantidadSentencias;
+        Integer cantidadProcesos;
+        Integer cantidadNotificaciones;
+        Integer cantidadOrientaciones;
     }
 
-    @Data @Builder @NoArgsConstructor @AllArgsConstructor
-    public static class DetalleTarea {
-        private String tareaId;
-        private LocalDate fechaInicio;
-        private String descripcion;
+    @Data
+    @Builder
+    @NoArgsConstructor
+    @AllArgsConstructor
+    @FieldDefaults(level = AccessLevel.PRIVATE)
+    public static class DetalleTarea implements Serializable {
+        static final long serialVersionUID = 1L;
+        Long tareaId;
+        LocalDate fechaInicio;
+        String descripcion;
     }
 }

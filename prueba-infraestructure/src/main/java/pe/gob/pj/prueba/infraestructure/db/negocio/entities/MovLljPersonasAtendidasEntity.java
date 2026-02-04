@@ -1,43 +1,38 @@
 package pe.gob.pj.prueba.infraestructure.db.negocio.entities;
 
 import jakarta.persistence.*;
-import lombok.Getter;
-import lombok.Setter;
+import lombok.AccessLevel;
+import lombok.Data;
+import lombok.experimental.FieldDefaults;
 import pe.gob.pj.prueba.infraestructure.common.utils.EsquemaConstants;
 import pe.gob.pj.prueba.infraestructure.db.negocio.entities.ids.MovLljPersonasAtendidasId;
+import pe.gob.pj.prueba.infraestructure.db.negocio.entities.ids.TrimStringConverter;
+
 import java.io.Serializable;
 
-@Getter @Setter
+@Data
 @Entity
-@Table(name = "mov_aju_llj_per_atendidas", schema = EsquemaConstants.PRUEBA)
+@FieldDefaults(level = AccessLevel.PRIVATE)
+@Table(name = "mov_llj_per_atendidas", schema = EsquemaConstants.PRUEBA)
 @IdClass(MovLljPersonasAtendidasId.class)
 public class MovLljPersonasAtendidasEntity implements Serializable {
 
     @Id
-    @Column(name = "c_llj_id", length = 17)
-    private String lljId;
+    @Column(name = "n_llj_id")
+    Long lljId;
 
     @Id
     @Column(name = "n_tipo_vuln_id")
-    private Integer tipoVulnerabilidadId;
+    Long tipoVulnerabilidadId;
 
     @Id
-    @Column(name = "c_rango", length = 5)
-    private String rangoEdad;
+    @Column(name = "c_rango", length = 6)
+    @Convert(converter = TrimStringConverter.class)
+    String rangoEdad;
 
-    @Column(name = "n_cant_fem", nullable = false)
-    private Integer cantidadFemenino;
+    @Column(name = "n_cant_fem") Integer cantidadFemenino;
+    @Column(name = "n_cant_mas") Integer cantidadMasculino;
+    @Column(name = "n_cant_lgtbiq") Integer cantidadLgtbiq;
 
-    @Column(name = "n_cant_mas", nullable = false)
-    private Integer cantidadMasculino;
-
-    @Column(name = "n_cant_lgtbiq", nullable = false)
-    private Integer cantidadLgtbiq;
-
-    @PrePersist
-    public void prePersist() {
-        if(this.cantidadFemenino == null) this.cantidadFemenino = 0;
-        if(this.cantidadMasculino == null) this.cantidadMasculino = 0;
-        if(this.cantidadLgtbiq == null) this.cantidadLgtbiq = 0;
-    }
+    @Column(name = "l_activo") String activo = "1";
 }

@@ -1,42 +1,69 @@
 package pe.gob.pj.prueba.infraestructure.db.negocio.entities;
 
 import jakarta.persistence.*;
-import lombok.Getter;
-import lombok.Setter;
+import lombok.AccessLevel;
+import lombok.Data;
+import lombok.experimental.FieldDefaults;
+import pe.gob.pj.prueba.domain.common.enums.Estado;
+import pe.gob.pj.prueba.infraestructure.common.enums.OperacionBaseDatos;
 import pe.gob.pj.prueba.infraestructure.common.utils.EsquemaConstants;
-import pe.gob.pj.prueba.infraestructure.db.negocio.entities.ids.MovPromCulturaDetalleId; // IMPORTANTE
+import pe.gob.pj.prueba.infraestructure.common.utils.InformacionRedUtils;
+import pe.gob.pj.prueba.infraestructure.db.negocio.entities.ids.MovPromCulturaDetalleId;
 import pe.gob.pj.prueba.infraestructure.db.negocio.entities.ids.TrimStringConverter;
 
 import java.io.Serializable;
+import java.time.LocalDateTime;
 
-@Getter
-@Setter
+@Data
 @Entity
-@Table(name = "mov_aju_actv_prom_culturas_det", schema = EsquemaConstants.PRUEBA)
+@FieldDefaults(level = AccessLevel.PRIVATE)
+@Table(name = "mov_actividad_prom_cult_detalle", schema = EsquemaConstants.PRUEBA)
 @IdClass(MovPromCulturaDetalleId.class)
 public class MovPromCulturaDetalleEntity implements Serializable {
 
     @Id
-    @Column(name = "c_actv_prom_cult_id", length = 17)
-    @Convert(converter = TrimStringConverter.class)
-    private String promocionCulturaId;
+    @Column(name = "n_actv_prom_cult_id")
+    Long promocionCulturaId;
 
     @Id
     @Column(name = "c_rango", length = 6)
     @Convert(converter = TrimStringConverter.class)
-    private String codigoRango;
+    String codigoRango;
 
     @Id
     @Column(name = "x_desc_rango", length = 35)
     @Convert(converter = TrimStringConverter.class)
-    private String descripcionRango;
+    String descripcionRango;
 
-    @Column(name = "n_cant_fem")
-    private Integer cantidadFemenino;
+    @Column(name = "n_cant_fem") Integer cantidadFemenino;
+    @Column(name = "n_cant_mas") Integer cantidadMasculino;
+    @Column(name = "n_cant_lgtbiq") Integer cantidadLgtbiq;
 
-    @Column(name = "n_cant_mas")
-    private Integer cantidadMasculino;
+    // --- AUDITORÍA ESTÁNDAR ---
+    @Column(name = "l_activo", length = 1, nullable = false)
+    String activo = Estado.ACTIVO_NUMERICO.getNombre();
 
-    @Column(name = "n_cant_lgtbiq")
-    private Integer cantidadLgtbiq;
+    @Column(name = "f_registro", insertable = false, updatable = false)
+    LocalDateTime fRegistro;
+
+    @Column(name = "f_aud")
+    LocalDateTime fAud = LocalDateTime.now();
+
+    @Column(name = "b_aud")
+    String bAud = OperacionBaseDatos.INSERTAR.getNombre();
+
+    @Column(name = "c_aud_uid")
+    String cAudId;
+
+    @Column(name = "c_aud_uidred")
+    String cAudIdRed = InformacionRedUtils.getNombreRed();
+
+    @Column(name = "c_aud_pc")
+    String cAudPc = InformacionRedUtils.getPc();
+
+    @Column(name = "c_aud_ip")
+    String cAudIp = InformacionRedUtils.getIp();
+
+    @Column(name = "c_aud_mcaddr")
+    String cAudMcAddr = InformacionRedUtils.getMac();
 }

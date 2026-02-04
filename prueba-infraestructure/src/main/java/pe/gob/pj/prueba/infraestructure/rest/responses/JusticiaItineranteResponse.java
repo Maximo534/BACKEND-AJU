@@ -18,10 +18,13 @@ import java.util.List;
 @JsonInclude(JsonInclude.Include.NON_NULL)
 public class JusticiaItineranteResponse implements Serializable {
 
-    // --- CAMPOS COMUNES ---
-    private String id;
+    // --- IDENTIFICADORES ---
+    private Long id;
+    private String codigo;
+
+    // --- DATOS ---
     private String distritoJudicialNombre;
-    private String distritoJudicialId;
+    private Long distritoJudicialId;
     private LocalDate fechaInicio;
     private LocalDate fechaFin;
     private String estado;
@@ -30,16 +33,16 @@ public class JusticiaItineranteResponse implements Serializable {
     private String resolucionPlanAnual;
     private String resolucionAdminPlan;
     private String documentoAutoriza;
-    private String ejeId;
+    private Long ejeId;
 
     private String publicoObjetivo;
     private String publicoObjetivoDetalle;
     private String lugarActividad;
 
     // Ubigeo
-    private String departamentoId;
-    private String provinciaId;
-    private String distritoGeograficoId;
+    private Long departamentoId;
+    private Long provinciaId;
+    private Long distritoId;
 
     // Estadísticas
     private Integer numMesasInstaladas;
@@ -61,12 +64,14 @@ public class JusticiaItineranteResponse implements Serializable {
     private List<DetallePBResponse> personasBeneficiadas;
     private List<DetalleTRResponse> tareasRealizadas;
 
+    private LocalDate fRegistro;
+
     // --- ARCHIVOS ---
     private List<Archivo> archivos;
 
     @Data @Builder @NoArgsConstructor @AllArgsConstructor
     public static class DetallePAResponse implements Serializable {
-        private Integer tipoVulnerabilidadId;
+        private Long tipoVulnerabilidadId;
         private String rangoEdad;
         private Integer cantFemenino;
         private Integer cantMasculino;
@@ -75,7 +80,7 @@ public class JusticiaItineranteResponse implements Serializable {
 
     @Data @Builder @NoArgsConstructor @AllArgsConstructor
     public static class DetallePCAResponse implements Serializable {
-        private Integer materiaId;
+        private Long materiaId;
         private Integer numDemandas;
         private Integer numAudiencias;
         private Integer numSentencias;
@@ -95,7 +100,7 @@ public class JusticiaItineranteResponse implements Serializable {
 
     @Data @Builder @NoArgsConstructor @AllArgsConstructor
     public static class DetalleTRResponse implements Serializable {
-        private String tareaId;
+        private Long tareaId;
         private LocalDate fechaInicio;
         private String descripcion;
     }

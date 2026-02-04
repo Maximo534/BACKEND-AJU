@@ -1,77 +1,103 @@
 package pe.gob.pj.prueba.infraestructure.rest.responses;
 
 import com.fasterxml.jackson.annotation.JsonInclude;
-import lombok.AllArgsConstructor;
-import lombok.Builder;
-import lombok.Data;
-import lombok.NoArgsConstructor;
+import lombok.*;
+import lombok.experimental.FieldDefaults;
 import pe.gob.pj.prueba.domain.model.negocio.Archivo;
 
 import java.io.Serializable;
 import java.time.LocalDate;
 import java.util.List;
 
-@Data @Builder @NoArgsConstructor @AllArgsConstructor
+@Data
+@Builder
+@NoArgsConstructor
+@AllArgsConstructor
 @JsonInclude(JsonInclude.Include.NON_NULL)
+@FieldDefaults(level = AccessLevel.PRIVATE)
 public class FortalecimientoResponse implements Serializable {
 
+    static final long serialVersionUID = 1L;
+
     // Cabecera
-    private String id;
-    private String distritoJudicialId;
-    private String distritoJudicialNombre;
-    private String tipoEvento;
-    private String nombreEvento;
-    private LocalDate fechaInicio;
-    private LocalDate fechaFin;
-    private String estado;
+    Long id;
+    String codigo;
+
+    Long distritoJudicialId;
+    String distritoJudicialNombre;
+
+    String tipoEvento;
+    String nombreEvento;
+    LocalDate fechaInicio;
+    LocalDate fechaFin;
+    String estado;
 
     // Detalle
-    private String resolucionPlanAnual;
-    private String resolucionAdminPlan;
-    private String documentoAutoriza;
-    private String ejeId;
-    private String modalidad;
-    private Integer duracionHoras;
-    private Integer numeroSesiones;
-    private String docenteExpositor;
-    private String interpreteSenias;
-    private Integer numeroDiscapacitados;
-    private String seDictoLenguaNativa;
-    private String lenguaNativaDesc;
-    private String publicoObjetivo;
-    private String publicoObjetivoDetalle;
-    private String nombreInstitucion;
-    private String departamentoId;
-    private String provinciaId;
-    private String distritoGeograficoId;
-    private String descripcionActividad;
-    private String institucionesAliadas;
-    private String observaciones;
+    String resolucionPlanAnual;
+    String resolucionAdminPlan;
+    String documentoAutoriza;
+
+    Long ejeId;
+
+    String modalidad;
+    Integer duracionHoras;
+    Integer numeroSesiones;
+    String docenteExpositor;
+
+    String interpreteSenias;
+    Integer numeroDiscapacitados;
+    String seDictoLenguaNativa;
+    String lenguaNativaDesc;
+
+    String publicoObjetivo;
+    String publicoObjetivoDetalle;
+    String nombreInstitucion;
+
+    // Ubigeo
+    Long departamentoId;
+    Long provinciaId;
+    Long distritoGeograficoId;
+
+    String descripcionActividad;
+    String institucionesAliadas;
+    String observaciones;
 
     // Auditoría
-    private LocalDate fechaRegistro;
-    private String usuarioRegistro;
+    LocalDate fechaRegistro;
+    String usuarioRegistro;
 
     // Listas anidadas
-    private List<DetalleParticipanteResponse> participantes;
-    private List<DetalleTareaResponse> tareasRealizadas;
+    List<DetalleParticipanteResponse> participantes;
+    List<DetalleTareaResponse> tareasRealizadas;
 
     // Archivos
-    private List<Archivo> archivos;
+    List<Archivo> archivos;
 
-    @Data @Builder @NoArgsConstructor @AllArgsConstructor
+    @Data
+    @Builder
+    @NoArgsConstructor
+    @AllArgsConstructor
+    @FieldDefaults(level = AccessLevel.PRIVATE)
     public static class DetalleParticipanteResponse implements Serializable {
-        private Integer tipoParticipanteId;
-        private String rangoEdad;
-        private Integer cantidadFemenino;
-        private Integer cantidadMasculino;
-        private Integer cantidadLgtbiq;
+        static final long serialVersionUID = 1L;
+
+        Long tipoParticipanteId;
+        String rangoEdad;
+        Integer cantidadFemenino;
+        Integer cantidadMasculino;
+        Integer cantidadLgtbiq;
     }
 
-    @Data @Builder @NoArgsConstructor @AllArgsConstructor
+    @Data
+    @Builder
+    @NoArgsConstructor
+    @AllArgsConstructor
+    @FieldDefaults(level = AccessLevel.PRIVATE)
     public static class DetalleTareaResponse implements Serializable {
-        private String tareaId;
-        private LocalDate fechaInicio;
-        private String descripcion;
+        static final long serialVersionUID = 1L;
+
+        Long tareaId;
+        LocalDate fechaInicio;
+        String descripcion;
     }
 }

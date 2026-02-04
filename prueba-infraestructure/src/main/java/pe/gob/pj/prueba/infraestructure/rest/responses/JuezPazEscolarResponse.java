@@ -1,10 +1,8 @@
 package pe.gob.pj.prueba.infraestructure.rest.responses;
 
 import com.fasterxml.jackson.annotation.JsonInclude;
-import lombok.AllArgsConstructor;
-import lombok.Builder;
-import lombok.Data;
-import lombok.NoArgsConstructor;
+import lombok.*;
+import lombok.experimental.FieldDefaults;
 import pe.gob.pj.prueba.domain.model.negocio.Archivo;
 
 import java.io.Serializable;
@@ -16,44 +14,48 @@ import java.util.List;
 @NoArgsConstructor
 @AllArgsConstructor
 @JsonInclude(JsonInclude.Include.NON_NULL)
+@FieldDefaults(level = AccessLevel.PRIVATE)
 public class JuezPazEscolarResponse implements Serializable {
 
-    private String id;
+    static final long serialVersionUID = 1L;
+
+    Long id;
+    String codigo;
 
     // --- DATOS PERSONALES ---
-    private String dni;
-    private String apePaterno;
-    private String apeMaterno;
-    private String nombres;
-    private LocalDate fechaNacimiento;
-    private String genero;
+    String dni;
+    String apePaterno;
+    String apeMaterno;
+    String nombres;
+    LocalDate fechaNacimiento;
+    String genero;
 
-    // --- CAMPO CALCULADO---
-    private String nombreCompleto;
+    // --- CAMPO CALCULADO ---
+    String nombreCompleto;
 
     // --- DATOS ESCOLARES ---
-    private String grado;
-    private String seccion;
-    private String cargo;
+    String grado;
+    String seccion;
+    String cargo;
 
     // --- CONTACTO ---
-    private String email;
-    private String celular;
+    String email;
+    String celular;
 
     // --- ACREDITACIÓN ---
-    private LocalDate fechaJuramentacion;
-    private String resolucionAcreditacion;
+    LocalDate fechaJuramentacion;
+    String resolucionAcreditacion;
 
     // --- JERARQUÍA INSTITUCIONAL ---
-    private String institucionEducativaId;
-    private String nombreColegio;          // Para columna "I.E."
+    Long institucionEducativaId;
+    String nombreColegio;
 
-    private String ugelNombre;             // Para columna "UGEL"
-    private String distritoJudicialNombre; // Para columna "CORTE"
+    String ugelNombre;
+    String distritoJudicialNombre;
 
     // --- ESTADO ---
-    private String estado; // "ACTIVO" (o 1)
+    String estado;
 
     // --- ARCHIVOS ---
-    private List<Archivo> archivos;
+    List<Archivo> archivos;
 }

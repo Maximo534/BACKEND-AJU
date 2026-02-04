@@ -4,18 +4,26 @@ import org.springframework.web.multipart.MultipartFile;
 import pe.gob.pj.prueba.domain.model.common.Pagina;
 import pe.gob.pj.prueba.domain.model.common.RecursoArchivo;
 import pe.gob.pj.prueba.domain.model.negocio.JuezPazEscolar;
+import pe.gob.pj.prueba.domain.model.negocio.query.ListarJuezEscolarQuery;
 
 import java.util.List;
 
 public interface GestionJuecesEscolaresUseCasePort {
 
-    Pagina<JuezPazEscolar> listar(JuezPazEscolar filtros, int pagina, int tamanio) throws Exception;
-    JuezPazEscolar registrar(JuezPazEscolar juez, MultipartFile resolucion, String usuario) throws Exception;
-    JuezPazEscolar actualizar(JuezPazEscolar juez, String usuario) throws Exception;
-    JuezPazEscolar buscarPorId(String id) throws Exception;
-    void agregarArchivo(String idJuez, MultipartFile archivo, String tipo, String usuario) throws Exception;
-    void eliminarArchivo(String nombreArchivo) throws Exception;
-    RecursoArchivo descargarResolucion(String id) throws Exception;
-    boolean existeDniEnColegio(String dni, String colegioId);
-    RecursoArchivo descargarArchivoPorNombre(String nombreArchivo) throws Exception;
+    Pagina<JuezPazEscolar> listar(String cuo, ListarJuezEscolarQuery query, int pagina, int tamanio);
+
+    JuezPazEscolar registrar(String cuo, JuezPazEscolar dominio, MultipartFile anexo, List<MultipartFile> fotos) throws Exception;
+
+    JuezPazEscolar buscarPorId(String cuo, Long id);
+
+    JuezPazEscolar actualizar(String cuo, JuezPazEscolar dominio) throws Exception;
+
+    void agregarArchivo(String cuo, Long idJuez, MultipartFile archivo, String tipoArchivo, String usuarioOperacion) throws Exception;
+
+    void eliminarArchivo(String cuo, Long idArchivo, String usuarioOperacion) throws Exception;
+
+    RecursoArchivo descargarArchivoPorTipo(String cuo, Long idJuez, String tipoArchivo) throws Exception;
+
+    RecursoArchivo descargarArchivoPorId(Long idArchivo) throws Exception;
+
 }

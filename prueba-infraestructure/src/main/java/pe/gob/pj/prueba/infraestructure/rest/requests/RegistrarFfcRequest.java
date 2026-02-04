@@ -2,131 +2,142 @@ package pe.gob.pj.prueba.infraestructure.rest.requests;
 
 import jakarta.validation.Valid;
 import jakarta.validation.constraints.*;
+import lombok.AccessLevel;
 import lombok.Data;
+import lombok.experimental.FieldDefaults;
 import org.springframework.format.annotation.DateTimeFormat;
+
 import java.io.Serializable;
 import java.time.LocalDate;
 import java.util.List;
 
 @Data
+@FieldDefaults(level = AccessLevel.PRIVATE)
 public class RegistrarFfcRequest implements Serializable {
 
-    private String id;
+    static final long serialVersionUID = 1L;
 
-    @NotBlank(message = "El Distrito Judicial es obligatorio")
-    private String distritoJudicialId;
+    Long id;
+    String codigo;
+
+    @NotNull(message = "El Distrito Judicial es obligatorio")
+    Long distritoJudicialId;
+
+    @NotNull(message = "El eje es obligatorio")
+    Long ejeId;
 
     @NotBlank(message = "El tipo de evento es obligatorio")
-    private String tipoEvento;
+    String tipoEvento;
 
     @NotBlank(message = "El nombre del evento es obligatorio")
-    private String nombreEvento;
+    String nombreEvento;
 
     @NotNull(message = "La fecha de inicio es obligatoria")
     @DateTimeFormat(pattern = "yyyy-MM-dd")
-    private LocalDate fechaInicio;
+    LocalDate fechaInicio;
 
     @NotNull(message = "La fecha fin es obligatoria")
     @DateTimeFormat(pattern = "yyyy-MM-dd")
-    private LocalDate fechaFin;
+    LocalDate fechaFin;
 
     @NotBlank(message = "La resolución del plan anual es obligatoria")
-    private String resolucionPlanAnual;
+    String resolucionPlanAnual;
 
     @NotBlank(message = "La resolución administrativa es obligatoria")
-    private String resolucionAdminPlan;
+    String resolucionAdminPlan;
 
     @NotBlank(message = "El documento que autoriza es obligatorio")
-    private String documentoAutoriza;
-
-    @NotBlank(message = "El eje es obligatorio")
-    private String ejeId;
+    String documentoAutoriza;
 
     @NotBlank(message = "La modalidad es obligatoria")
-    private String modalidad;
-
-    @NotNull(message = "La duración en horas es obligatoria")
-    @Min(value = 1, message = "La duración debe ser mayor a 0")
-    private Integer duracionHoras;
-
-    @NotNull(message = "El número de sesiones es obligatorio")
-    @Min(value = 1, message = "Debe haber al menos 1 sesión")
-    private Integer numeroSesiones;
+    String modalidad;
 
     @NotBlank(message = "El docente expositor es obligatorio")
-    private String docenteExpositor;
+    String docenteExpositor;
 
-    @NotBlank(message = "El indicador de intérprete de señas es obligatorio")
-    private String interpreteSenias;
+    // Estadísticas
+    @NotNull(message = "La duración es obligatoria") @Min(0)
+    Integer duracionHoras;
 
-    @NotNull(message = "El número de discapacitados es obligatorio")
-    @Min(0)
-    private Integer numeroDiscapacitados;
+    @NotNull(message = "El número de sesiones es obligatorio") @Min(0)
+    Integer numeroSesiones;
 
-    @NotBlank(message = "El indicador de lengua nativa es obligatorio")
-    private String seDictoLenguaNativa;
+    @NotNull(message = "El número de discapacitados es obligatorio") @Min(0)
+    Integer numeroDiscapacitados;
 
-    @NotBlank(message = "La descripción de lengua nativa es obligatoria")
-    private String lenguaNativaDesc;
+    // Flags (SI/NO)
+    String interpreteSenias;
+    String seDictoLenguaNativa;
+    String lenguaNativaDesc;
 
     @NotBlank(message = "El público objetivo es obligatorio")
-    private String publicoObjetivo;
+    String publicoObjetivo;
 
-    @NotBlank(message = "El detalle del público objetivo es obligatorio")
-    private String publicoObjetivoDetalle;
+    String publicoObjetivoDetalle;
 
     @NotBlank(message = "El nombre de la institución es obligatorio")
-    private String nombreInstitucion;
+    String nombreInstitucion;
 
-    @NotBlank(message = "El departamento es obligatorio")
-    private String departamentoId;
+    // Ubigeo
+    @NotNull(message = "El departamento es obligatorio")
+    Long departamentoId;
 
-    @NotBlank(message = "La provincia es obligatoria")
-    private String provinciaId;
+    @NotNull(message = "La provincia es obligatoria")
+    Long provinciaId;
 
-    @NotBlank(message = "El distrito geográfico es obligatorio")
-    private String distritoGeograficoId;
+    @NotNull(message = "El distrito geográfico es obligatorio")
+    Long distritoGeograficoId;
 
     @NotBlank(message = "La descripción de la actividad es obligatoria")
-    private String descripcionActividad;
+    String descripcionActividad;
 
     @NotBlank(message = "Las instituciones aliadas son obligatorias")
-    private String institucionesAliadas;
+    String institucionesAliadas;
 
     @NotBlank(message = "Las observaciones son obligatorias")
-    private String observaciones;
+    String observaciones;
 
+    // Listas
     @Valid
     @NotEmpty(message = "Debe registrar al menos un detalle de participantes")
-    private List<DetalleParticipantesRequest> participantes;
+    List<DetalleParticipantesRequest> participantes;
 
     @Valid
     @NotEmpty(message = "Debe registrar al menos una tarea realizada")
-    private List<DetalleTareaRequest> tareasRealizadas;
+    List<DetalleTareaRequest> tareasRealizadas;
+
+    // --- CLASES INTERNAS ---
 
     @Data
+    @FieldDefaults(level = AccessLevel.PRIVATE)
     public static class DetalleParticipantesRequest implements Serializable {
+        static final long serialVersionUID = 1L;
+
         @NotNull(message = "El tipo de participante es obligatorio")
-        private Integer tipoParticipanteId;
+        Long tipoParticipanteId;
 
         @NotBlank(message = "El rango de edad es obligatorio")
-        private String rangoEdad;
+        String rangoEdad;
 
         @NotNull(message = "Cantidad femenino obligatoria") @Min(0)
-        private Integer cantidadFemenino;
+        Integer cantidadFemenino;
 
         @NotNull(message = "Cantidad masculino obligatoria") @Min(0)
-        private Integer cantidadMasculino;
+        Integer cantidadMasculino;
 
         @NotNull(message = "Cantidad LGTBIQ obligatoria") @Min(0)
-        private Integer cantidadLgtbiq;
+        Integer cantidadLgtbiq;
     }
 
     @Data
+    @FieldDefaults(level = AccessLevel.PRIVATE)
     public static class DetalleTareaRequest implements Serializable {
-        @NotBlank(message = "El ID de la tarea es obligatorio")
-        private String tareaId;
+        static final long serialVersionUID = 1L;
 
-        private LocalDate fechaInicio;
+        @NotNull(message = "El ID de la tarea es obligatorio")
+        Long tareaId;
+
+        @DateTimeFormat(pattern = "yyyy-MM-dd")
+        LocalDate fechaInicio;
     }
 }

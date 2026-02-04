@@ -3,59 +3,65 @@ package pe.gob.pj.prueba.infraestructure.rest.requests;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Size;
+import lombok.AccessLevel;
 import lombok.Data;
+import lombok.experimental.FieldDefaults;
 import org.springframework.format.annotation.DateTimeFormat;
 
 import java.io.Serializable;
 import java.time.LocalDate;
 
 @Data
+@FieldDefaults(level = AccessLevel.PRIVATE)
 public class RegistrarJuezRequest implements Serializable {
 
-    private String id;
+    static final long serialVersionUID = 1L;
+
+    Long id;
+    String codigo;
 
     @NotBlank(message = "El DNI es obligatorio.")
-    @Size(min = 8, max = 8)
-    private String dni;
+    @Size(min = 8, max = 8, message = "El DNI debe tener 8 dígitos.")
+    String dni;
 
     @NotBlank(message = "El apellido paterno es obligatorio.")
-    private String apePaterno;
+    String apePaterno;
 
     @NotBlank(message = "El apellido materno es obligatorio.")
-    private String apeMaterno;
+    String apeMaterno;
 
     @NotBlank(message = "Los nombres son obligatorios.")
-    private String nombres;
+    String nombres;
 
     @NotNull(message = "La fecha de nacimiento es obligatoria.")
     @DateTimeFormat(pattern = "yyyy-MM-dd")
-    private LocalDate fechaNacimiento;
+    LocalDate fechaNacimiento;
 
     @NotBlank(message = "El género es obligatorio.")
-    private String genero;
+    String genero;
 
     @NotBlank(message = "El grado es obligatorio.")
-    private String grado;
+    String grado;
 
     @NotBlank(message = "La sección es obligatoria.")
-    private String seccion;
+    String seccion;
 
     @NotBlank(message = "El email es obligatorio.")
-    private String email;
+    String email;
 
     @NotBlank(message = "El celular es obligatorio.")
-    private String celular;
+    String celular;
 
     @NotBlank(message = "El cargo es obligatorio.")
-    private String cargo;
+    String cargo;
 
     @NotNull(message = "La fecha de juramentación es obligatoria.")
     @DateTimeFormat(pattern = "yyyy-MM-dd")
-    private LocalDate fechaJuramentacion;
+    LocalDate fechaJuramentacion;
 
     @NotBlank(message = "La resolución de acreditación es obligatoria.")
-    private String resolucionAcreditacion;
+    String resolucionAcreditacion;
 
-    @NotBlank(message = "La institución educativa es obligatoria.")
-    private String institucionEducativaId;
+    @NotNull(message = "La institución educativa es obligatoria.")
+    Long institucionEducativaId;
 }

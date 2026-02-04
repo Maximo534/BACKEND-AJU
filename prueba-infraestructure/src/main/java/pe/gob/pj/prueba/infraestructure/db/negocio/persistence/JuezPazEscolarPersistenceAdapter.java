@@ -1,15 +1,21 @@
 package pe.gob.pj.prueba.infraestructure.db.negocio.persistence;
 
+import lombok.AccessLevel;
 import lombok.RequiredArgsConstructor;
+import lombok.experimental.FieldDefaults;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Component;
 import org.springframework.transaction.annotation.Transactional;
+import pe.gob.pj.prueba.domain.exceptions.negocio.MovimientoNoEncontradoException;
 import pe.gob.pj.prueba.domain.model.common.Pagina;
 import pe.gob.pj.prueba.domain.model.negocio.Archivo;
 import pe.gob.pj.prueba.domain.model.negocio.JuezPazEscolar;
+import pe.gob.pj.prueba.domain.model.negocio.query.ListarJuezEscolarQuery;
 import pe.gob.pj.prueba.domain.port.persistence.negocio.JuezPazEscolarPersistencePort;
 import pe.gob.pj.prueba.infraestructure.db.negocio.entities.MaeJuezPazEscolarEntity;
-import pe.gob.pj.prueba.infraestructure.db.negocio.entities.MovArchivosEntity;
+import pe.gob.pj.prueba.infraestructure.db.negocio.entities.MovArchivoEntity;
 import pe.gob.pj.prueba.infraestructure.db.negocio.repositories.MaeJuezPazEscolarRepository;
 import pe.gob.pj.prueba.infraestructure.db.negocio.repositories.MovArchivosRepository;
 import pe.gob.pj.prueba.infraestructure.mappers.JuezPazEscolarMapper;
@@ -17,89 +23,100 @@ import pe.gob.pj.prueba.infraestructure.mappers.JuezPazEscolarMapper;
 import java.util.List;
 import java.util.stream.Collectors;
 
+@Slf4j
 @Component
 @RequiredArgsConstructor
+@FieldDefaults(level = AccessLevel.PRIVATE, makeFinal = true)
 public class JuezPazEscolarPersistenceAdapter implements JuezPazEscolarPersistencePort {
 
-    private final MaeJuezPazEscolarRepository repository;
-    private final MovArchivosRepository repoArchivos;
-    private final JuezPazEscolarMapper mapper;
+    MaeJuezPazEscolarRepository repository;
+    MovArchivosRepository repoArchivos;
+    JuezPazEscolarMapper mapper;
 
     @Override
-    @Transactional(readOnly = true)
-    public Pagina<JuezPazEscolar> listar(JuezPazEscolar filtros, int pagina, int tamanio) {
-        if (filtros == null) filtros = JuezPazEscolar.builder().build();
+    public Pagina<JuezPazEscolar> listar(String cuo, ListarJuezEscolarQuery query, int pagina, int tamanio) {
+        Pageable pageable = PageRequest.of(pagina - 1, tamanio);
 
-        var result = repository.listar(
-                filtros.getSearch(),
-                filtros.getDistritoJudicialId(),
-                filtros.getUgelId(),
-                filtros.getInstitucionEducativaId(),
-                PageRequest.of(pagina - 1, tamanio));
+        var pageResult = repository.listarCompleto(
+                query.getSearch(),
+                query.getDistritoJudicialId(),
+                query.getUgelId(),
+                query.getInstitucionEducativaId(),
+                pageable
+        );
 
-        List<JuezPazEscolar> content = result.getContent().stream()
-                .map(r -> JuezPazEscolar.builder()
-                        .id(r.getId())
-                        .dni(r.getDni())
-                        .nombres(r.getNombres())
-                        .apePaterno(r.getApePaterno())
-                        .apeMaterno(r.getApeMaterno())
-                        .cargo(r.getCargo())
-                        .distritoJudicialNombre(r.getCorteNombre())
-                        .ugelNombre(r.getUgelNombre())
-                        .institucionEducativaNombre(r.getColegioNombre())
-                        .build())
+        List<JuezPazEscolar> contenido = pageResult.getContent().stream()
+                .map(mapper::toDomain)
                 .collect(Collectors.toList());
 
         return Pagina.<JuezPazEscolar>builder()
-                .contenido(content)
-                .totalRegistros(result.getTotalElements())
-                .totalPaginas(result.getTotalPages())
+                .contenido(contenido)
+                .totalRegistros(pageResult.getTotalElements())
+                .totalPaginas(pageResult.getTotalPages())
                 .paginaActual(pagina)
                 .tamanioPagina(tamanio)
                 .build();
     }
 
     @Override
-    @Transactional(readOnly = true)
-    public JuezPazEscolar buscarPorId(String id) throws Exception {
-        MaeJuezPazEscolarEntity entity = repository.findById(id).orElse(null);
-        if (entity == null) return null;
+    @Transactional
+    public JuezPazEscolar guardar(String cuo, JuezPazEscolar dominio) {
+        log.info("[{}] Guardando Juez Paz Escolar: {}", cuo, dominio.getCodigo());
+        MaeJuezPazEscolarEntity entity = mapper.toEntity(dominio);
+        MaeJuezPazEscolarEntity saved = repository.save(entity);
+        return mapper.toDomain(saved);
+    }
 
-        JuezPazEscolar domain = mapper.toDomain(entity);
+    @Override
+    @Transactional
+    public JuezPazEscolar actualizar(String cuo, JuezPazEscolar dominio) {
+        log.info("[{}] Actualizando Juez Paz Escolar ID: {}", cuo, dominio.getId());
 
-        // Enriquecer Archivos
-        List<MovArchivosEntity> archivos = repoArchivos.findByNumeroIdentificacion(id);
-        if (!archivos.isEmpty()) {
-            domain.setArchivosGuardados(archivos.stream()
+        MaeJuezPazEscolarEntity entityDb = repository.findById(dominio.getId())
+                .orElseThrow(() -> new MovimientoNoEncontradoException("No se encontró el registro con ID: " + dominio.getId()));
+
+        mapper.updateEntityFromDomain(dominio, entityDb);
+
+        MaeJuezPazEscolarEntity saved = repository.save(entityDb);
+        return mapper.toDomain(saved);
+    }
+
+    @Override
+    public JuezPazEscolar obtenerPorId(String cuo, Long id) {
+        JuezPazEscolar dominio = repository.findById(id)
+                .map(mapper::toDomain)
+                .orElse(null);
+
+        if (dominio != null) {
+            cargarArchivosEnDominio(dominio);
+        }
+        return dominio;
+    }
+
+    @Override
+    public boolean existeDniEnColegio(String dni, Long colegioId) {
+        return repository.existsByDniAndInstitucionEducativaIdAndActivo(dni, colegioId, "1");
+    }
+
+    @Override
+    public String obtenerUltimoCodigo(String cuo, String anio) {
+        return repository.obtenerUltimoCodigo("-" + anio + "-JE");
+    }
+
+    // --- PRIVADOS ---
+
+    private void cargarArchivosEnDominio(JuezPazEscolar dominio) {
+        List<MovArchivoEntity> archivosEntities = repoArchivos.findByNumeroIdentificacionAndActivo(dominio.getCodigo(), "1");
+        if (archivosEntities != null && !archivosEntities.isEmpty()) {
+            dominio.setArchivosGuardados(archivosEntities.stream()
                     .map(a -> Archivo.builder()
-                            .nombre(a.getNombre()).tipo(a.getTipo())
-                            .ruta(a.getRuta()).numeroIdentificacion(a.getNumeroIdentificacion())
+                            .id(a.getId())
+                            .nombre(a.getNombre())
+                            .tipo(a.getTipo())
+                            .ruta(a.getRuta())
+                            .numeroIdentificacion(a.getNumeroIdentificacion())
                             .build())
                     .collect(Collectors.toList()));
         }
-        return domain;
-    }
-
-    @Override
-    @Transactional
-    public JuezPazEscolar guardar(JuezPazEscolar domain) throws Exception {
-        MaeJuezPazEscolarEntity entity = mapper.toEntity(domain);
-        return mapper.toDomain(repository.save(entity));
-    }
-
-    @Override
-    @Transactional
-    public JuezPazEscolar actualizar(JuezPazEscolar domain) throws Exception {
-        MaeJuezPazEscolarEntity db = repository.findById(domain.getId())
-                .orElseThrow(() -> new Exception("No existe"));
-
-        mapper.updateEntityFromDomain(domain, db);
-        return mapper.toDomain(repository.save(db));
-    }
-
-    @Override
-    public boolean existeDniEnColegio(String dni, String colegioId) {
-        return repository.existsByDniAndInstitucionEducativaIdAndActivo(dni, colegioId, "1");
     }
 }

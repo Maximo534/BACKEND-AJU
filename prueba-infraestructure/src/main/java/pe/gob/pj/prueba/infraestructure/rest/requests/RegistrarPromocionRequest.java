@@ -2,139 +2,151 @@ package pe.gob.pj.prueba.infraestructure.rest.requests;
 
 import jakarta.validation.Valid;
 import jakarta.validation.constraints.*;
+import lombok.AccessLevel;
 import lombok.Data;
+import lombok.experimental.FieldDefaults;
 import org.springframework.format.annotation.DateTimeFormat;
+
 import java.io.Serializable;
 import java.time.LocalDate;
 import java.util.List;
 
 @Data
+@FieldDefaults(level = AccessLevel.PRIVATE)
 public class RegistrarPromocionRequest implements Serializable {
 
-    private String id;
+    static final long serialVersionUID = 1L;
 
-    @NotBlank(message = "El Distrito Judicial es obligatorio")
-    private String distritoJudicialId;
+    Long id;
+
+    @NotNull(message = "El Distrito Judicial es obligatorio")
+    Long distritoJudicialId;
 
     @NotBlank(message = "Nombre actividad obligatorio")
     @Size(max = 100)
-    private String nombreActividad;
+    String nombreActividad;
 
     @NotBlank(message = "Tipo de actividad obligatorio")
     @Size(max = 100)
-    private String tipoActividad;
+    String tipoActividad;
 
     @NotBlank(message = "Otros tipo actividad obligatorio")
     @Size(max = 100)
-    private String tipoActividadOtros;
+    String tipoActividadOtros;
 
-    @Size(max = 02)
-    private String areaRiesgo;
+    @Size(max = 2)
+    String areaRiesgo;
 
     @NotBlank(message = "Zona intervención obligatoria")
     @Size(max = 200)
-    private String zonaIntervencion;
+    String zonaIntervencion;
 
     @NotBlank(message = "Modalidad obligatoria")
     @Size(max = 50)
-    private String modalidadProyecto;
+    String modalidadProyecto;
 
     @NotBlank(message = "Público objetivo obligatorio")
     @Size(max = 150)
-    private String publicoObjetivo;
+    String publicoObjetivo;
 
     @NotBlank(message = "Otros público objetivo obligatorio")
     @Size(max = 100)
-    private String publicoObjetivoOtros;
+    String publicoObjetivoOtros;
 
     @NotNull(message = "Fecha inicio obligatoria")
     @DateTimeFormat(pattern = "yyyy-MM-dd")
-    private LocalDate fechaInicio;
+    LocalDate fechaInicio;
 
     @NotNull(message = "Fecha fin obligatoria")
     @DateTimeFormat(pattern = "yyyy-MM-dd")
-    private LocalDate fechaFin;
+    LocalDate fechaFin;
 
-    // Autorizaciones
+    // --- Autorizaciones ---
     @NotBlank(message = "Resolución Plan obligatoria")
     @Size(max = 50)
-    private String resolucionPlanAnual;
+    String resolucionPlanAnual;
 
     @NotBlank(message = "Resolución Admin obligatoria")
     @Size(max = 50)
-    private String resolucionAdminPlan;
+    String resolucionAdminPlan;
 
     @NotBlank(message = "Documento autoriza obligatorio")
     @Size(max = 60)
-    private String documentoAutoriza;
+    String documentoAutoriza;
 
-    // Ubigeo
+    // --- Ubicación ---
     @NotBlank(message = "Lugar actividad obligatorio")
     @Size(max = 60)
-    private String lugarActividad;
+    String lugarActividad;
 
-    @NotBlank(message = "Departamento obligatorio")
-    @Size(max = 2)
-    private String departamentoId;
+    @NotNull(message = "Departamento obligatorio")
+    Long departamentoId;
 
-    @NotBlank(message = "Provincia obligatoria")
-    @Size(max = 4)
-    private String provinciaId;
+    @NotNull(message = "Provincia obligatoria")
+    Long provinciaId;
 
-    @NotBlank(message = "Distrito obligatorio")
-    @Size(max = 6)
-    private String distritoGeograficoId;
+    @NotNull(message = "Distrito obligatorio")
+    Long distritoGeograficoId;
 
-    @NotBlank(message = "Eje obligatorio")
-    @Size(max = 5)
-    private String ejeId;
+    @NotNull(message = "Eje obligatorio")
+    Long ejeId;
 
-    // Indicadores
+    // --- Indicadores ---
     @NotBlank(message = "Lengua nativa obligatorio")
-    private String seDictoLenguaNativa;
+    String seDictoLenguaNativa;
 
     @NotBlank(message = "Desc. Lengua nativa obligatorio")
     @Size(max = 25)
-    private String lenguaNativa;
+    String lenguaNativa;
 
     @NotBlank(message = "Participaron discap. obligatorio")
-    private String participaronDiscapacitados;
+    String participaronDiscapacitados;
 
     @NotNull(message = "Número discap. obligatorio")
     @Min(0)
-    private Integer numeroDiscapacitados;
+    Integer numeroDiscapacitados;
 
-    // Textos
+    // --- Textos ---
     @NotBlank(message = "Descripción actividad obligatoria")
-    private String descripcionActividad;
+    String descripcionActividad;
 
     @NotBlank(message = "Observación obligatoria")
-    private String observacion;
+    String observacion;
 
     @NotBlank(message = "Instituciones aliadas obligatoria")
-    private String institucionesAliadas;
+    String institucionesAliadas;
 
-    // Listas
+    // --- Listas ---
     @Valid
     @NotEmpty(message = "Debe haber personas Beneficiadas")
-    private List<DetallePBResponse> personasBeneficiadas;
+    List<DetallePBRequest> personasBeneficiadas;
 
     @Valid
     @NotEmpty(message = "Debe haber tareas")
-    private List<DetalleTareaRequest> tareasRealizadas;
+    List<DetalleTareaRequest> tareasRealizadas;
+
+    // --- CLASES INTERNAS ---
 
     @Data
-    public static class DetallePBResponse implements Serializable {
-        @NotBlank private String descripcionRango;
-        @NotBlank private String codigoRango;
-        @NotNull @Min(0) private Integer cantidadFemenino;
-        @NotNull @Min(0) private Integer cantidadMasculino;
-        @NotNull @Min(0) private Integer cantidadLgtbiq;
+    @FieldDefaults(level = AccessLevel.PRIVATE)
+    public static class DetallePBRequest implements Serializable {
+        static final long serialVersionUID = 1L;
+
+        @NotBlank String descripcionRango;
+        @NotBlank String codigoRango;
+
+        @NotNull @Min(0) Integer cantidadFemenino;
+        @NotNull @Min(0) Integer cantidadMasculino;
+        @NotNull @Min(0) Integer cantidadLgtbiq;
     }
 
     @Data
+    @FieldDefaults(level = AccessLevel.PRIVATE)
     public static class DetalleTareaRequest implements Serializable {
-        @NotBlank private String tareaId;
-        private LocalDate fechaInicio;
+        static final long serialVersionUID = 1L;
+
+        @NotNull(message = "ID de tarea obligatorio")
+        Long tareaId;
+        LocalDate fechaInicio;
     }
 }

@@ -1,16 +1,22 @@
 package pe.gob.pj.prueba.infraestructure.rest.requests;
 
+import lombok.AccessLevel;
 import lombok.Data;
+import lombok.experimental.FieldDefaults;
+
 import java.io.Serializable;
 import java.time.LocalDate;
 
 @Data
+@FieldDefaults(level = AccessLevel.PRIVATE)
 public class ListarOrientadoraRequest implements Serializable {
 
-    private String search; // Buscador por ID, Nombre o DNI
+    static final long serialVersionUID = 1L;
 
-    private String distritoJudicialId;
+    String search;
 
-    private LocalDate fechaInicio;
-    private LocalDate fechaFin;
+    Long distritoJudicialId;
+
+    LocalDate fechaInicio;
+    LocalDate fechaFin;
 }

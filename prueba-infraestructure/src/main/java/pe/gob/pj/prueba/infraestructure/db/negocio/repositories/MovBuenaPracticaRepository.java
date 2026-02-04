@@ -12,66 +12,33 @@ import java.time.LocalDate;
 import java.util.List;
 
 @Repository
-public interface MovBuenaPracticaRepository extends JpaRepository<MovBuenaPracticaEntity, String> {
+public interface MovBuenaPracticaRepository extends JpaRepository<MovBuenaPracticaEntity, Long> {
 
-    @Query("SELECT MAX(e.id) FROM MovBuenaPracticaEntity e WHERE e.id LIKE '%-BP'")
-    String obtenerUltimoId();
+    @Query(value = "SELECT c_codigo FROM acjust.mov_buena_practica " +
+            "WHERE c_codigo LIKE %:sufijoAnio " +
+            "AND n_distrito_jud_id = :distrito " +
+            "ORDER BY n_buena_pract_id DESC LIMIT 1", nativeQuery = true)
+    String obtenerUltimoCodigo(@Param("distrito") Long distrito, @Param("sufijoAnio") String sufijoAnio);
 
-    @Query(value = """
-        SELECT 
-            bp.c_buena_pract_id AS id,
-            bp.c_distrito_jud_id AS distritoJudicialId,
-            bp.x_titulo AS titulo,
-            bp.f_inicio AS fechaInicio,
-            dj.x_nom_corto AS distritoJudicialNombre
-        FROM prueba.mov_aju_buena_practicas bp  
-        INNER JOIN prueba.mae_aju_distrito_judiciales dj ON bp.c_distrito_jud_id = dj.c_distrito_jud_id
-        WHERE bp.c_usuario_reg = :usuario
-          
-          -- FILTROS
-          AND (:distrito IS NULL OR bp.c_distrito_jud_id = :distrito)
-          AND (CAST(:fecIni AS DATE) IS NULL OR bp.f_inicio >= :fecIni)
-          AND (CAST(:fecFin AS DATE) IS NULL OR bp.f_inicio <= :fecFin)
-
-          -- BUSCADOR
-          AND (
-              :search IS NULL OR :search = '' OR
-              UPPER(bp.c_buena_pract_id) LIKE UPPER(CONCAT('%', :search, '%')) OR
-              UPPER(bp.x_titulo) LIKE UPPER(CONCAT('%', :search, '%')) OR
-              UPPER(dj.x_nom_corto) LIKE UPPER(CONCAT('%', :search, '%'))
-          )
-        ORDER BY bp.f_inicio DESC
-    """, countQuery = """
-        SELECT count(*) 
-        FROM prueba.mov_aju_buena_practicas bp 
-        INNER JOIN prueba.mae_aju_distrito_judiciales dj ON bp.c_distrito_jud_id = dj.c_distrito_jud_id 
-        WHERE bp.c_usuario_reg = :usuario
-          AND (:distrito IS NULL OR bp.c_distrito_jud_id = :distrito)
-          AND (CAST(:fecIni AS DATE) IS NULL OR bp.f_inicio >= :fecIni)
-          AND (CAST(:fecFin AS DATE) IS NULL OR bp.f_inicio <= :fecFin)
-          AND (
-              :search IS NULL OR :search = '' OR
-              UPPER(bp.c_buena_pract_id) LIKE UPPER(CONCAT('%', :search, '%')) OR
-              UPPER(bp.x_titulo) LIKE UPPER(CONCAT('%', :search, '%')) OR
-              UPPER(dj.x_nom_corto) LIKE UPPER(CONCAT('%', :search, '%'))
-          )
-    """, nativeQuery = true)
-    Page<BuenaPracticaProjection> listar(
-            @Param("usuario") String usuario,
+    @Query("SELECT e FROM MovBuenaPracticaEntity e " +
+            "WHERE e.activo = '1' " +
+            "AND (:distrito IS NULL OR e.distritoJudicialId = :distrito) " +
+            "AND (cast(:fecIni as date) IS NULL OR e.fechaInicio >= :fecIni) " +
+            "AND (cast(:fecFin as date) IS NULL OR e.fechaInicio <= :fecFin) " +
+            "AND (:search IS NULL OR :search = '' OR " +
+            "     UPPER(e.codigo) LIKE UPPER(CONCAT('%', :search, '%')) OR " +
+            "     UPPER(e.titulo) LIKE UPPER(CONCAT('%', :search, '%'))) " +
+            "ORDER BY e.id DESC")
+    Page<MovBuenaPracticaEntity> listarCompleto(
             @Param("search") String search,
-            @Param("distrito") String distritoId,
+            @Param("distrito") Long distrito,
             @Param("fecIni") LocalDate fecIni,
             @Param("fecFin") LocalDate fecFin,
             Pageable pageable);
 
-    @Query("SELECT e.distritoJudicialId, COUNT(e) FROM MovBuenaPracticaEntity e GROUP BY e.distritoJudicialId")
-    List<Object[]> obtenerEstadisticasHistoricas();
-
-    interface BuenaPracticaProjection {
-        String getId();
-        String getDistritoJudicialId();
-        String getDistritoJudicialNombre();
-        String getTitulo();
-        LocalDate getFechaInicio();
-    }
+    @Query("SELECT e.distritoJudicialId, COUNT(e) " +
+            "FROM MovBuenaPracticaEntity e " +
+            "WHERE e.activo = '1' " +
+            "GROUP BY e.distritoJudicialId")
+    List<Object[]> obtenerEstadisticasPorCorte();
 }

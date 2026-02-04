@@ -1,60 +1,109 @@
 package pe.gob.pj.prueba.infraestructure.mappers;
 
 import org.mapstruct.*;
+import pe.gob.pj.prueba.domain.model.auditoriageneral.PeticionServicios;
 import pe.gob.pj.prueba.domain.model.negocio.JuezPazEscolar;
+import pe.gob.pj.prueba.domain.model.negocio.query.ListarJuezEscolarQuery;
 import pe.gob.pj.prueba.infraestructure.db.negocio.entities.MaeJuezPazEscolarEntity;
-import pe.gob.pj.prueba.infraestructure.rest.requests.ListarJuezEscolarRequest; // Import necesario
+import pe.gob.pj.prueba.infraestructure.rest.requests.ListarJuezEscolarRequest;
 import pe.gob.pj.prueba.infraestructure.rest.requests.RegistrarJuezRequest;
 import pe.gob.pj.prueba.infraestructure.rest.responses.JuezPazEscolarResponse;
 
-import java.util.List;
-
 @Mapper(componentModel = MappingConstants.ComponentModel.SPRING,
-        unmappedTargetPolicy = ReportingPolicy.IGNORE)
+        unmappedTargetPolicy = ReportingPolicy.IGNORE,
+        builder = @Builder(disableBuilder = true))
 public interface JuezPazEscolarMapper {
 
-    // --- MAPPINGS DE REGISTRO ---
-    @Mapping(target = "id", source = "id")
-    @Mapping(target = "fechaRegistro", ignore = true)
-    @Mapping(target = "usuarioRegistro", ignore = true)
-    @Mapping(target = "activo", ignore = true)
-    @Mapping(target = "archivosGuardados", ignore = true)
-    // Ignoramos campos de filtro/salida al registrar
-    @Mapping(target = "search", ignore = true)
-    @Mapping(target = "distritoJudicialId", ignore = true)
-    @Mapping(target = "ugelId", ignore = true)
-    @Mapping(target = "distritoJudicialNombre", ignore = true)
-    @Mapping(target = "ugelNombre", ignore = true)
-    @Mapping(target = "institucionEducativaNombre", ignore = true)
-    JuezPazEscolar toDomain(RegistrarJuezRequest request);
+    // =========================================================
+    // 1. QUERY (Request -> Domain Query)
+    // =========================================================
+    ListarJuezEscolarQuery toQuery(ListarJuezEscolarRequest request);
 
-    // Request Listado -> Dominio (Filtros)
-    @Mapping(target = "search", source = "search")
-    @Mapping(target = "distritoJudicialId", source = "distritoJudicialId")
-    @Mapping(target = "ugelId", source = "ugelId")
-    @Mapping(target = "institucionEducativaId", source = "institucionEducativaId")
-    // Ignoramos el resto
+    // =========================================================
+    // 2. REGISTRAR (Request + Auditoría -> Domain)
+    // =========================================================
+
     @Mapping(target = "id", ignore = true)
-    @Mapping(target = "dni", ignore = true)
-    // ... (MapStruct ignorará nulls por policy o ignorar explícitamente)
-    JuezPazEscolar toDomain(ListarJuezEscolarRequest request);
+    @Mapping(target = "codigo", ignore = true)
+    @Mapping(target = "archivosGuardados", ignore = true)
 
-    // --- MAPPINGS ENTITY ---
+    // -- Auditoría Técnica desde PeticionServicios --
+    @Mapping(target = "usuario", source = "peticion.usuarioAuth")
+    @Mapping(target = "nombrePc", source = "peticion.nombrePc")
+    @Mapping(target = "direccionMac", source = "peticion.codigoMac")
+    @Mapping(target = "numeroIp", source = "peticion.ip")
+    @Mapping(target = "red", source = "peticion.red")
+
+    JuezPazEscolar toDomainRegistrar(RegistrarJuezRequest request, PeticionServicios peticion);
+
+    // =========================================================
+    // 3. ACTUALIZAR (ID + Request + Auditoría -> Domain)
+    // =========================================================
+    @Mapping(target = "id", source = "id")
+    @Mapping(target = "codigo", ignore = true)
+    @Mapping(target = "archivosGuardados", ignore = true)
+
+    // -- Auditoría de Modificación --
+    @Mapping(target = "usuario", source = "peticion.usuarioAuth")
+    @Mapping(target = "nombrePc", source = "peticion.nombrePc")
+    @Mapping(target = "direccionMac", source = "peticion.codigoMac")
+    @Mapping(target = "numeroIp", source = "peticion.ip")
+    @Mapping(target = "red", source = "peticion.red")
+
+    JuezPazEscolar toDomainActualizar(Long id, RegistrarJuezRequest request, PeticionServicios peticion);
+
+    // =========================================================
+    // 4. PERSISTENCIA (Domain <-> Entity)
+    // =========================================================
     @Mapping(target = "institucionEducativa", ignore = true)
+
+    // -- Mapeo Auditoría a Columnas BD --
+    @Mapping(target = "CAudId", source = "usuario")
+    @Mapping(target = "CAudIp", source = "numeroIp")
+    @Mapping(target = "CAudPc", source = "nombrePc")
+    @Mapping(target = "CAudMcAddr", source = "direccionMac")
+
+    // Ignorar campos automáticos de BD
+    @Mapping(target = "FAud", ignore = true)
+    @Mapping(target = "BAud", ignore = true)
+    @Mapping(target = "fechaRegistroActividad", ignore = true)
+    @Mapping(target = "FRegistro", ignore = true)
     MaeJuezPazEscolarEntity toEntity(JuezPazEscolar domain);
 
     @InheritInverseConfiguration(name = "toEntity")
+    // Mapeo inverso de auditoría
+    @Mapping(target = "usuario", source = "CAudId")
+    @Mapping(target = "nombrePc", source = "CAudPc")
+    @Mapping(target = "numeroIp", source = "CAudIp")
+    @Mapping(target = "direccionMac", source = "CAudMcAddr")
     JuezPazEscolar toDomain(MaeJuezPazEscolarEntity entity);
 
-    @Mapping(target = "fechaRegistro", ignore = true)
+    // =========================================================
+    // 5. UPDATE PARCIAL (Entity Update)
+    // =========================================================
+    @BeanMapping(nullValuePropertyMappingStrategy = NullValuePropertyMappingStrategy.IGNORE)
     @Mapping(target = "id", ignore = true)
-    @Mapping(target = "usuarioRegistro", ignore = true)
+    @Mapping(target = "codigo", ignore = true)
+    @Mapping(target = "fechaRegistroActividad", ignore = true)
+    @Mapping(target = "usuarioRegistroId", ignore = true)
     @Mapping(target = "activo", ignore = true)
+    @Mapping(target = "FRegistro", ignore = true)
     @Mapping(target = "institucionEducativa", ignore = true)
+
+    // Auditoría Update
+    @Mapping(target = "CAudId", source = "usuario")
+    @Mapping(target = "CAudIp", source = "numeroIp")
+    @Mapping(target = "CAudPc", source = "nombrePc")
+    @Mapping(target = "CAudMcAddr", source = "direccionMac")
     void updateEntityFromDomain(JuezPazEscolar domain, @MappingTarget MaeJuezPazEscolarEntity entity);
 
-    // --- RESPONSE ---
-    @Mapping(target = "nombreCompleto", expression = "java(domain.getNombres() + ' ' + domain.getApePaterno() + ' ' + domain.getApeMaterno())")
+    // =========================================================
+    // 6. RESPUESTA (Domain -> Response)
+    // =========================================================
+    @Mapping(target = "id", source = "id")
+    @Mapping(target = "codigo", source = "codigo")
+    @Mapping(target = "estado", source = "activo")
     @Mapping(target = "archivos", source = "archivosGuardados")
+    @Mapping(target = "nombreCompleto", expression = "java(domain.getNombres() + ' ' + domain.getApePaterno() + ' ' + domain.getApeMaterno())")
     JuezPazEscolarResponse toResponse(JuezPazEscolar domain);
 }

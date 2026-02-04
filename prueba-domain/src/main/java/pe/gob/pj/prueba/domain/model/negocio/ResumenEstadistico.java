@@ -6,6 +6,6 @@ import java.io.Serializable;
 
 @Data @Builder
 public class ResumenEstadistico implements Serializable {
-    private String etiqueta; // Nombre de la Corte
-    private Long cantidad;   // Valor numérico
+    private String etiqueta;
+    private Long cantidad;
 }

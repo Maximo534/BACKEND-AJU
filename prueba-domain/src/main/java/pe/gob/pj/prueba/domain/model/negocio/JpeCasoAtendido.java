@@ -1,58 +1,62 @@
 package pe.gob.pj.prueba.domain.model.negocio;
 
-import lombok.AllArgsConstructor;
-import lombok.Builder;
-import lombok.Data;
-import lombok.NoArgsConstructor;
-import pe.gob.pj.prueba.domain.model.common.RecursoArchivo; // Importa esto
+import lombok.*;
+import lombok.experimental.FieldDefaults;
+import pe.gob.pj.prueba.domain.model.Auditoria;
 
 import java.io.Serializable;
 import java.time.LocalDate;
 import java.util.List;
 
-@Data @Builder @NoArgsConstructor @AllArgsConstructor
-public class JpeCasoAtendido implements Serializable {
+@Data
+@Builder
+@NoArgsConstructor
+@AllArgsConstructor
+@EqualsAndHashCode(callSuper = true)
+@FieldDefaults(level = AccessLevel.PRIVATE)
+public class JpeCasoAtendido extends Auditoria implements Serializable {
 
-    private String id;
-    private String distritoJudicialId;
+    static final long serialVersionUID = 1L;
 
-    // ✅ CAMPOS NUEVOS (Necesarios para el Listado/Tabla)
-    private String distritoJudicialNombre; // Para columna "CORTE"
-    private String ugelId;
-    private String ugelNombre;             // Para columna "UGEL"
-    private String institucionEducativaId;
-    private String institucionNombre;      // Para columna "I.E."
-    private String juezEscolarNombre;     // Nombre completo del alumno juez
-    private String juezGradoSeccion;
+    // --- Identificadores ---
+    Long id;
+    String codigo;
 
-    private LocalDate fechaRegistro;
-    private String lugarActividad;
+    // --- Ubicación y Registro ---
+    Long distritoJudicialId;
+    LocalDate fechaRegistroCaso;
+    String lugarActividad;
 
-    // Ubigeo
-    private String departamentoId;
-    private String provinciaId;
-    private String distritoId;
+    Long departamentoId;
+    Long provinciaId;
+    Long distritoId;
 
-    private String juezEscolarId; // ID del alumno Juez
+    // --- Juez de Paz Escolar  ---
+    Long juezEscolarId;
 
-    // Estudiante 1
-    private String nombreEstudiante1;
-    private String dniEstudiante1;
-    private String gradoEstudiante1;
-    private String seccionEstudiante1;
+    // --- Estudiante 1 ---
+    String nombreEstudiante1;
+    String dniEstudiante1;
+    String gradoEstudiante1;
+    String seccionEstudiante1;
 
-    // Estudiante 2
-    private String nombreEstudiante2;
-    private String dniEstudiante2;
-    private String gradoEstudiante2;
-    private String seccionEstudiante2;
+    // --- Estudiante 2 ---
+    String nombreEstudiante2;
+    String dniEstudiante2;
+    String gradoEstudiante2;
+    String seccionEstudiante2;
 
-    private String resumenHechos; // Columna "INCIDENTE"
-    private String acuerdos;
+    // --- Detalle del Conflicto ---
+    String resumenHechos;
+    String acuerdos;
 
-    private String usuarioRegistro;
-    private String search;
-    private String estado;
-    // ✅ CAMPO NUEVO (Para ver las fotos/actas al editar)
-    private List<Archivo> archivosGuardados;
+    // --- Campos de Salida / ---
+    String distritoJudicialNombre;
+    String ugelNombre;
+    String institucionNombre;
+    String juezEscolarNombre;
+    String juezGradoSeccion;
+    String activo;
+    // --- Archivos ---
+    List<Archivo> archivosGuardados;
 }

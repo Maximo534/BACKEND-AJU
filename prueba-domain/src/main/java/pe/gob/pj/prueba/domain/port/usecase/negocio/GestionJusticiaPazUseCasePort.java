@@ -5,18 +5,29 @@ import pe.gob.pj.prueba.domain.model.common.Pagina;
 import pe.gob.pj.prueba.domain.model.common.RecursoArchivo;
 import pe.gob.pj.prueba.domain.model.negocio.JpeCasoAtendido;
 import pe.gob.pj.prueba.domain.model.negocio.ResumenEstadistico;
+import pe.gob.pj.prueba.domain.model.negocio.query.ListarJpeCasosQuery;
 
 import java.util.List;
 
 public interface GestionJusticiaPazUseCasePort {
-    Pagina<JpeCasoAtendido> listar(String usuario, JpeCasoAtendido filtros, int pagina, int tamanio) throws Exception;
-    JpeCasoAtendido registrar(JpeCasoAtendido caso, MultipartFile acta, List<MultipartFile> fotos, String usuario) throws Exception;
-    JpeCasoAtendido actualizar(JpeCasoAtendido caso, String usuario) throws Exception;
-    void eliminarArchivo(String nombreArchivo) throws Exception;
-    void agregarArchivo(String idCaso, MultipartFile archivo, String tipo, String usuario) throws Exception;
-    RecursoArchivo descargarArchivoPorTipo(String id, String tipoArchivo) throws Exception;
-    JpeCasoAtendido buscarPorId(String id) throws Exception;
-    byte[] generarFichaPdf(String id) throws Exception;
+
+    Pagina<JpeCasoAtendido> listar(String cuo, ListarJpeCasosQuery query, int pagina, int tamanio);
+
+    JpeCasoAtendido buscarPorId(String cuo, Long id);
+
+    JpeCasoAtendido registrar(String cuo, JpeCasoAtendido dominio, MultipartFile acta, List<MultipartFile> fotos) throws Exception;
+
+    JpeCasoAtendido actualizar(String cuo, JpeCasoAtendido dominio) throws Exception;
+
+    void agregarArchivo(String cuo, Long idCaso, MultipartFile archivo, String tipoArchivo, String usuarioOperacion) throws Exception;
+
+    void eliminarArchivo(String cuo, Long idArchivo, String usuarioOperacion) throws Exception;
+
+    RecursoArchivo descargarArchivoPorTipo(String cuo, Long idCaso, String tipoArchivo) throws Exception;
+
+    RecursoArchivo descargarArchivoPorId(Long idArchivo) throws Exception;
+
+    byte[] generarFichaPdf(String cuo, Long idCaso) throws Exception;
+
     List<ResumenEstadistico> obtenerResumenGrafico() throws Exception;
-    RecursoArchivo descargarArchivoPorNombre(String nombreArchivo) throws Exception;
 }

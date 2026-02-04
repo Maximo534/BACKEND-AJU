@@ -1,127 +1,149 @@
 package pe.gob.pj.prueba.infraestructure.db.negocio.entities;
 
 import jakarta.persistence.*;
-import lombok.Getter;
-import lombok.Setter;
+import lombok.AccessLevel;
+import lombok.Data;
+import lombok.EqualsAndHashCode;
+import lombok.experimental.FieldDefaults;
+import pe.gob.pj.prueba.domain.common.enums.Estado;
+import pe.gob.pj.prueba.infraestructure.common.enums.OperacionBaseDatos;
 import pe.gob.pj.prueba.infraestructure.common.utils.EsquemaConstants;
+import pe.gob.pj.prueba.infraestructure.common.utils.InformacionRedUtils;
 
 import java.io.Serializable;
 import java.time.LocalDate;
+import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
 
-@Getter
-@Setter
+@Data
+@EqualsAndHashCode(callSuper = false)
+@FieldDefaults(level = AccessLevel.PRIVATE)
 @Entity
-@Table(name = "mov_aju_actv_prom_culturas", schema = EsquemaConstants.PRUEBA)
+@Table(name = "mov_actividad_promocion_cultura", schema = EsquemaConstants.PRUEBA)
 public class MovPromocionCulturaEntity implements Serializable {
 
-    @Id
-    @Column(name = "c_actv_prom_cult_id", length = 17)
-    private String id;
+    static final long serialVersionUID = 1L;
 
-    @Column(name = "c_distrito_jud_id", length = 2, nullable = false)
-    private String distritoJudicialId;
+    @Id
+    @SequenceGenerator(name = "SEQ_MOV_PROM_CULT", schema = EsquemaConstants.PRUEBA, sequenceName = "useq_mov_actividad_promocion_cultura", initialValue = 1, allocationSize = 1)
+    @GeneratedValue(strategy = GenerationType.SEQUENCE, generator = "SEQ_MOV_PROM_CULT")
+    @Column(name = "n_actv_prom_cult_id", nullable = false)
+    Long id;
+    @Column(name = "c_codigo", length = 17, nullable = false, unique = true)
+    String codigo;
+
+    @Column(name = "n_distrito_jud_id", nullable = false)
+    Long distritoJudicialId; // Long
 
     @Column(name = "x_nom_autoridad", length = 100)
-    private String nombreActividad;
+    String nombreActividad;
 
     @Column(name = "x_tipo_doc_autoridad", length = 100)
-    private String tipoActividad;
+    String tipoActividad;
 
     @Column(name = "x_dato_autoridad", length = 100)
-    private String tipoActividadOtros;
+    String tipoActividadOtros;
 
     @Column(name = "x_posic_solicitante", length = 150)
-    private String publicoObjetivo;
+    String publicoObjetivo;
 
     @Column(name = "x_desc_posic_orig", length = 100)
-    private String publicoObjetivoOtros;
+    String publicoObjetivoOtros;
 
     @Column(name = "l_sub_area_interv", length = 2)
-    private String seDictoLenguaNativa;
+    String seDictoLenguaNativa;
 
     @Column(name = "x_lengua_nat", length = 25)
-    private String lenguaNativaDesc;
+    String lenguaNativaDesc;
 
     @Column(name = "l_cod_prog_presu", length = 2)
-    private String participaronDiscapacitados;
+    String participaronDiscapacitados;
 
     @Column(name = "n_cod_prog_proy")
-    private Integer numeroDiscapacitados;
+    Integer numeroDiscapacitados;
 
     @Column(name = "t_recur_utiliz", columnDefinition = "TEXT")
-    private String institucionesAliadas;
+    String institucionesAliadas;
 
     @Column(name = "l_area_riesgo", length = 2)
-    private String areaRiesgo;
+    String areaRiesgo;
 
     @Column(name = "x_zona_intervencion", length = 200)
-    private String zonaIntervencion;
+    String zonaIntervencion;
 
     @Column(name = "x_modalidad_proy", length = 50)
-    private String modalidadProyecto;
+    String modalidadProyecto;
 
     @Column(name = "f_inicio")
-    private LocalDate fechaInicio;
+    LocalDate fechaInicio;
 
     @Column(name = "f_fin")
-    private LocalDate fechaFin;
+    LocalDate fechaFin;
 
     @Column(name = "x_res_plan_anual", length = 50)
-    private String resolucionPlanAnual;
+    String resolucionPlanAnual;
 
     @Column(name = "x_res_admin_plan", length = 50)
-    private String resolucionAdminPlan;
+    String resolucionAdminPlan;
 
     @Column(name = "x_doc_autoriza", length = 60)
-    private String documentoAutoriza;
+    String documentoAutoriza;
 
     @Column(name = "x_lugar_actv", length = 60)
-    private String lugarActividad;
+    String lugarActividad;
 
-    @Column(name = "c_depa_id", length = 2)
-    private String departamentoId;
+    // --- Ubigeo Long ---
+    @Column(name = "n_depa_id") Long departamentoId;
+    @Column(name = "n_prov_id") Long provinciaId;
+    @Column(name = "n_dist_id") Long distritoGeograficoId;
 
-    @Column(name = "c_prov_id", length = 4)
-    private String provinciaId;
-
-    @Column(name = "c_dist_id", length = 6)
-    private String distritoGeograficoId;
-
-    @Column(name = "c_eje_id", length = 5)
-    private String ejeId;
+    @Column(name = "n_eje_id")
+    Long ejeId;
 
     @Column(name = "t_desc_activ", columnDefinition = "TEXT")
-    private String descripcionActividad;
+    String descripcionActividad;
 
     @Column(name = "t_observacion", columnDefinition = "TEXT")
-    private String observacion;
+    String observacion;
 
-    @Column(name = "f_registro")
-    private LocalDate fechaRegistro;
+    // --- Auditoría ---
+    @Column(name = "f_reg_activ")
+    LocalDate fechaRegistroActividad = LocalDate.now();
 
-    @Column(name = "c_usuario_reg", length = 25)
-    private String usuarioRegistro;
+    @Column(name = "n_usuario_reg_id")
+    Long usuarioRegistroId;
 
     @Column(name = "l_activo", length = 1)
-    private String activo;
+    String activo = Estado.ACTIVO_NUMERICO.getNombre();
+
+    @Column(name = "f_registro", insertable = false, updatable = false)
+    LocalDateTime fRegistro;
+
+    @Column(name = "f_aud")
+    LocalDateTime fAud = LocalDateTime.now();
+
+    @Column(name = "b_aud")
+    String bAud = OperacionBaseDatos.INSERTAR.getNombre();
+
+    @Column(name = "c_aud_uid") String cAudId;
+    @Column(name = "c_aud_uidred") String cAudIdRed = InformacionRedUtils.getNombreRed();
+    @Column(name = "c_aud_pc") String cAudPc = InformacionRedUtils.getPc();
+    @Column(name = "c_aud_ip") String cAudIp = InformacionRedUtils.getIp();
+    @Column(name = "c_aud_mcaddr") String cAudMcAddr = InformacionRedUtils.getMac();
+
+    // --- Relaciones ---
 
     @OneToMany(cascade = CascadeType.ALL, fetch = FetchType.LAZY, orphanRemoval = true)
-    @JoinColumn(name = "c_actv_prom_cult_id", referencedColumnName = "c_actv_prom_cult_id", nullable = false, insertable = false, updatable = false)
-    private List<MovPromCulturaDetalleEntity> personasBeneficiadas = new ArrayList<>();
+    @JoinColumn(name = "n_actv_prom_cult_id", referencedColumnName = "n_actv_prom_cult_id", nullable = false)
+    List<MovPromCulturaDetalleEntity> personasBeneficiadas = new ArrayList<>();
 
     @OneToMany(cascade = CascadeType.ALL, fetch = FetchType.LAZY, orphanRemoval = true)
-    @JoinColumn(name = "c_actv_prom_cult_id", referencedColumnName = "c_actv_prom_cult_id", nullable = false, insertable = false, updatable = false)
-    private List<MovPromCulturaTareaEntity> tareas = new ArrayList<>();
+    @JoinColumn(name = "n_actv_prom_cult_id", referencedColumnName = "n_actv_prom_cult_id", nullable = false)
+    List<MovPromCulturaTareaEntity> tareas = new ArrayList<>();
 
-    //SOLO LÓGICA ESTRUCTURAL, NADA DE NEGOCIO
     @PrePersist
     public void prePersist() {
-        if (this.fechaRegistro == null) this.fechaRegistro = LocalDate.now();
-        if (this.activo == null) this.activo = "1";
-
-        // integridad de IDs hijos
         if (this.id != null) {
             if (this.personasBeneficiadas != null) this.personasBeneficiadas.forEach(p -> p.setPromocionCulturaId(this.id));
             if (this.tareas != null) this.tareas.forEach(t -> t.setPromocionCulturaId(this.id));

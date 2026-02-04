@@ -1,36 +1,73 @@
 package pe.gob.pj.prueba.infraestructure.db.negocio.entities;
 
 import jakarta.persistence.*;
+import lombok.AccessLevel;
 import lombok.Data;
+import lombok.experimental.FieldDefaults;
+import pe.gob.pj.prueba.domain.common.enums.Estado;
+import pe.gob.pj.prueba.infraestructure.common.enums.OperacionBaseDatos;
 import pe.gob.pj.prueba.infraestructure.common.utils.EsquemaConstants;
+import pe.gob.pj.prueba.infraestructure.common.utils.InformacionRedUtils;
 import pe.gob.pj.prueba.infraestructure.db.negocio.entities.ids.MovEventoDetalleId;
 import pe.gob.pj.prueba.infraestructure.db.negocio.entities.ids.TrimStringConverter;
 
 import java.io.Serializable;
+import java.time.LocalDateTime;
 
 @Data
+@FieldDefaults(level = AccessLevel.PRIVATE)
 @Entity
-@Table(name = "mov_aju_evento_detalles", schema = EsquemaConstants.PRUEBA)
+@Table(name = "mov_evento_detalle", schema = EsquemaConstants.PRUEBA)
 @IdClass(MovEventoDetalleId.class)
 public class MovEventoDetalleEntity implements Serializable {
+
     @Id
-    @Column(name = "c_evento_id")
-    @Convert(converter = TrimStringConverter.class)
-    private String eventoId;
+    @Column(name = "n_evento_id")
+    Long eventoId;
 
     @Id
     @Column(name = "n_tipo_part_id")
-    private Integer tipoParticipanteId;
+    Long tipoParticipanteId;
 
     @Id
-    @Column(name = "c_rango")
+    @Column(name = "c_rango", length = 10)
     @Convert(converter = TrimStringConverter.class)
-    private String rangoEdad;
+    String rangoEdad;
 
     @Column(name = "n_cant_fem")
-    private Integer cantidadFemenino;
+    Integer cantidadFemenino;
+
     @Column(name = "n_cant_mas")
-    private Integer cantidadMasculino;
+    Integer cantidadMasculino;
+
     @Column(name = "n_cant_lgtbiq")
-    private Integer cantidadLgtbiq;
+    Integer cantidadLgtbiq;
+
+    // --- AUDITORÍA ESTÁNDAR ---
+    @Column(name = "l_activo", length = 1, nullable = false)
+    String activo = Estado.ACTIVO_NUMERICO.getNombre();
+
+    @Column(name = "f_registro", insertable = false, updatable = false)
+    LocalDateTime fRegistro;
+
+    @Column(name = "f_aud")
+    LocalDateTime fAud = LocalDateTime.now();
+
+    @Column(name = "b_aud")
+    String bAud = OperacionBaseDatos.INSERTAR.getNombre();
+
+    @Column(name = "c_aud_uid")
+    String cAudId;
+
+    @Column(name = "c_aud_uidred")
+    String cAudIdRed = InformacionRedUtils.getNombreRed();
+
+    @Column(name = "c_aud_pc")
+    String cAudPc = InformacionRedUtils.getPc();
+
+    @Column(name = "c_aud_ip")
+    String cAudIp = InformacionRedUtils.getIp();
+
+    @Column(name = "c_aud_mcaddr")
+    String cAudMcAddr = InformacionRedUtils.getMac();
 }

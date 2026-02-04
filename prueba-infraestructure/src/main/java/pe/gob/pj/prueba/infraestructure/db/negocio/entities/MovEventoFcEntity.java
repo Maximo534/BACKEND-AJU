@@ -1,130 +1,126 @@
 package pe.gob.pj.prueba.infraestructure.db.negocio.entities;
 
 import jakarta.persistence.*;
-import lombok.Getter;
-import lombok.Setter;
+import lombok.AccessLevel;
+import lombok.Data;
+import lombok.EqualsAndHashCode;
+import lombok.experimental.FieldDefaults;
+import pe.gob.pj.prueba.domain.common.enums.Estado;
+import pe.gob.pj.prueba.infraestructure.common.enums.OperacionBaseDatos;
 import pe.gob.pj.prueba.infraestructure.common.utils.EsquemaConstants;
+import pe.gob.pj.prueba.infraestructure.common.utils.InformacionRedUtils;
 
 import java.io.Serializable;
 import java.time.LocalDate;
+import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
 
-@Getter
-@Setter
+@Data
+@EqualsAndHashCode(callSuper = false)
+@FieldDefaults(level = AccessLevel.PRIVATE)
 @Entity
-@Table(name = "mov_aju_eventos", schema = EsquemaConstants.PRUEBA)
+@Table(name = "mov_evento", schema = EsquemaConstants.PRUEBA)
 public class MovEventoFcEntity implements Serializable {
 
-    private static final long serialVersionUID = 1L;
+    static final long serialVersionUID = 1L;
 
     @Id
-    @Column(name = "c_evento_id", length = 17)
-    private String id;
+    @SequenceGenerator(name = "SEQ_MOV_EVENTO", schema = EsquemaConstants.PRUEBA, sequenceName = "useq_mov_evento", initialValue = 1, allocationSize = 1)
+    @GeneratedValue(strategy = GenerationType.SEQUENCE, generator = "SEQ_MOV_EVENTO")
+    @Column(name = "n_evento_id", nullable = false)
+    Long id;
 
-    @Column(name = "c_distrito_jud_id", length = 2, nullable = false)
-    private String distritoJudicialId;
+    // --- CÓDIGO VISIBLE ---
+    @Column(name = "c_codigo", length = 17, nullable = false, unique = true)
+    String codigo;
 
-    @Column(name = "c_tipo_evento", length = 25)
-    private String tipoEvento;
+    // --- DATOS NEGOCIO (FKs Long) ---
+    @Column(name = "n_distrito_jud_id", nullable = false)
+    Long distritoJudicialId;
 
-    @Column(name = "x_nombre_evento", length = 150)
-    private String nombreEvento;
+    @Column(name = "c_tipo_evento", length = 25, nullable = false)
+    String tipoEvento;
 
-    @Column(name = "f_inicio")
-    private LocalDate fechaInicio;
+    @Column(name = "x_nombre_evento", length = 150, nullable = false)
+    String nombreEvento;
 
-    @Column(name = "f_fin")
-    private LocalDate fechaFin;
+    @Column(name = "f_inicio", nullable = false)
+    LocalDate fechaInicio;
 
-    @Column(name = "x_res_plan_anual", length = 50)
-    private String resolucionPlanAnual;
+    @Column(name = "f_fin", nullable = false)
+    LocalDate fechaFin;
 
-    @Column(name = "x_res_admin_plan", length = 50)
-    private String resolucionAdminPlan;
+    @Column(name = "x_res_plan_anual", length = 50) String resolucionPlanAnual;
+    @Column(name = "x_res_admin_plan", length = 50) String resolucionAdminPlan;
+    @Column(name = "x_doc_autoriza", length = 60) String documentoAutoriza;
 
-    @Column(name = "x_doc_autoriza", length = 60)
-    private String documentoAutoriza;
+    @Column(name = "n_eje_id", nullable = false)
+    Long ejeId;
 
-    @Column(name = "c_eje_id", length = 5)
-    private String ejeId;
+    @Column(name = "x_modalidad", length = 25, nullable = false)
+    String modalidad;
 
-    @Column(name = "x_modalidad", length = 25)
-    private String modalidad;
+    @Column(name = "n_duracion", nullable = false) Integer duracionHoras;
+    @Column(name = "n_sesion", nullable = false) Integer numeroSesiones;
+    @Column(name = "x_docente", length = 200, nullable = false) String docenteExpositor;
 
-    @Column(name = "n_duracion")
-    private Integer duracionHoras;
+    @Column(name = "l_interprete", length = 2) String interpreteSenias;
+    @Column(name = "n_discapacidad", nullable = false) Integer numeroDiscapacitados;
+    @Column(name = "l_lengua_nat", length = 2) String seDictoLenguaNativa;
+    @Column(name = "x_lengua_nat_desc", length = 30) String lenguaNativaDesc;
 
-    @Column(name = "n_sesion")
-    private Integer numeroSesiones;
+    @Column(name = "x_publico_obj", length = 200, nullable = false) String publicoObjetivo;
+    @Column(name = "x_publico_obj_det", length = 50) String publicoObjetivoDetalle;
+    @Column(name = "x_nombre_inst", length = 100, nullable = false) String nombreInstitucion;
 
-    @Column(name = "x_docente", length = 200)
-    private String docenteExpositor;
+    // --- UBIGEO  ---
+    @Column(name = "n_departamento_id", nullable = false) Long departamentoId;
+    @Column(name = "n_provincia_id", nullable = false) Long provinciaId;
+    @Column(name = "n_distrito_id", nullable = false) Long distritoGeograficoId;
 
-    @Column(name = "l_interprete", length = 2)
-    private String interpreteSenias;
+    @Column(name = "x_desc_activ", length = 500) String descripcionActividad;
+    @Column(name = "x_inst_aliada", length = 500) String institucionesAliadas;
+    @Column(name = "x_observacion", length = 500) String observaciones;
 
-    @Column(name = "n_discapacidad")
-    private Integer numeroDiscapacitados;
+    // --- AUDITORÍA ---
+    @Column(name = "f_reg_activ", nullable = false)
+    LocalDate fechaRegistroActividad = LocalDate.now();
 
-    @Column(name = "l_lengua_nat", length = 2)
-    private String seDictoLenguaNativa;
+    @Column(name = "n_usuario_reg_id", nullable = false)
+    Long usuarioRegistroId;
 
-    @Column(name = "x_lengua_nat_desc", length = 30)
-    private String lenguaNativaDesc;
+    @Column(name = "l_activo", length = 1, nullable = false)
+    String activo = Estado.ACTIVO_NUMERICO.getNombre();
 
-    @Column(name = "x_publico_obj", length = 200)
-    private String publicoObjetivo;
+    @Column(name = "f_registro", insertable = false, updatable = false)
+    LocalDateTime fRegistro;
 
-    @Column(name = "x_publico_obj_det", length = 50)
-    private String publicoObjetivoDetalle;
+    @Column(name = "f_aud")
+    LocalDateTime fAud = LocalDateTime.now();
 
-    @Column(name = "x_nombre_inst", length = 100)
-    private String nombreInstitucion;
+    @Column(name = "b_aud")
+    String bAud = OperacionBaseDatos.INSERTAR.getNombre();
 
-    @Column(name = "c_depa_id", length = 2)
-    private String departamentoId;
+    @Column(name = "c_aud_uid") String cAudId;
+    @Column(name = "c_aud_uidred") String cAudIdRed = InformacionRedUtils.getNombreRed();
+    @Column(name = "c_aud_pc") String cAudPc = InformacionRedUtils.getPc();
+    @Column(name = "c_aud_ip") String cAudIp = InformacionRedUtils.getIp();
+    @Column(name = "c_aud_mcaddr") String cAudMcAddr = InformacionRedUtils.getMac();
 
-    @Column(name = "c_prov_id", length = 4)
-    private String provinciaId;
-
-    @Column(name = "c_dist_id", length = 6)
-    private String distritoGeograficoId;
-
-    @Column(name = "x_desc_activ", length = 500)
-    private String descripcionActividad;
-
-    @Column(name = "x_inst_aliada", length = 500)
-    private String institucionesAliadas;
-
-    @Column(name = "x_observacion", length = 500)
-    private String observaciones;
-
-    @Column(name = "f_registro")
-    private LocalDate fechaRegistro;
-
-    @Column(name = "c_usuario_reg", length = 25)
-    private String usuarioRegistro;
-
-    @Column(name = "l_activo", length = 1)
-    private String activo;
+    // --- RELACIONES ---
+    @OneToMany(cascade = CascadeType.ALL, fetch = FetchType.LAZY, orphanRemoval = true)
+    @JoinColumn(name = "n_evento_id", referencedColumnName = "n_evento_id", nullable = false)
+    List<MovEventoDetalleEntity> participantes = new ArrayList<>();
 
     @OneToMany(cascade = CascadeType.ALL, fetch = FetchType.LAZY, orphanRemoval = true)
-    @JoinColumn(name = "c_evento_id", referencedColumnName = "c_evento_id", nullable = false, insertable = false, updatable = false)
-    private List<MovEventoDetalleEntity> participantes = new ArrayList<>();
+    @JoinColumn(name = "n_evento_id", referencedColumnName = "n_evento_id", nullable = false)
+    List<MovEventoTareaEntity> tareasRealizadas = new ArrayList<>();
 
-    @OneToMany(cascade = CascadeType.ALL, fetch = FetchType.LAZY, orphanRemoval = true)
-    @JoinColumn(name = "c_evento_id", referencedColumnName = "c_evento_id", nullable = false, insertable = false, updatable = false)
-    private List<MovEventoTareaEntity> tareasRealizadas = new ArrayList<>();
-
-    //SOLO LÓGICA ESTRUCTURAL, NADA DE VALORES POR DEFECTO
     @PrePersist
     public void prePersist() {
-        if (this.fechaRegistro == null) this.fechaRegistro = LocalDate.now();
-        if (this.activo == null) this.activo = "1";
-
-        // Mantenemos esto para que las relaciones funcionen
         if (this.id != null) {
+            // Pasamos el ID Long a los hijos
             if(this.participantes != null) this.participantes.forEach(p -> p.setEventoId(this.id));
             if(this.tareasRealizadas != null) this.tareasRealizadas.forEach(t -> t.setEventoId(this.id));
         }

@@ -1,68 +1,130 @@
 package pe.gob.pj.prueba.infraestructure.rest.responses;
 
-// import com.fasterxml.jackson.annotation.JsonInclude; // COMENTADO
 import com.fasterxml.jackson.annotation.JsonInclude;
-import lombok.AllArgsConstructor;
-import lombok.Builder;
-import lombok.Data;
-import lombok.NoArgsConstructor;
+import lombok.*;
+import lombok.experimental.FieldDefaults;
 import pe.gob.pj.prueba.domain.model.negocio.Archivo;
+
 import java.io.Serializable;
 import java.time.LocalDate;
 import java.util.List;
 
-@Data @Builder @NoArgsConstructor @AllArgsConstructor
- @JsonInclude(JsonInclude.Include.NON_NULL)
+@Data
+@Builder
+@NoArgsConstructor
+@AllArgsConstructor
+@JsonInclude(JsonInclude.Include.NON_NULL)
+@FieldDefaults(level = AccessLevel.PRIVATE)
 public class LlapanchikpaqResponse implements Serializable {
 
-    private String id;
-    private String distritoJudicialId;
-    private String distritoJudicialNombre;
-    private LocalDate fechaInicio;
-    private String estado;
+    static final long serialVersionUID = 1L;
 
-    // Campos Detalle
-    private String resolucionPlanAnual;
-    private String resolucionAdminPlan;
-    private String documentoAutoriza;
-    private String lugarActividad;
+    // --- Identificadores ---
+    Long id;
+    String codigo;
 
-    // Ubigeo
-    private String departamentoId;
-    private String provinciaId;
-    private String distritoGeograficoId;
+    Long distritoJudicialId;
+    String distritoJudicialNombre;
 
-    // Población
-    private Integer numMesasInstaladas;
-    private Integer numServidores;
-    private Integer numJueces;
-    private String usoLenguaNativa;
-    private String lenguaNativaDesc;
+    LocalDate fechaInicio;
+    LocalDate fechaFin;
+    String estado;
 
-    // Textos
-    private String derivacion;
-    private String descripcionActividad;
-    private String observacion;
+    // --- Detalle ---
+    String resolucionPlanAnual;
+    String resolucionAdminPlan;
+    String documentoAutoriza;
+    String lugarActividad;
 
-    // Auditoría
-    private LocalDate fechaRegistro;
-    private String usuarioRegistro;
+    // --- Ubigeo ---
+    Long departamentoId;
+    Long provinciaId;
+    Long distritoGeograficoId;
 
-    // Listas
-    private List<DetalleBeneficiadaResponse> beneficiadas;
-    private List<DetalleAtendidaResponse> atendidas;
-    private List<DetalleCasoResponse> casos;
-    private List<DetalleTareaResponse> tareas;
+    Long ejeId;
 
-    private List<Archivo> archivos;
+    // --- Población / Estadísticas ---
+    Integer numMesasInstaladas;
+    Integer numServidores;
+    Integer numJueces;
 
-    // DTOs internos
-    @Data @Builder @NoArgsConstructor @AllArgsConstructor
-    public static class DetalleBeneficiadaResponse { String codigoRango; String descripcionRango; Integer cantFemenino; Integer cantMasculino; Integer cantLgtbiq; }
-    @Data @Builder @NoArgsConstructor @AllArgsConstructor
-    public static class DetalleAtendidaResponse { Integer tipoVulnerabilidadId; String rangoEdad; Integer cantidadFemenino; Integer cantidadMasculino; Integer cantidadLgtbiq; }
-    @Data @Builder @NoArgsConstructor @AllArgsConstructor
-    public static class DetalleCasoResponse { Integer materiaId; Integer cantidadDemandas; Integer cantidadAudiencias; Integer cantidadSentencias; Integer cantidadProcesos; Integer cantidadNotificaciones; Integer cantidadOrientaciones; }
-    @Data @Builder @NoArgsConstructor @AllArgsConstructor
-    public static class DetalleTareaResponse { String tareaId; LocalDate fechaInicio;String descripcion;}
+    String usoLenguaNativa;
+    String lenguaNativaDesc;
+
+    // --- Textos ---
+    String derivacion;
+    String descripcionActividad;
+    String institucionesAliadas;
+    String observacion;
+
+    // --- Auditoría ---
+    LocalDate fechaRegistro;
+    String usuarioRegistro;
+
+    // --- Listas ---
+    List<DetalleBeneficiadaResponse> beneficiadas;
+    List<DetalleAtendidaResponse> atendidas;
+    List<DetalleCasoResponse> casos;
+    List<DetalleTareaResponse> tareas;
+
+    // --- Archivos ---
+    List<Archivo> archivos;
+
+    // --- DTOs Internos ---
+
+    @Data
+    @Builder
+    @NoArgsConstructor
+    @AllArgsConstructor
+    @FieldDefaults(level = AccessLevel.PRIVATE)
+    public static class DetalleBeneficiadaResponse implements Serializable {
+        static final long serialVersionUID = 1L;
+        String codigoRango;
+        String descripcionRango;
+        Integer cantFemenino;
+        Integer cantMasculino;
+        Integer cantLgtbiq;
+    }
+
+    @Data
+    @Builder
+    @NoArgsConstructor
+    @AllArgsConstructor
+    @FieldDefaults(level = AccessLevel.PRIVATE)
+    public static class DetalleAtendidaResponse implements Serializable {
+        static final long serialVersionUID = 1L;
+        Long tipoVulnerabilidadId;
+        String rangoEdad;
+        Integer cantidadFemenino;
+        Integer cantidadMasculino;
+        Integer cantidadLgtbiq;
+    }
+
+    @Data
+    @Builder
+    @NoArgsConstructor
+    @AllArgsConstructor
+    @FieldDefaults(level = AccessLevel.PRIVATE)
+    public static class DetalleCasoResponse implements Serializable {
+        static final long serialVersionUID = 1L;
+        Long materiaId;
+        Integer cantidadDemandas;
+        Integer cantidadAudiencias;
+        Integer cantidadSentencias;
+        Integer cantidadProcesos;
+        Integer cantidadNotificaciones;
+        Integer cantidadOrientaciones;
+    }
+
+    @Data
+    @Builder
+    @NoArgsConstructor
+    @AllArgsConstructor
+    @FieldDefaults(level = AccessLevel.PRIVATE)
+    public static class DetalleTareaResponse implements Serializable {
+        static final long serialVersionUID = 1L;
+        Long tareaId;
+        LocalDate fechaInicio;
+        String descripcion;
+    }
 }

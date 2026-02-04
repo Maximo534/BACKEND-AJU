@@ -1,46 +1,56 @@
 package pe.gob.pj.prueba.domain.model.negocio;
 
-import lombok.AllArgsConstructor;
-import lombok.Builder;
-import lombok.Data;
-import lombok.NoArgsConstructor;
+import lombok.*;
+import lombok.experimental.FieldDefaults;
+import pe.gob.pj.prueba.domain.model.Auditoria;
+
 import java.io.Serializable;
 import java.time.LocalDate;
 import java.util.List;
 
-@Data @Builder @NoArgsConstructor @AllArgsConstructor
-public class JuezPazEscolar implements Serializable {
+@Data
+@Builder
+@NoArgsConstructor
+@AllArgsConstructor
+@EqualsAndHashCode(callSuper = true)
+@FieldDefaults(level = AccessLevel.PRIVATE)
+public class JuezPazEscolar extends Auditoria implements Serializable {
 
-    private String id;
-    private String dni;
-    private String apePaterno;
-    private String apeMaterno;
-    private String nombres;
-    private LocalDate fechaNacimiento;
-    private String genero;
-    private String grado;
-    private String seccion;
-    private String email;
-    private String celular;
-    private String cargo;
-    private LocalDate fechaJuramentacion;
-    private String resolucionAcreditacion;
+    static final long serialVersionUID = 1L;
 
-    private String institucionEducativaId;
+    // --- Identificadores ---
+    Long id;
+    String codigo;
 
-    // Campos de Salida (Para mostrar nombres)
-    private String distritoJudicialNombre;
-    private String ugelNombre;
-    private String institucionEducativaNombre;
+    // --- Datos Personales ---
+    String dni;
+    String apePaterno;
+    String apeMaterno;
+    String nombres;
+    LocalDate fechaNacimiento;
+    String genero;
 
-    // ✅ NUEVOS: Campos de Entrada (Filtros)
-    private String search;              // Buscador general
-    private String distritoJudicialId;  // Filtro Corte
-    private String ugelId;              // Filtro UGEL
+    // --- Datos Escolares ---
+    String grado;
+    String seccion;
 
-    private String activo;
-    private LocalDate fechaRegistro;
-    private String usuarioRegistro;
+    // --- FK (Long) ---
+    Long institucionEducativaId;
 
-    private List<Archivo> archivosGuardados;
+    // --- Contacto ---
+    String email;
+    String celular;
+
+    // --- Datos del Cargo ---
+    String cargo;
+    LocalDate fechaJuramentacion;
+    String resolucionAcreditacion;
+
+    // --- Campos de Salida ---
+    String distritoJudicialNombre;
+    String ugelNombre;
+    String institucionEducativaNombre;
+    String activo;
+    // --- Archivos ---
+    List<Archivo> archivosGuardados;
 }

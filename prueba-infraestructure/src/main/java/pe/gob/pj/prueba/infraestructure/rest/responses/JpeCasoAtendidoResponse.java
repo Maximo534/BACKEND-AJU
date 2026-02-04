@@ -1,49 +1,59 @@
 package pe.gob.pj.prueba.infraestructure.rest.responses;
 
 import com.fasterxml.jackson.annotation.JsonInclude;
-import lombok.AllArgsConstructor;
-import lombok.Builder;
-import lombok.Data;
-import lombok.NoArgsConstructor;
+import lombok.*;
+import lombok.experimental.FieldDefaults;
 import pe.gob.pj.prueba.domain.model.negocio.Archivo;
+
 import java.io.Serializable;
 import java.time.LocalDate;
 import java.util.List;
 
-@Data @Builder @NoArgsConstructor @AllArgsConstructor
+@Data
+@Builder
+@NoArgsConstructor
+@AllArgsConstructor
 @JsonInclude(JsonInclude.Include.NON_NULL)
+@FieldDefaults(level = AccessLevel.PRIVATE)
 public class JpeCasoAtendidoResponse implements Serializable {
 
-    private String id;
-    private String distritoJudicialId;
-    private String distritoJudicialNombre;
+    static final long serialVersionUID = 1L;
 
-    // Datos Institucionales (Recuperados via Juez)
-    private String ugelId;
-    private String ugelNombre;
-    private String institucionEducativaId;
-    private String institucionNombre;
+    Long id;
+    String codigo;
 
-    // Juez
-    private String juezEscolarId;
-    private String juezEscolarNombre;
-    private String juezGradoSeccion;
+    Long distritoJudicialId;
+    String distritoJudicialNombre;
 
-    private LocalDate fechaRegistro;
-    private String lugarActividad;
-    private String estado;
+    // --- Datos Institucionales  ---
+    Long ugelId;
+    String ugelNombre;
+    Long institucionEducativaId;
+    String institucionNombre;
 
-    // Detalle Conflicto
-    private String nombreEstudiante1;
-    private String dniEstudiante1;
-    private String gradoEstudiante1;
+    // --- Juez ---
+    Long juezEscolarId;
+    String juezEscolarNombre;
+    String juezGradoSeccion;
 
-    private String nombreEstudiante2;
-    private String dniEstudiante2;
-    private String gradoEstudiante2;
+    // --- Actividad ---
+    LocalDate fechaRegistro;
+    String lugarActividad;
+    String estado;
 
-    private String resumenHechos;
-    private String acuerdos;
+    // --- Detalle Conflicto ---
+    String nombreEstudiante1;
+    String dniEstudiante1;
+    String gradoEstudiante1;
+    String seccionEstudiante1;
 
-    private List<Archivo> archivos;
+    String nombreEstudiante2;
+    String dniEstudiante2;
+    String gradoEstudiante2;
+    String seccionEstudiante2;
+
+    String resumenHechos;
+    String acuerdos;
+
+    List<Archivo> archivos;
 }

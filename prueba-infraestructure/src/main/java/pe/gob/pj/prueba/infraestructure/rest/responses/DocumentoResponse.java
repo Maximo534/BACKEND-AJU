@@ -1,17 +1,27 @@
 package pe.gob.pj.prueba.infraestructure.rest.responses;
 
-import lombok.Builder;
-import lombok.Data;
+import com.fasterxml.jackson.annotation.JsonInclude;
+import lombok.*;
+import lombok.experimental.FieldDefaults;
+
 import java.io.Serializable;
 
 @Data
 @Builder
+@NoArgsConstructor
+@AllArgsConstructor
+@JsonInclude(JsonInclude.Include.NON_NULL)
+@FieldDefaults(level = AccessLevel.PRIVATE)
 public class DocumentoResponse implements Serializable {
-    private String id;
-    private String nombre;
-    private String tipo;
-    private Integer periodo;
-    private String formato;
-    private Integer categoriaId;
-//    private String urlDescarga;
+
+    static final long serialVersionUID = 1L;
+
+    Long id;
+    String nombre;
+    String tipo;
+    Integer periodo;
+    String formato;
+
+    Long categoriaDocumentoId;
+    String categoriaNombre;
 }

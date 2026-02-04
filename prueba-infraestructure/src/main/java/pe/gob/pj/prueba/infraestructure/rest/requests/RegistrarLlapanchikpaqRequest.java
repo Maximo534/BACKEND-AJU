@@ -2,114 +2,160 @@ package pe.gob.pj.prueba.infraestructure.rest.requests;
 
 import jakarta.validation.Valid;
 import jakarta.validation.constraints.*;
+import lombok.AccessLevel;
 import lombok.Data;
+import lombok.experimental.FieldDefaults;
 import org.springframework.format.annotation.DateTimeFormat;
+
 import java.io.Serializable;
 import java.time.LocalDate;
 import java.util.List;
 
 @Data
+@FieldDefaults(level = AccessLevel.PRIVATE)
 public class RegistrarLlapanchikpaqRequest implements Serializable {
 
-    private String id;
+    static final long serialVersionUID = 1L;
 
-    @NotBlank(message = "El Distrito Judicial es obligatorio")
-    private String distritoJudicialId;
+    Long id;
+    String codigo;
+
+    @NotNull(message = "El Distrito Judicial es obligatorio")
+    Long distritoJudicialId;
 
     @NotNull(message = "Fecha inicio obligatoria")
     @DateTimeFormat(pattern = "yyyy-MM-dd")
-    private LocalDate fechaInicio;
+    LocalDate fechaInicio;
+
+    @NotNull(message = "Fecha fin obligatoria")
+    @DateTimeFormat(pattern = "yyyy-MM-dd")
+    LocalDate fechaFin;
 
     @NotBlank(message = "Resolución Plan Anual obligatoria")
-    private String resolucionPlanAnual;
+    @Size(max = 50)
+    String resolucionPlanAnual;
 
     @NotBlank(message = "Resolución Admin Plan obligatoria")
-    private String resolucionAdminPlan;
+    @Size(max = 50)
+    String resolucionAdminPlan;
 
     @NotBlank(message = "Documento Autoriza obligatorio")
-    private String documentoAutoriza;
+    @Size(max = 60)
+    String documentoAutoriza;
 
     @NotBlank(message = "Lugar Actividad obligatorio")
-    private String lugarActividad;
+    @Size(max = 200)
+    String lugarActividad;
 
-    @NotBlank(message = "Departamento obligatorio")
-    private String departamentoId;
+    // --- Ubigeo (Long) ---
+    @NotNull(message = "Departamento obligatorio")
+    Long departamentoId;
 
-    @NotBlank(message = "Provincia obligatoria")
-    private String provinciaId;
+    @NotNull(message = "Provincia obligatoria")
+    Long provinciaId;
 
-    @NotBlank(message = "Distrito Geográfico obligatorio")
-    private String distritoGeograficoId;
+    @NotNull(message = "Distrito Geográfico obligatorio")
+    Long distritoGeograficoId;
 
+    @NotNull(message = "Eje es obligatorio")
+    Long ejeId;
+
+    // --- Datos Estadísticos ---
     @NotNull(message = "Num Mesas Instaladas obligatorio") @Min(0)
-    private Integer numMesasInstaladas;
+    Integer numMesasInstaladas;
 
     @NotNull(message = "Num Servidores obligatorio") @Min(0)
-    private Integer numServidores;
+    Integer numServidores;
 
     @NotNull(message = "Num Jueces obligatorio") @Min(0)
-    private Integer numJueces;
+    Integer numJueces;
 
-    @NotBlank(message = "Uso Lengua Nativa obligatorio")
-    private String usoLenguaNativa;
+    // --- Indicadores ---
+    @NotBlank(message = "Uso de lengua nativa es obligatorio (SI/NO)")
+    String usoLenguaNativa;
 
-    @NotBlank(message = "Desc. Lengua Nativa obligatorio")
-    private String lenguaNativaDesc;
+    String lenguaNativaDesc;
 
-    @NotBlank(message = "Derivación obligatoria")
-    private String derivacion;
+    // --- Textos ---
+    String derivacion;
 
-    @NotBlank(message = "Descripcion Actividad obligatorio")
-    private String descripcionActividad;
+    @NotBlank(message = "Descripción Actividad obligatoria")
+    String descripcionActividad;
+
+    @NotBlank(message = "Instituciones Aliadas obligatoria")
+    String institucionesAliadas;
 
     @NotBlank(message = "Observación obligatoria")
-    private String observacion;
+    String observacion;
 
+    // --- Listas ---
     @Valid @NotEmpty(message = "Debe registrar beneficiadas")
-    private List<BeneficiadaRequest> beneficiadas;
+    List<BeneficiadaRequest> beneficiadas;
 
     @Valid @NotEmpty(message = "Debe registrar atendidas")
-    private List<AtendidaRequest> atendidas;
+    List<AtendidaRequest> atendidas;
 
     @Valid @NotEmpty(message = "Debe registrar casos")
-    private List<CasoRequest> casos;
+    List<CasoRequest> casos;
 
     @Valid @NotEmpty(message = "Debe registrar tareas")
-    private List<TareaRequest> tareas;
+    List<TareaRequest> tareas;
 
     // --- DTOs Internos ---
+
     @Data
-    public static class BeneficiadaRequest {
-        @NotBlank private String codigoRango;
-        @NotBlank private String descripcionRango;
-        @NotNull @Min(0) private Integer cantFemenino;
-        @NotNull @Min(0) private Integer cantMasculino;
-        @NotNull @Min(0) private Integer cantLgtbiq;
+    @FieldDefaults(level = AccessLevel.PRIVATE)
+    public static class BeneficiadaRequest implements Serializable {
+        static final long serialVersionUID = 1L;
+
+        @NotBlank String codigoRango;
+        @NotBlank String descripcionRango;
+
+        @NotNull @Min(0) Integer cantFemenino;
+        @NotNull @Min(0) Integer cantMasculino;
+        @NotNull @Min(0) Integer cantLgtbiq;
     }
 
     @Data
-    public static class AtendidaRequest {
-        @NotNull private Integer tipoVulnerabilidadId;
-        @NotBlank private String rangoEdad;
-        @NotNull @Min(0) private Integer cantidadFemenino;
-        @NotNull @Min(0) private Integer cantidadMasculino;
-        @NotNull @Min(0) private Integer cantidadLgtbiq;
+    @FieldDefaults(level = AccessLevel.PRIVATE)
+    public static class AtendidaRequest implements Serializable {
+        static final long serialVersionUID = 1L;
+
+        @NotNull(message = "Tipo vulnerabilidad obligatorio")
+        Long tipoVulnerabilidadId;
+
+        @NotBlank String rangoEdad;
+
+        @NotNull @Min(0) Integer cantidadFemenino;
+        @NotNull @Min(0) Integer cantidadMasculino;
+        @NotNull @Min(0) Integer cantidadLgtbiq;
     }
 
     @Data
-    public static class CasoRequest {
-        @NotNull private Integer materiaId;
-        @NotNull @Min(0) private Integer cantidadDemandas;
-        @NotNull @Min(0) private Integer cantidadAudiencias;
-        @NotNull @Min(0) private Integer cantidadSentencias;
-        @NotNull @Min(0) private Integer cantidadProcesos;
-        @NotNull @Min(0) private Integer cantidadNotificaciones;
-        @NotNull @Min(0) private Integer cantidadOrientaciones;
+    @FieldDefaults(level = AccessLevel.PRIVATE)
+    public static class CasoRequest implements Serializable {
+        static final long serialVersionUID = 1L;
+
+        @NotNull(message = "Materia obligatoria")
+        Long materiaId;
+
+        @NotNull @Min(0) Integer cantidadDemandas;
+        @NotNull @Min(0) Integer cantidadAudiencias;
+        @NotNull @Min(0) Integer cantidadSentencias;
+        @NotNull @Min(0) Integer cantidadProcesos;
+        @NotNull @Min(0) Integer cantidadNotificaciones;
+        @NotNull @Min(0) Integer cantidadOrientaciones;
     }
 
     @Data
-    public static class TareaRequest {
-        @NotBlank private String tareaId;
-        private LocalDate fechaInicio;
+    @FieldDefaults(level = AccessLevel.PRIVATE)
+    public static class TareaRequest implements Serializable {
+        static final long serialVersionUID = 1L;
+
+        @NotNull(message = "Tarea obligatoria")
+        Long tareaId;
+
+        @DateTimeFormat(pattern = "yyyy-MM-dd")
+        LocalDate fechaInicio;
     }
 }

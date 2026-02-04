@@ -10,37 +10,48 @@ import pe.gob.pj.prueba.infraestructure.db.negocio.entities.MovJusticiaItinerant
 
 import java.time.LocalDate;
 import java.util.List;
+import java.util.Optional;
 
 @Repository
-public interface MovJusticiaItineranteRepository extends JpaRepository<MovJusticiaItineranteEntity, String> {
+public interface MovJusticiaItineranteRepository extends JpaRepository<MovJusticiaItineranteEntity, Long> {
 
-    @Query("SELECT MAX(e.id) FROM MovJusticiaItineranteEntity e WHERE e.id LIKE '%-JI'")
-    String obtenerUltimoId();
+    boolean existsByCodigo(String codigo);
 
-    @Query(value = "SELECT e FROM MovJusticiaItineranteEntity e " +
-            "WHERE e.usuarioRegistro = :usuario " +
-            "AND e.activo = '1' " +
-            "AND (:distrito IS NULL OR e.distritoJudicialId = :distrito) " +
-            "AND (cast(:fecIni as date) IS NULL OR e.fechaInicio >= :fecIni) " +
-            "AND (cast(:fecFin as date) IS NULL OR e.fechaInicio <= :fecFin) " +
+    Optional<MovJusticiaItineranteEntity> findByIdAndActivo(Long id, String activo);
+
+    // Búsqueda Dinámica
+    @Query("SELECT j FROM MovJusticiaItineranteEntity j " +
+            "WHERE j.activo = '1' " +
+            "AND (:distrito IS NULL OR j.distritoJudicialId = :distrito) " +
+            "AND (cast(:fInicio as date) IS NULL OR j.fechaInicio >= :fInicio) " +
+            "AND (cast(:fFin as date) IS NULL OR j.fechaInicio <= :fFin) " +
             "AND (:search IS NULL OR :search = '' OR " +
-            "UPPER(e.id) LIKE UPPER(CONCAT('%', :search, '%')) OR " +
-            "UPPER(e.lugarActividad) LIKE UPPER(CONCAT('%', :search, '%')) OR " +
-            "UPPER(e.publicoObjetivo) LIKE UPPER(CONCAT('%', :search, '%'))) " +
-            "ORDER BY e.fechaInicio DESC")
+            "     UPPER(j.codigo) LIKE UPPER(CONCAT('%', :search, '%')) OR " +
+            "     UPPER(j.lugarActividad) LIKE UPPER(CONCAT('%', :search, '%'))) " +
+            "ORDER BY j.id DESC")
     Page<MovJusticiaItineranteEntity> listarCompleto(
-            @Param("usuario") String usuario,
             @Param("search") String search,
-            @Param("distrito") String distrito,
-            @Param("fecIni") LocalDate fecIni,
-            @Param("fecFin") LocalDate fecFin,
-            Pageable pageable);
+            @Param("distrito") Long distrito,
+            @Param("fInicio") LocalDate fInicio,
+            @Param("fFin") LocalDate fFin,
+            Pageable pageable
+    );
+
+    // Obtener último código para correlativo (ej: busca '%-2026-JI' en distrito X)
+    @Query(value = "SELECT c_codigo FROM acjust.mov_justicia_itinerante " +
+            "WHERE c_codigo LIKE %:sufijoAnio " +
+            "AND n_distrito_jud_id = :distrito " +
+            "ORDER BY n_just_itin_id DESC LIMIT 1", nativeQuery = true)
+    String obtenerUltimoCodigo(@Param("distrito") Long distrito, @Param("sufijoAnio") String sufijoAnio);
+
 
     @Query("SELECT EXTRACT(MONTH FROM e.fechaInicio) as mes, COUNT(e) as cantidad " +
             "FROM MovJusticiaItineranteEntity e " +
             "WHERE e.activo = '1' " +
             "AND EXTRACT(YEAR FROM e.fechaInicio) = :anio " +
-            "AND e.usuarioRegistro = :usuario " +
+            "AND e.cAudId = :usuario " +
             "GROUP BY EXTRACT(MONTH FROM e.fechaInicio)")
     List<Object[]> contarPorMes(@Param("anio") int anio, @Param("usuario") String usuario);
 }
+
+

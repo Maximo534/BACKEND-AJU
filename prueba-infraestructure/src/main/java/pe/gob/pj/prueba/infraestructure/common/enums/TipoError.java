@@ -44,7 +44,12 @@ public enum TipoError {
   NUEVO_TOKEN_NO_VALIDO("N007","Ocurrió un error al generar nuevo token de seguridad.",null),
   MAESTRO_NO_ENCONTRADO("N008", "No se encontró información para el maestro solicitado.", null),
   USUARIO_YA_REGISTRADO("N009", "El nombre de usuario (login) ya se encuentra registrado.", null),
-  ACCESO_DENEGADO("N403", "No tiene privilegios suficientes para realizar esta acción.", null);
+  ACCESO_DENEGADO("N010", "No tiene privilegios suficientes para realizar esta acción.", null),
+  MOVIMIENTO_NO_ENCONTRADO("N011", "El registro solicitado no existe.", null),
+  VALIDACION_NEGOCIO("N011", "El registro solicitado no existe.", null)
+  ;
+
+
   ;
 
   String codigo;

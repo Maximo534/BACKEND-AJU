@@ -1,65 +1,63 @@
 package pe.gob.pj.prueba.infraestructure.db.negocio.persistence;
 
+import lombok.AccessLevel;
 import lombok.RequiredArgsConstructor;
+import lombok.experimental.FieldDefaults;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Component;
 import org.springframework.transaction.annotation.Transactional;
+import pe.gob.pj.prueba.domain.exceptions.negocio.MovimientoNoEncontradoException;
 import pe.gob.pj.prueba.domain.model.common.Pagina;
 import pe.gob.pj.prueba.domain.model.negocio.Archivo;
 import pe.gob.pj.prueba.domain.model.negocio.FortalecimientoCapacidades;
+import pe.gob.pj.prueba.domain.model.negocio.query.ListarFortalecimientoQuery;
 import pe.gob.pj.prueba.domain.port.persistence.negocio.FortalecimientoPersistencePort;
-import pe.gob.pj.prueba.infraestructure.db.negocio.entities.MovArchivosEntity;
+import pe.gob.pj.prueba.infraestructure.db.negocio.entities.MovArchivoEntity;
 import pe.gob.pj.prueba.infraestructure.db.negocio.entities.MovEventoFcEntity;
-import pe.gob.pj.prueba.infraestructure.db.negocio.repositories.*;
-import pe.gob.pj.prueba.infraestructure.db.negocio.repositories.masters.MaeDistritoJudicialRepository;
+import pe.gob.pj.prueba.infraestructure.db.negocio.repositories.MovArchivosRepository;
+import pe.gob.pj.prueba.infraestructure.db.negocio.repositories.MovEventoFcRepository;
 import pe.gob.pj.prueba.infraestructure.mappers.FortalecimientoMapper;
 
-import java.time.LocalDate;
-import java.util.ArrayList;
 import java.util.List;
 import java.util.stream.Collectors;
 
+@Slf4j
 @Component
 @RequiredArgsConstructor
-@Slf4j
+@FieldDefaults(level = AccessLevel.PRIVATE, makeFinal = true)
 public class FortalecimientoPersistenceAdapter implements FortalecimientoPersistencePort {
 
-    private final MovEventoFcRepository repository;
-    private final MovArchivosRepository repoArchivos;
-    private final MaeDistritoJudicialRepository repoDistrito;
-    private final FortalecimientoMapper mapper;
+    MovEventoFcRepository repository;
+    MovArchivosRepository repoArchivos;
+    FortalecimientoMapper mapper;
 
     @Override
-    @Transactional(readOnly = true)
-    public Pagina<FortalecimientoCapacidades> listar(String usuario, FortalecimientoCapacidades filtros, int pagina, int tamanio) throws Exception {
+    public Pagina<FortalecimientoCapacidades> listar(String cuo, ListarFortalecimientoQuery query, int pagina, int tamanio) {
         Pageable pageable = PageRequest.of(pagina - 1, tamanio);
-        if (filtros == null) filtros = FortalecimientoCapacidades.builder().build();
 
-        String search = filtros.getSearch();
-        String distrito = filtros.getDistritoJudicialId();
-        String tipo = filtros.getTipoEvento();
-        LocalDate fIni = filtros.getFechaInicio();
-        LocalDate fFin = filtros.getFechaFin();
+        var pageResult = repository.listarCompleto(
+                query.getSearch(),
+                query.getDistritoJudicialId(),
+                query.getTipoEvento(),
+                query.getFechaInicio(),
+                query.getFechaFin(),
+                pageable
+        );
 
-        var result = repository.listar(usuario, search, distrito, tipo, fIni, fFin, pageable);
-
-        List<FortalecimientoCapacidades> contenido = result.getContent().stream()
-                .map(p -> FortalecimientoCapacidades.builder()
-                        .id(p.getId())
-                        .fechaInicio(p.getFechaInicio())
-                        .fechaFin(p.getFechaFin())
-                        .tipoEvento(p.getTipoEvento())
-                        .distritoJudicialNombre(p.getDistritoJudicialNombre())
-                        .activo(p.getEstado())
-                        .build())
+        List<FortalecimientoCapacidades> contenido = pageResult.getContent().stream()
+                .map(entity -> {
+                    FortalecimientoCapacidades dominio = mapper.toDomain(entity);
+                    cargarArchivosEnDominio(dominio);
+                    return dominio;
+                })
                 .collect(Collectors.toList());
 
         return Pagina.<FortalecimientoCapacidades>builder()
                 .contenido(contenido)
-                .totalRegistros(result.getTotalElements())
-                .totalPaginas(result.getTotalPages())
+                .totalRegistros(pageResult.getTotalElements())
+                .totalPaginas(pageResult.getTotalPages())
                 .paginaActual(pagina)
                 .tamanioPagina(tamanio)
                 .build();
@@ -67,115 +65,87 @@ public class FortalecimientoPersistenceAdapter implements FortalecimientoPersist
 
     @Override
     @Transactional
-    public FortalecimientoCapacidades guardar(FortalecimientoCapacidades dominio) throws Exception {
-        try {
-            MovEventoFcEntity entidad = mapper.toEntity(dominio);
-
-            // Asegurar integridad de IDs hijos
-            if (entidad.getId() != null) {
-                String id = entidad.getId();
-                if (entidad.getParticipantes() != null) entidad.getParticipantes().forEach(d -> d.setEventoId(id));
-                if (entidad.getTareasRealizadas() != null) entidad.getTareasRealizadas().forEach(d -> d.setEventoId(id));
-            }
-
-            MovEventoFcEntity guardado = repository.save(entidad);
-            FortalecimientoCapacidades res = mapper.toDomain(guardado);
-
-            //  Enriquecer con nombre para devolver al front
-//            if (res.getDistritoJudicialId() != null) {
-//                repoDistrito.findById(res.getDistritoJudicialId())
-//                        .ifPresent(d -> res.setDistritoJudicialNombre(d.getNombre()));
-//            }
-
-            return res;
-
-        } catch (Exception e) {
-            log.error("Error al guardar FFC", e);
-            throw new Exception("Error BD: " + e.getMessage());
-        }
-    }
-
-    @Override
-    public String obtenerUltimoId() throws Exception {
-        return repository.obtenerUltimoId();
+    public FortalecimientoCapacidades guardar(String cuo, FortalecimientoCapacidades dominio) {
+        log.info("[{}] Guardando Fortalecimiento: {}", cuo, dominio.getCodigo());
+        MovEventoFcEntity entity = mapper.toEntity(dominio);
+        MovEventoFcEntity saved = repository.save(entity);
+        return mapper.toDomain(saved);
     }
 
     @Override
     @Transactional
-    public FortalecimientoCapacidades actualizar(FortalecimientoCapacidades dominio) throws Exception {
-        try {
-            MovEventoFcEntity entidadDb = repository.findById(dominio.getId())
-                    .orElseThrow(() -> new Exception("Evento no encontrado: " + dominio.getId()));
+    public FortalecimientoCapacidades actualizar(String cuo, FortalecimientoCapacidades dominio) {
+        log.info("[{}] Actualizando Fortalecimiento ID: {}", cuo, dominio.getId());
 
-            // Mapper actualiza campos simples
-            mapper.updateEntityFromDomain(dominio, entidadDb);
+        // Buscamos por ID
+        MovEventoFcEntity entityDb = repository.findById(dominio.getId())
+                .orElseThrow(() -> new MovimientoNoEncontradoException("No se encontró el evento con ID: " + dominio.getId()));
 
-            // Actualizar Listas (Limpia e inserta - Orphan Removal manual)
-            if (entidadDb.getParticipantes() != null) entidadDb.getParticipantes().clear();
-            if (dominio.getParticipantes() != null) {
-                dominio.getParticipantes().forEach(p -> {
-                    var entityPart = mapper.toEntityPart(p);
-                    entityPart.setEventoId(entidadDb.getId());
-                    entidadDb.getParticipantes().add(entityPart);
-                });
-            }
+        mapper.updateEntityFromDomain(dominio, entityDb);
 
-            if (entidadDb.getTareasRealizadas() != null) {
-                entidadDb.getTareasRealizadas().clear();
-            } else {
-                entidadDb.setTareasRealizadas(new ArrayList<>());
-            }
+        actualizarHijos(entityDb, dominio);
 
-            if (entidadDb.getTareasRealizadas() != null) entidadDb.getTareasRealizadas().clear();
-            if (dominio.getTareasRealizadas() != null) {
-                dominio.getTareasRealizadas().forEach(t -> {
-                    var entityTarea = mapper.toEntityTarea(t);
-                    entityTarea.setEventoId(entidadDb.getId());
-                    entidadDb.getTareasRealizadas().add(entityTarea);
-                });
-            }
-
-            MovEventoFcEntity guardado = repository.save(entidadDb);
-            FortalecimientoCapacidades res = mapper.toDomain(guardado);
-
-            // Enriquecer con nombre
-//            if (res.getDistritoJudicialId() != null) {
-//                repoDistrito.findById(res.getDistritoJudicialId())
-//                        .ifPresent(d -> res.setDistritoJudicialNombre(d.getNombre()));
-//            }
-
-            return res;
-
-        } catch (Exception e) {
-            log.error("Error al actualizar FFC", e);
-            throw new Exception("Error BD al actualizar: " + e.getMessage());
-        }
+        MovEventoFcEntity saved = repository.save(entityDb);
+        return mapper.toDomain(saved);
     }
 
     @Override
-    @Transactional(readOnly = true)
-    public FortalecimientoCapacidades obtenerPorId(String id) throws Exception {
-        MovEventoFcEntity entidad = repository.findById(id)
-                .orElseThrow(() -> new Exception("Evento no encontrado: " + id));
+    public FortalecimientoCapacidades obtenerPorId(String cuo, Long id) {
+        FortalecimientoCapacidades dominio = repository.findById(id)
+                .map(mapper::toDomain)
+                .orElse(null);
 
-        FortalecimientoCapacidades dominio = mapper.toDomain(entidad);
+        if (dominio != null) {
+            cargarArchivosEnDominio(dominio);
+        }
+        return dominio;
+    }
 
-        // Enriquecer con nombre
-//        if (dominio.getDistritoJudicialId() != null) {
-//            repoDistrito.findById(dominio.getDistritoJudicialId())
-//                    .ifPresent(d -> dominio.setDistritoJudicialNombre(d.getNombre()));
-//        }
+    @Override
+    public String obtenerUltimoCodigo(String cuo, Long distritoId, String anio) {
+        return repository.obtenerUltimoCodigo(distritoId, "-" + anio + "-FC");
+    }
 
-        // Archivos
-        List<MovArchivosEntity> archivos = repoArchivos.findByNumeroIdentificacion(id);
-        if (archivos != null && !archivos.isEmpty()) {
-            dominio.setArchivosGuardados(archivos.stream()
+    // --- PRIVADOS ---
+
+    private void cargarArchivosEnDominio(FortalecimientoCapacidades dominio) {
+        List<MovArchivoEntity> archivosEntities = repoArchivos.findByNumeroIdentificacionAndActivo(dominio.getCodigo(), "1");
+        if (archivosEntities != null && !archivosEntities.isEmpty()) {
+            dominio.setArchivosGuardados(archivosEntities.stream()
                     .map(a -> Archivo.builder()
-                            .nombre(a.getNombre()).tipo(a.getTipo())
-                            .ruta(a.getRuta()).numeroIdentificacion(a.getNumeroIdentificacion())
+                            .id(a.getId())
+                            .nombre(a.getNombre())
+                            .tipo(a.getTipo())
+                            .ruta(a.getRuta())
+                            .numeroIdentificacion(a.getNumeroIdentificacion())
                             .build())
                     .collect(Collectors.toList()));
         }
-        return dominio;
+    }
+
+    private void actualizarHijos(MovEventoFcEntity entityDb, FortalecimientoCapacidades dominio) {
+        // 1. Participantes
+        if (entityDb.getParticipantes() != null) {
+            entityDb.getParticipantes().clear();
+        }
+        if (dominio.getParticipantes() != null) {
+            dominio.getParticipantes().forEach(d -> {
+                var child = mapper.toEntityPart(d);
+                child.setEventoId(entityDb.getId()); // ID Long del padre
+                entityDb.getParticipantes().add(child);
+            });
+        }
+
+        // 2. Tareas Realizadas
+        if (entityDb.getTareasRealizadas() != null) {
+            entityDb.getTareasRealizadas().clear();
+        }
+        if (dominio.getTareasRealizadas() != null) {
+            dominio.getTareasRealizadas().forEach(d -> {
+                var child = mapper.toEntityTarea(d);
+                child.setEventoId(entityDb.getId()); // ID Long del padre
+                entityDb.getTareasRealizadas().add(child);
+            });
+        }
     }
 }

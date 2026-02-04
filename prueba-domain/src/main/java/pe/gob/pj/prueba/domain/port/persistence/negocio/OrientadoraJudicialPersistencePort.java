@@ -1,16 +1,23 @@
 package pe.gob.pj.prueba.domain.port.persistence.negocio;
+
 import pe.gob.pj.prueba.domain.model.common.Pagina;
 import pe.gob.pj.prueba.domain.model.negocio.OrientadoraJudicial;
 import pe.gob.pj.prueba.domain.model.negocio.ResumenEstadistico;
+import pe.gob.pj.prueba.domain.model.negocio.query.ListarOrientadoraQuery;
 
 import java.util.List;
 
 public interface OrientadoraJudicialPersistencePort {
-    Pagina<OrientadoraJudicial> listar(String usuario, OrientadoraJudicial filtros, int pagina, int tamanio) throws Exception;
-    OrientadoraJudicial guardar(OrientadoraJudicial dominio) throws Exception;
-    String obtenerUltimoId() throws Exception;
-    OrientadoraJudicial buscarPorId(String id) throws Exception;
-    OrientadoraJudicial actualizar(OrientadoraJudicial dominio) throws Exception;
-    List<ResumenEstadistico> obtenerResumenGrafico() throws Exception;
 
+    Pagina<OrientadoraJudicial> listar(String cuo, ListarOrientadoraQuery query, int pagina, int tamanio);
+
+    OrientadoraJudicial guardar(String cuo, OrientadoraJudicial dominio);
+
+    OrientadoraJudicial actualizar(String cuo, OrientadoraJudicial dominio);
+
+    OrientadoraJudicial obtenerPorId(String cuo, Long id);
+
+    String obtenerUltimoCodigo(String cuo, Long distritoId, String anio);
+
+    List<ResumenEstadistico> obtenerResumenGrafico() throws Exception;
 }

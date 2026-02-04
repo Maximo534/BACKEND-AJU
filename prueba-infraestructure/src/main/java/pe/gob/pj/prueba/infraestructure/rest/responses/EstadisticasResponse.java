@@ -1,22 +1,54 @@
 package pe.gob.pj.prueba.infraestructure.rest.responses;
 
 import com.fasterxml.jackson.annotation.JsonInclude;
-import lombok.Builder;
-import lombok.Data;
+import lombok.*;
+import lombok.experimental.FieldDefaults;
+
 import java.io.Serializable;
+import java.util.List;
 
 @Data
 @Builder
+@NoArgsConstructor
+@AllArgsConstructor
 @JsonInclude(JsonInclude.Include.NON_NULL)
+@FieldDefaults(level = AccessLevel.PRIVATE)
 public class EstadisticasResponse implements Serializable {
 
-    private Integer anioConsultado;
+    static final long serialVersionUID = 1L;
 
-    private GraficoResponse chartTopMagistrados;
+    Integer anioConsultado;
 
-    private GraficoResponse chartPorEje;
-    private GraficoResumenMagistradoResponse chartResumenMagistrados;
-    private GraficoResponse chartTopDistrito;
-    private GraficoEvolucionMensualResponse chartEvolucionMensual;
+    GraficoSimpleResponse chartTopMagistrados;
+    GraficoSimpleResponse chartPorEje;
+    GraficoSimpleResponse chartTopDistrito;
 
+    // Gráficos Multiseries
+    GraficoMultiserieResponse chartResumenMagistrados;
+    GraficoMultiserieResponse chartEvolucionMensual;
+
+
+    @Data
+    @Builder
+    @NoArgsConstructor
+    @AllArgsConstructor
+    @FieldDefaults(level = AccessLevel.PRIVATE)
+    public static class GraficoSimpleResponse implements Serializable {
+        static final long serialVersionUID = 1L;
+        List<String> labels;
+        List<Integer> cantidad;
+    }
+
+    @Data
+    @Builder
+    @NoArgsConstructor
+    @AllArgsConstructor
+    @FieldDefaults(level = AccessLevel.PRIVATE)
+    public static class GraficoMultiserieResponse implements Serializable {
+        static final long serialVersionUID = 1L;
+        List<String> labels;
+        List<Integer> dataJusticia;
+        List<Integer> dataCultura;
+        List<Integer> dataFortalecimiento;
+    }
 }

@@ -1,19 +1,34 @@
 package pe.gob.pj.prueba.domain.model.negocio;
 
-import lombok.Builder;
-import lombok.Data;
+import lombok.*;
+import lombok.experimental.FieldDefaults;
+import pe.gob.pj.prueba.domain.model.Auditoria;
+
 import java.io.Serializable;
 
 @Data
 @Builder
-public class Documento implements Serializable {
-    private String id;
-    private String nombre;
-    private String tipo;
-    private String formato;
-    private String rutaArchivo;
-    private Integer periodo;
-    private String activo;
-    private Integer categoriaId;
+@NoArgsConstructor
+@AllArgsConstructor
+@EqualsAndHashCode(callSuper = true)
+@FieldDefaults(level = AccessLevel.PRIVATE)
+public class Documento extends Auditoria implements Serializable {
 
+    static final long serialVersionUID = 1L;
+
+    // --- Identificadores ---
+    Long id;
+
+    // --- Datos del Documento ---
+    String nombre;
+    String tipo;
+    String formato;
+    String ruta;
+    Integer periodo;
+    String activo;
+    // --- FK ---
+    Long categoriaDocumentoId;
+
+    // --- Campos de Salida ---
+    String categoriaNombre;
 }

@@ -27,7 +27,7 @@ import pe.gob.pj.prueba.infraestructure.rest.responses.GlobalResponse;
 public interface GestionarMaestros {
 
     // --- PLANIFICACIÓN ---
-    @GetMapping("/actividades")
+    @GetMapping("/actividades-operativas")
     @Operation(summary = "Listar Actividades Operativas")
     @ApiResponse(responseCode = "200", content = @Content(schema = @Schema(implementation = GlobalResponse.class)))
     ResponseEntity<GlobalResponse> listarActividades(

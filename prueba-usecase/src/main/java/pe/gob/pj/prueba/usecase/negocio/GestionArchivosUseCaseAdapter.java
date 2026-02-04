@@ -5,6 +5,8 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
+import pe.gob.pj.prueba.domain.exceptions.negocio.MovimientoNoEncontradoException;
+import pe.gob.pj.prueba.domain.model.Auditoria;
 import pe.gob.pj.prueba.domain.model.common.RecursoArchivo;
 import pe.gob.pj.prueba.domain.model.negocio.Archivo;
 import pe.gob.pj.prueba.domain.port.files.FtpPort;
@@ -35,11 +37,14 @@ public class GestionArchivosUseCaseAdapter implements GestionArchivosUseCasePort
     @Value("${ftp.ruta-base:/evidencias}") private String ftpRutaBase;
 
     @Override
-    public void subirArchivo(MultipartFile file, String distritoId, String tipo, String modulo, LocalDate fecha, String idRegistro) throws Exception {
+    public void subirArchivo(MultipartFile file, String distritoId, String tipo, String modulo,
+                             LocalDate fecha, String codigoEnlace, Auditoria datosAuditoria) throws Exception {
+
         String sessionKey = UUID.randomUUID().toString();
         try {
             ftpPort.iniciarSesion(sessionKey, ftpIp, ftpPuerto, ftpUsuario, ftpClave);
 
+            // 1. Construir ruta FTP
             String carpeta = switch (tipo.toUpperCase()) {
                 case "ANEXO" -> "fichas";
                 case "VIDEO" -> "videos";
@@ -53,21 +58,34 @@ public class GestionArchivosUseCaseAdapter implements GestionArchivosUseCasePort
             String mes = String.format("%02d", fecha.getMonthValue());
 
             String rutaRelativa = String.format("%s/%s/%s/%s/%s/%s/%s",
-                    ftpRutaBase, distritoId, modulo, carpeta, anio, mes, idRegistro);
+                    ftpRutaBase, distritoId, modulo, carpeta, anio, mes, codigoEnlace);
 
             String ext = (file.getOriginalFilename() != null && file.getOriginalFilename().contains("."))
                     ? file.getOriginalFilename().substring(file.getOriginalFilename().lastIndexOf(".")) : "";
 
             String nombreFinal = UUID.randomUUID().toString().replace("-", "") + ext;
 
+            // 2. Subir Físico (FTP)
             if (!ftpPort.uploadFileFTP(sessionKey, rutaRelativa + "/" + nombreFinal, file.getInputStream(), "Carga " + tipo)) {
                 throw new Exception("Fallo FTP al subir " + nombreFinal);
             }
 
-            archivosPersistencePort.guardarReferenciaArchivo(Archivo.builder()
-                    .nombre(nombreFinal).tipo(tipo.toLowerCase())
-                    .ruta(rutaRelativa).numeroIdentificacion(idRegistro)
-                    .build());
+            // 3. Preparar Dominio con Auditoría
+            Archivo archivoDomain = Archivo.builder()
+                    .nombre(nombreFinal)
+                    .tipo(tipo.toLowerCase())
+                    .ruta(rutaRelativa)
+                    .numeroIdentificacion(codigoEnlace) // Enlace por CÓDIGO (String)
+                    .build();
+
+            archivoDomain.setUsuario(datosAuditoria.getUsuario());
+            archivoDomain.setNumeroIp(datosAuditoria.getNumeroIp());
+            archivoDomain.setNombrePc(datosAuditoria.getNombrePc());
+            archivoDomain.setDireccionMac(datosAuditoria.getDireccionMac());
+            archivoDomain.setRed(datosAuditoria.getRed());
+
+            // 4. Guardar Metadatos en BD
+            archivosPersistencePort.guardarReferenciaArchivo(archivoDomain);
 
         } finally {
             ftpPort.finalizarSession(sessionKey);
@@ -75,19 +93,53 @@ public class GestionArchivosUseCaseAdapter implements GestionArchivosUseCasePort
     }
 
     @Override
-    public RecursoArchivo descargarPorNombre(String nombreArchivo) throws Exception {
-        Archivo archivoBd = archivosPersistencePort.buscarPorNombre(nombreArchivo);
-        if (archivoBd == null) throw new Exception("El archivo no existe en la base de datos.");
+    public void eliminarPorId(Long idArchivo, Auditoria datosAuditoria) throws Exception {
+        // 1. Buscar metadatos en BD para saber la ruta física
+        Archivo archivo = archivosPersistencePort.buscarPorId(idArchivo);
+        if (archivo == null) {
+            throw new MovimientoNoEncontradoException("El archivo con ID " + idArchivo + " no existe.");
+        }
 
-        java.nio.file.Path tempFile = java.nio.file.Files.createTempFile("temp_download_", ".tmp");
+        // 2. Borrar del FTP
+        String rutaCompleta = archivo.getRuta() + "/" + archivo.getNombre();
+        String sessionKey = UUID.randomUUID().toString();
+
+        try {
+            ftpPort.iniciarSesion(sessionKey, ftpIp, ftpPuerto, ftpUsuario, ftpClave);
+            ftpPort.deleteFileFTP(rutaCompleta);
+        } catch (Exception e) {
+            log.warn("No se pudo borrar físico del FTP (o no existía): {}", e.getMessage());
+        } finally {
+            ftpPort.finalizarSession(sessionKey);
+        }
+
+        // 3. Borrado Lógico en BD usando el ID
+        archivosPersistencePort.eliminarReferenciaPorId(
+                idArchivo,
+                datosAuditoria.getUsuario(),
+                datosAuditoria.getNumeroIp(),
+                datosAuditoria.getNombrePc(),
+                datosAuditoria.getDireccionMac()
+        );
+    }
+
+    @Override
+    public RecursoArchivo descargarPorId(Long idArchivo) throws Exception {
+        // 1. Buscar metadatos
+        Archivo archivoBd = archivosPersistencePort.buscarPorId(idArchivo);
+        if (archivoBd == null) {
+            throw new MovimientoNoEncontradoException("El archivo no existe o fue eliminado.");
+        }
+
+        java.nio.file.Path tempFile = java.nio.file.Files.createTempFile("down_", ".tmp");
         String sessionKey = UUID.randomUUID().toString();
 
         ftpPort.iniciarSesion(sessionKey, ftpIp, ftpPuerto, ftpUsuario, ftpClave);
 
         try {
             String rutaCompletaFtp = archivoBd.getRuta() + "/" + archivoBd.getNombre();
-
             InputStream ftpStream = ftpPort.downloadFileStream(sessionKey, rutaCompletaFtp);
+
             if (ftpStream == null) throw new Exception("Archivo físico no encontrado en FTP.");
 
             try (java.io.OutputStream tempStream = java.nio.file.Files.newOutputStream(tempFile)) {
@@ -116,31 +168,8 @@ public class GestionArchivosUseCaseAdapter implements GestionArchivosUseCasePort
     }
 
     @Override
-    public void eliminarPorNombre(String nombreArchivo) throws Exception {
-        // 1. Buscamos en BD
-        Archivo archivo = archivosPersistencePort.buscarPorNombre(nombreArchivo);
-        if (archivo == null) throw new Exception("Archivo no encontrado en BD.");
-
-        String rutaCompleta = archivo.getRuta() + "/" + archivo.getNombre();
-        String sessionKey = UUID.randomUUID().toString();
-
-        ftpPort.iniciarSesion(sessionKey, ftpIp, ftpPuerto, ftpUsuario, ftpClave);
-        try {
-            boolean borrado = ftpPort.deleteFileFTP(rutaCompleta);
-            if (!borrado) log.warn("El archivo no existía en el FTP o no se pudo borrar: {}", rutaCompleta);
-        } catch (Exception e) {
-            log.warn("Error de conexión FTP al intentar borrar. Se procederá a borrar de BD. Error: {}", e.getMessage());
-        } finally {
-            ftpPort.finalizarSession(sessionKey);
-        }
-
-        archivosPersistencePort.eliminarReferenciaArchivo(nombreArchivo);
-    }
-
-    @Override
     public RecursoArchivo descargarListaComoZip(List<Archivo> listaArchivos, String nombreZipSalida) throws Exception {
         log.info("Generando ZIP masivo para {} archivos...", listaArchivos.size());
-
         java.nio.file.Path tempZip = java.nio.file.Files.createTempFile("masivo_temp_", ".zip");
         String sessionKey = UUID.randomUUID().toString();
 
@@ -156,7 +185,7 @@ public class GestionArchivosUseCaseAdapter implements GestionArchivosUseCasePort
 
                     String rutaCompleta = archivo.getRuta();
                     if (!rutaCompleta.endsWith("/")) rutaCompleta += "/";
-                    if (!rutaCompleta.endsWith(archivo.getNombre())) rutaCompleta += archivo.getNombre();
+                    rutaCompleta += archivo.getNombre();
 
                     InputStream ftpStream = ftpPort.downloadFileStream(sessionKey, rutaCompleta);
 
@@ -166,7 +195,6 @@ public class GestionArchivosUseCaseAdapter implements GestionArchivosUseCasePort
                         ftpStream.transferTo(zos);
                         zos.closeEntry();
                         ftpStream.close();
-
                         ftpPort.completarTransferencia(sessionKey);
                     }
                 } catch (Exception e) {
@@ -192,5 +220,4 @@ public class GestionArchivosUseCaseAdapter implements GestionArchivosUseCasePort
                 .stream(autoDeleteStream)
                 .build();
     }
-
 }

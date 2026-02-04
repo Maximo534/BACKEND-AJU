@@ -1,49 +1,57 @@
 package pe.gob.pj.prueba.domain.model.negocio;
 
-import lombok.AllArgsConstructor;
-import lombok.Builder;
-import lombok.Data;
-import lombok.NoArgsConstructor;
+import lombok.*;
+import lombok.experimental.FieldDefaults;
+import pe.gob.pj.prueba.domain.model.Auditoria;
+
 import java.io.Serializable;
 import java.time.LocalDate;
 import java.util.List;
 
-@Data @Builder @NoArgsConstructor @AllArgsConstructor
-public class OrientadoraJudicial implements Serializable {
+@Data
+@Builder
+@NoArgsConstructor
+@AllArgsConstructor
+@EqualsAndHashCode(callSuper = true)
+@FieldDefaults(level = AccessLevel.PRIVATE)
+public class OrientadoraJudicial extends Auditoria implements Serializable {
 
-    private String id;
-    private String distritoJudicialId;
-    private String distritoJudicialNombre; // Campo extra para respuesta
-    private LocalDate fechaAtencion;
+    static final long serialVersionUID = 1L;
 
-    // Datos Usuaria
-    private String nombreCompleto;
-    private String tipoDocumento;
-    private String numeroDocumento;
-    private String nacionalidad;
-    private Integer edad;
-    private String telefono;
-    private String direccion;
+    // --- Identificadores ---
+    Long id;
+    String codigo;
 
-    // Ubigeo
-    private String departamentoId;
-    private String provinciaId;
-    private String distritoId;
+    Long distritoJudicialId;
+    LocalDate fechaAtencion;
 
-    // Detalle Caso
-    private String tipoVulnerabilidad;
-    private String genero;
-    private String lenguaMaterna;
-    private String tipoCasoAtendido;
-    private String numeroExpediente;
-    private String tipoViolencia;
-    private String derivacionInstitucion;
-    private String resenaCaso;
+    // --- Datos Usuaria ---
+    String nombreCompleto;
+    String tipoDocumento;
+    String numeroDocumento;
+    String nacionalidad;
+    Integer edad;
+    String telefono;
+    String direccion;
 
-    // Auditoría
-    private String usuarioRegistro;
+    // --- Ubigeo ---
+    Long departamentoId;
+    Long provinciaId;
+    Long distritoId;
 
-    // Auxiliares
-    private String search;
-    private List<Archivo> archivosGuardados;
+    // --- Detalle del Caso ---
+    String tipoVulnerabilidad;
+    String genero;
+    String lenguaMaterna;
+    String tipoCasoAtendido;
+    String numeroExpediente;
+    String tipoViolencia;
+    String derivacionInstitucion;
+    String resenaCaso;
+
+    // --- Campos de Salida  ---
+    String distritoJudicialNombre;
+    String activo;
+    // --- Archivos ---
+    List<Archivo> archivosGuardados;
 }

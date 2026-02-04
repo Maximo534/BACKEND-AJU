@@ -6,9 +6,10 @@ import org.springframework.stereotype.Component;
 import org.springframework.transaction.annotation.Transactional;
 import pe.gob.pj.prueba.domain.model.negocio.Archivo;
 import pe.gob.pj.prueba.domain.port.persistence.negocio.GestionArchivosPersistencePort;
-import pe.gob.pj.prueba.infraestructure.db.negocio.entities.MovArchivosEntity;
+import pe.gob.pj.prueba.infraestructure.db.negocio.entities.MovArchivoEntity;
 import pe.gob.pj.prueba.infraestructure.db.negocio.repositories.MovArchivosRepository;
 
+import java.time.LocalDateTime;
 import java.util.List;
 import java.util.stream.Collectors;
 
@@ -21,13 +22,23 @@ public class GestionArchivosPersistenceAdapter implements GestionArchivosPersist
 
     @Override
     @Transactional
-    public void guardarReferenciaArchivo(Archivo archivoDomain) throws Exception {
+    public void guardarReferenciaArchivo(Archivo dominio) throws Exception {
         try {
-            MovArchivosEntity entidad = new MovArchivosEntity();
-            entidad.setNombre(archivoDomain.getNombre());
-            entidad.setTipo(archivoDomain.getTipo());
-            entidad.setRuta(archivoDomain.getRuta());
-            entidad.setNumeroIdentificacion(archivoDomain.getNumeroIdentificacion());
+            MovArchivoEntity entidad = new MovArchivoEntity();
+
+            // Datos
+            entidad.setNombre(dominio.getNombre());
+            entidad.setTipo(dominio.getTipo());
+            entidad.setRuta(dominio.getRuta());
+            entidad.setNumeroIdentificacion(dominio.getNumeroIdentificacion());
+
+            // Auditoría
+            entidad.setActivo("1");
+            entidad.setCAudId(dominio.getUsuario());
+            entidad.setCAudIp(dominio.getNumeroIp());
+            entidad.setCAudPc(dominio.getNombrePc());
+            entidad.setCAudMcAddr(dominio.getDireccionMac());
+            entidad.setCAudIdRed(dominio.getRed());
 
             repository.save(entidad);
         } catch (Exception e) {
@@ -37,46 +48,50 @@ public class GestionArchivosPersistenceAdapter implements GestionArchivosPersist
     }
 
     @Override
-    public Archivo buscarPorNombre(String nombre) throws Exception {
-        MovArchivosEntity entidad = repository.findById(nombre)
-                .orElseThrow(() -> new Exception("El archivo no existe en la base de datos: " + nombre));
+    public Archivo buscarPorId(Long id) throws Exception {
+        return repository.findById(id)
+                .filter(e -> "1".equals(e.getActivo()))
+                .map(this::mapearADominio)
+                .orElse(null);
+    }
 
-        return Archivo.builder()
-                .nombre(entidad.getNombre())
-                .tipo(entidad.getTipo())
-                .ruta(entidad.getRuta())
-                .numeroIdentificacion(entidad.getNumeroIdentificacion())
-                .build();
+    @Override
+    public Archivo buscarPorNombre(String nombre) throws Exception {
+        return repository.findByNombreAndActivo(nombre, "1")
+                .map(this::mapearADominio).orElse(null);
     }
 
     @Override
     @Transactional
-    public void eliminarReferenciaArchivo(String nombre) throws Exception {
-        repository.deleteById(nombre);
+    public void eliminarReferenciaPorId(Long id, String usuario, String ip, String pc, String mac) throws Exception {
+        MovArchivoEntity entidad = repository.findById(id)
+                .orElseThrow(() -> new Exception("Archivo no encontrado con ID: " + id));
+
+        entidad.setActivo("0");
+        entidad.setBAud("E");
+        entidad.setFAud(LocalDateTime.now());
+        entidad.setCAudId(usuario);
+        entidad.setCAudIp(ip);
+        entidad.setCAudPc(pc);
+        entidad.setCAudMcAddr(mac);
+
+        repository.save(entidad);
     }
 
     @Override
-    public List<Archivo> listarArchivosPorEvento(String idEvento) throws Exception {
-        List<MovArchivosEntity> entities = repository.findByNumeroIdentificacion(idEvento);
-
-        return entities.stream()
-                .map(e -> Archivo.builder()
-                        .nombre(e.getNombre())
-                        .tipo(e.getTipo())
-                        .ruta(e.getRuta())
-                        .numeroIdentificacion(e.getNumeroIdentificacion())
-                        .build())
+    public List<Archivo> listarArchivosPorEvento(String codigoIdentificacion) throws Exception {
+        // Buscamos por CÓDIGO y solo activos
+        return repository.findByNumeroIdentificacionAndActivo(codigoIdentificacion, "1").stream()
+                .map(this::mapearADominio)
                 .collect(Collectors.toList());
     }
 
     @Override
     public List<Archivo> listarParaDescargaMasiva(String tipoArchivo, Integer anio, Integer mes) throws Exception {
         try {
-            // Llamar al Query Nativo del repositorio
-            List<MovArchivosRepository.ArchivoDescargaProjection> resultados = repository.listarParaDescargaMasiva(tipoArchivo, anio, mes);
+            var proyecciones = repository.listarParaDescargaMasiva(tipoArchivo, anio, mes);
 
-            // Mapear de Projection (Interfaz) a Domain (Clase Archivo)
-            return resultados.stream()
+            return proyecciones.stream()
                     .map(p -> Archivo.builder()
                             .nombre(p.getNombre())
                             .ruta(p.getRuta())
@@ -88,5 +103,28 @@ public class GestionArchivosPersistenceAdapter implements GestionArchivosPersist
             throw new Exception("Error al consultar archivos para reporte: " + e.getMessage());
         }
     }
+
+    private Archivo mapearADominio(MovArchivoEntity e) {
+        Archivo a = Archivo.builder()
+                .id(e.getId())
+                .nombre(e.getNombre())
+                .tipo(e.getTipo())
+                .ruta(e.getRuta())
+                .numeroIdentificacion(e.getNumeroIdentificacion())
+                .activo(e.getActivo())
+                .build();
+
+        // --- Mapear Auditoría de Vuelta (Entity -> Domain) ---
+        // Estos métodos vienen de la clase padre 'Auditoria'
+        a.setUsuario(e.getCAudId());
+        a.setNumeroIp(e.getCAudIp());
+        a.setNombrePc(e.getCAudPc());
+        a.setDireccionMac(e.getCAudMcAddr());
+        a.setRed(e.getCAudIdRed());
+
+        return a;
+    }
+
+
 
 }

@@ -18,7 +18,7 @@ public class GenerarReporteAdapter implements GenerarReportePort {
     private final ReporteOrientadoraJudicialService servicioOJ;
 
     @Override
-    public byte[] generarFichaItinerante(String idEvento) throws Exception {
+    public byte[] generarFichaItinerante(Long idEvento) throws Exception {
         return servicioItinerante.generarFichaItinerante(idEvento);
     }
 

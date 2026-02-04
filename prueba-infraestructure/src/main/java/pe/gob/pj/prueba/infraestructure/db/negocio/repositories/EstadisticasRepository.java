@@ -11,7 +11,7 @@ import java.util.List;
 @Repository
 public interface EstadisticasRepository extends JpaRepository<MovJusticiaItineranteEntity, String> {
 
-    // --- QUERY 1: RANKING MAGISTRADOS (Ya corregida y probada) ---
+    // --- QUERY 1: RANKING MAGISTRADOS ---
     @Query(value = """
         WITH Totales AS (
             SELECT c_usuario_reg AS usuario, COUNT(*) AS cantidad FROM prueba.mov_aju_justicia_itinerantes WHERE l_activo = '1' AND EXTRACT(YEAR FROM f_inicio) = :anio GROUP BY c_usuario_reg
@@ -35,32 +35,16 @@ public interface EstadisticasRepository extends JpaRepository<MovJusticiaItinera
     """, nativeQuery = true)
     List<Object[]> obtenerRankingTop10(@Param("anio") int anio);
 
-
-    // --- QUERY 2: RANKING EJES
+    // --- QUERY 2: RANKING EJES ---
     @Query(value = """
         WITH EjesUnificados AS (
-            -- 1. Justicia Itinerante
-            SELECT c_eje_id 
-            FROM prueba.mov_aju_justicia_itinerantes 
-            WHERE l_activo = '1' AND EXTRACT(YEAR FROM f_inicio) = :anio
-            
+            SELECT c_eje_id FROM prueba.mov_aju_justicia_itinerantes WHERE l_activo = '1' AND EXTRACT(YEAR FROM f_inicio) = :anio
             UNION ALL
-            
-            -- 2. Promoción Cultura
-            SELECT c_eje_id 
-            FROM prueba.mov_aju_actv_prom_culturas 
-            WHERE l_activo = '1' AND EXTRACT(YEAR FROM f_inicio) = :anio
-            
+            SELECT c_eje_id FROM prueba.mov_aju_actv_prom_culturas WHERE l_activo = '1' AND EXTRACT(YEAR FROM f_inicio) = :anio
             UNION ALL
-            
-            -- 3. Eventos
-            SELECT c_eje_id 
-            FROM prueba.mov_aju_eventos 
-            WHERE l_activo = '1' AND EXTRACT(YEAR FROM f_inicio) = :anio
+            SELECT c_eje_id FROM prueba.mov_aju_eventos WHERE l_activo = '1' AND EXTRACT(YEAR FROM f_inicio) = :anio
         )
-        SELECT 
-            m.x_descripcion, 
-            COUNT(*) AS cantidad
+        SELECT m.x_descripcion, COUNT(*) AS cantidad
         FROM EjesUnificados u
         INNER JOIN prueba.mae_aju_ejes m ON u.c_eje_id = m.c_eje_id
         GROUP BY m.x_descripcion

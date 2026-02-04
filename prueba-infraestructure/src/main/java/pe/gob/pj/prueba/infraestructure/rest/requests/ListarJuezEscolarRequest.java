@@ -1,15 +1,20 @@
 package pe.gob.pj.prueba.infraestructure.rest.requests;
 
+import lombok.AccessLevel;
 import lombok.Data;
+import lombok.experimental.FieldDefaults;
+
 import java.io.Serializable;
 
 @Data
+@FieldDefaults(level = AccessLevel.PRIVATE)
 public class ListarJuezEscolarRequest implements Serializable {
 
-    //  (DNI, Nombres, Resolución)
-    private String search;
+    static final long serialVersionUID = 1L;
 
-    private String distritoJudicialId;
-    private String ugelId;
-    private String institucionEducativaId;
+    String search;
+
+    Long distritoJudicialId;
+    Long ugelId;
+    Long institucionEducativaId;
 }

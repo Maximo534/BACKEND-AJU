@@ -1,21 +1,23 @@
 package pe.gob.pj.prueba.domain.port.persistence.negocio;
 
-import org.springframework.data.domain.Page;
-import org.springframework.data.domain.PageRequest;
-import org.springframework.data.domain.Pageable;
 import pe.gob.pj.prueba.domain.model.common.Pagina;
 import pe.gob.pj.prueba.domain.model.negocio.BuenaPractica;
 import pe.gob.pj.prueba.domain.model.negocio.ResumenEstadistico;
+import pe.gob.pj.prueba.domain.model.negocio.query.ListarBuenaPracticaQuery;
 
 import java.util.List;
-import java.util.stream.Collectors;
 
 public interface BuenaPracticaPersistencePort {
-    Pagina<BuenaPractica> listar(String usuario, BuenaPractica filtros, int pagina, int tamanio) throws Exception;
-    BuenaPractica actualizar(BuenaPractica dominio) throws Exception;
-    BuenaPractica buscarPorId(String id) throws Exception;
-    BuenaPractica guardar(BuenaPractica dominio) throws Exception;
-    String obtenerUltimoId() throws Exception;
+
+    Pagina<BuenaPractica> listar(String cuo, ListarBuenaPracticaQuery query, int pagina, int tamanio);
+
+    BuenaPractica guardar(String cuo, BuenaPractica dominio);
+
+    BuenaPractica actualizar(String cuo, BuenaPractica dominio);
+
+    BuenaPractica obtenerPorId(String cuo, Long id);
+
+    String obtenerUltimoCodigo(String cuo, Long distritoId, String anio);
 
     List<ResumenEstadistico> obtenerResumenGrafico() throws Exception;
 }

@@ -1,76 +1,97 @@
 package pe.gob.pj.prueba.infraestructure.db.negocio.entities;
 
 import jakarta.persistence.*;
-import lombok.Getter;
-import lombok.Setter;
+import lombok.AccessLevel;
+import lombok.Data;
+import lombok.EqualsAndHashCode;
+import lombok.experimental.FieldDefaults;
+import pe.gob.pj.prueba.domain.common.enums.Estado;
+import pe.gob.pj.prueba.infraestructure.common.enums.OperacionBaseDatos;
 import pe.gob.pj.prueba.infraestructure.common.utils.EsquemaConstants;
+import pe.gob.pj.prueba.infraestructure.common.utils.InformacionRedUtils;
 
 import java.io.Serializable;
 import java.time.LocalDate;
+import java.time.LocalDateTime;
 
-@Getter @Setter
+@Data
+@EqualsAndHashCode(callSuper = false)
+@FieldDefaults(level = AccessLevel.PRIVATE)
 @Entity
-@Table(name = "mov_aju_jpe_caso_atendidos", schema = EsquemaConstants.PRUEBA)
+@Table(name = "mov_jpe_caso_atendido", schema = EsquemaConstants.PRUEBA)
 public class MovJpeCasoAtendidoEntity implements Serializable {
 
+    static final long serialVersionUID = 1L;
+
     @Id
-    @Column(name = "c_jpeca_id", length = 17)
-    private String id;
+    @SequenceGenerator(name = "SEQ_MOV_JPE_CASO", schema = EsquemaConstants.PRUEBA, sequenceName = "useq_mov_jpe_caso_atendido", initialValue = 1, allocationSize = 1)
+    @GeneratedValue(strategy = GenerationType.SEQUENCE, generator = "SEQ_MOV_JPE_CASO")
+    @Column(name = "n_jpeca_id", nullable = false)
+    Long id;
 
-    @Column(name = "c_distrito_jud_id", length = 2)
-    private String distritoJudicialId;
+    @Column(name = "c_codigo", length = 17, nullable = false, unique = true)
+    String codigo;
 
-    @Column(name = "f_registro")
-    private LocalDate fechaRegistro;
+    @Column(name = "n_distrito_jud_id", nullable = false)
+    Long distritoJudicialId;
 
-    @Column(name = "x_lugar_activ", length = 150)
-    private String lugarActividad;
+    @Column(name = "f_registro_caso", nullable = false)
+    LocalDate fechaRegistroCaso;
+
+    @Column(name = "x_lugar_activ", length = 150, nullable = false)
+    String lugarActividad;
 
     // --- UBIGEO ---
-    @Column(name = "c_depa_id", length = 2)
-    private String departamentoId;
-    @Column(name = "c_prov_id", length = 4)
-    private String provinciaId;
-    @Column(name = "c_dist_id", length = 6)
-    private String distritoId;
+    @Column(name = "n_depa_id", nullable = false) Long departamentoId;
+    @Column(name = "n_prov_id", nullable = false) Long provinciaId;
+    @Column(name = "n_dist_id", nullable = false) Long distritoId;
 
-    // 1. Campo ID (Solo lectura, para consultas rápidas o mappers simples)
-    // Se pone insertable=false, updatable=false porque el dueño de la relación será el objeto de abajo
-    @Column(name = "c_cod_reg", length = 36, insertable = false, updatable = false)
-    private String juezEscolarId;
+    // --- JUEZ DE PAZ ESCOLAR ---
+    @Column(name = "n_juez_paz_id", nullable = false)
+    Long juezEscolarId;
 
     @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "c_cod_reg") // Esta columna es la FK real
-    private MaeJuezPazEscolarEntity juezEscolar;
+    @JoinColumn(name = "n_juez_paz_id", insertable = false, updatable = false)
+    MaeJuezPazEscolarEntity juezEscolar;
 
-    // --- ESTUDIANTE 1  ---
-    @Column(name = "x_nom_comp_estud_1", length = 80)
-    private String nombreEstudiante1;
-    @Column(name = "x_dni_estud_1", length = 8)
-    private String dniEstudiante1;
-    @Column(name = "x_grado_estud_1", length = 1)
-    private String gradoEstudiante1;
-    @Column(name = "x_secc_estud_1", length = 1)
-    private String seccionEstudiante1;
+    // --- ESTUDIANTE 1 ---
+    @Column(name = "x_nom_comp_estud_1", length = 80, nullable = false) String nombreEstudiante1;
+    @Column(name = "x_dni_estud_1", length = 8, nullable = false) String dniEstudiante1;
+    @Column(name = "x_grado_estud_1", length = 1, nullable = false) String gradoEstudiante1;
+    @Column(name = "x_secc_estud_1", length = 1, nullable = false) String seccionEstudiante1;
 
-    // --- ESTUDIANTE 2---
-    @Column(name = "x_nom_comp_estud_2", length = 80)
-    private String nombreEstudiante2;
-    @Column(name = "x_dni_estud_2", length = 8)
-    private String dniEstudiante2;
-    @Column(name = "x_grado_estud_2", length = 1)
-    private String gradoEstudiante2;
-    @Column(name = "x_secc_estud_2", length = 1)
-    private String seccionEstudiante2;
+    // --- ESTUDIANTE 2 ---
+    @Column(name = "x_nom_comp_estud_2", length = 80, nullable = false) String nombreEstudiante2;
+    @Column(name = "x_dni_estud_2", length = 8, nullable = false) String dniEstudiante2;
+    @Column(name = "x_grado_estud_2", length = 1, nullable = false) String gradoEstudiante2;
+    @Column(name = "x_secc_estud_2", length = 1, nullable = false) String seccionEstudiante2;
 
     // --- DETALLE DEL CONFLICTO ---
-    @Column(name = "x_res_hecho", columnDefinition = "TEXT")
-    private String resumenHechos;
+    @Column(name = "x_res_hecho", columnDefinition = "TEXT", nullable = false)
+    String resumenHechos;
 
-    @Column(name = "x_acuerdo", columnDefinition = "TEXT")
-    private String acuerdos;
+    @Column(name = "x_acuerdo", columnDefinition = "TEXT", nullable = false)
+    String acuerdos;
 
-    @Column(name = "c_usuario_reg", length = 25)
-    private String usuarioRegistro;
+    // --- AUDITORÍA ESTÁNDAR ---
+    @Column(name = "n_usuario_reg_id", nullable = false)
+    Long usuarioRegistroId;
 
+    @Column(name = "l_activo", length = 1, nullable = false)
+    String activo = Estado.ACTIVO_NUMERICO.getNombre();
+
+    @Column(name = "f_registro", insertable = false, updatable = false)
+    LocalDateTime fRegistro;
+
+    @Column(name = "f_aud")
+    LocalDateTime fAud = LocalDateTime.now();
+
+    @Column(name = "b_aud")
+    String bAud = OperacionBaseDatos.INSERTAR.getNombre();
+
+    @Column(name = "c_aud_uid") String cAudId;
+    @Column(name = "c_aud_uidred") String cAudIdRed = InformacionRedUtils.getNombreRed();
+    @Column(name = "c_aud_pc") String cAudPc = InformacionRedUtils.getPc();
+    @Column(name = "c_aud_ip") String cAudIp = InformacionRedUtils.getIp();
+    @Column(name = "c_aud_mcaddr") String cAudMcAddr = InformacionRedUtils.getMac();
 }

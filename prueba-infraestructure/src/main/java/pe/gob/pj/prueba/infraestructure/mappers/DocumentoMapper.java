@@ -1,24 +1,84 @@
 package pe.gob.pj.prueba.infraestructure.mappers;
 
 import org.mapstruct.*;
+import pe.gob.pj.prueba.domain.model.auditoriageneral.PeticionServicios;
 import pe.gob.pj.prueba.domain.model.negocio.Documento;
 import pe.gob.pj.prueba.infraestructure.db.negocio.entities.DocumentoEntity;
+import pe.gob.pj.prueba.infraestructure.rest.requests.RegistrarDocumentoRequest;
 import pe.gob.pj.prueba.infraestructure.rest.responses.DocumentoResponse;
-import java.util.List;
 
 @Mapper(componentModel = MappingConstants.ComponentModel.SPRING,
-        unmappedTargetPolicy = ReportingPolicy.IGNORE)
+        unmappedTargetPolicy = ReportingPolicy.IGNORE,
+        builder = @Builder(disableBuilder = true))
 public interface DocumentoMapper {
 
-    DocumentoResponse toResponse(Documento domain);
-    List<DocumentoResponse> toResponseList(List<Documento> domainList);
+    // =========================================================
+    // 1. REQUEST -> DOMAIN (Registro y Actualización)
+    // =========================================================
+    @Mapping(target = "id", ignore = true)
+    @Mapping(target = "ruta", ignore = true)
+    @Mapping(target = "activo", constant = "1")
 
-    @Mapping(target = "ruta", source = "rutaArchivo")
+    @Mapping(target = "usuario", source = "peticion.usuarioAuth")
+    @Mapping(target = "nombrePc", source = "peticion.nombrePc")
+    @Mapping(target = "direccionMac", source = "peticion.codigoMac")
+    @Mapping(target = "numeroIp", source = "peticion.ip")
+    @Mapping(target = "red", source = "peticion.red")
+    Documento toDomainRegistrar(RegistrarDocumentoRequest request, PeticionServicios peticion);
+
+
+    @Mapping(target = "id", source = "id")
+    @Mapping(target = "ruta", ignore = true)
+
+    // -- Auditoría Técnica para Modificación --
+    @Mapping(target = "usuario", source = "peticion.usuarioAuth")
+    @Mapping(target = "nombrePc", source = "peticion.nombrePc")
+    @Mapping(target = "direccionMac", source = "peticion.codigoMac")
+    @Mapping(target = "numeroIp", source = "peticion.ip")
+    @Mapping(target = "red", source = "peticion.red")
+    Documento toDomainActualizar(Long id, RegistrarDocumentoRequest request, PeticionServicios peticion);
+
+    // =========================================================
+    // 2. PERSISTENCIA (Domain <-> Entity)
+    // =========================================================
+    @Mapping(target = "categoria", ignore = true)
+
+    // -- Mapeo Auditoría a Columnas BD --
+    @Mapping(target = "CAudId", source = "usuario")
+    @Mapping(target = "CAudIp", source = "numeroIp")
+    @Mapping(target = "CAudPc", source = "nombrePc")
+    @Mapping(target = "CAudMcAddr", source = "direccionMac")
+
+    // Ignorar campos automáticos de BD
+    @Mapping(target = "FAud", ignore = true)
+    @Mapping(target = "BAud", ignore = true)
+    @Mapping(target = "FRegistro", ignore = true)
     DocumentoEntity toEntity(Documento domain);
 
-    @Mapping(target = "rutaArchivo", source = "ruta")
+    @InheritInverseConfiguration(name = "toEntity")
+    @Mapping(target = "categoriaNombre", source = "categoria.descripcion")
+    // Mapeo inverso de auditoría
+    @Mapping(target = "usuario", source = "CAudId")
+    @Mapping(target = "nombrePc", source = "CAudPc")
+    @Mapping(target = "numeroIp", source = "CAudIp")
+    @Mapping(target = "direccionMac", source = "CAudMcAddr")
     Documento toDomain(DocumentoEntity entity);
 
+    // =========================================================
+    // 3. UPDATE ENTITY
+    // =========================================================
+    @BeanMapping(nullValuePropertyMappingStrategy = NullValuePropertyMappingStrategy.IGNORE)
     @Mapping(target = "id", ignore = true)
+    @Mapping(target = "FRegistro", ignore = true)
+
+    @Mapping(target = "CAudId", source = "usuario")
+    @Mapping(target = "CAudIp", source = "numeroIp")
+    @Mapping(target = "CAudPc", source = "nombrePc")
+    @Mapping(target = "CAudMcAddr", source = "direccionMac")
     void updateEntityFromDomain(Documento domain, @MappingTarget DocumentoEntity entity);
+
+    // =========================================================
+    // 4. RESPONSE (Domain -> Response)
+    // =========================================================
+    DocumentoResponse toResponse(Documento domain);
 }

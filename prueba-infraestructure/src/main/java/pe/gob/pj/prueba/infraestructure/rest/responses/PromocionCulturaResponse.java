@@ -1,92 +1,110 @@
 package pe.gob.pj.prueba.infraestructure.rest.responses;
 
-// import com.fasterxml.jackson.annotation.JsonInclude; // COMENTADO
 import com.fasterxml.jackson.annotation.JsonInclude;
-import lombok.AllArgsConstructor;
-import lombok.Builder;
-import lombok.Data;
-import lombok.NoArgsConstructor;
+import lombok.*;
+import lombok.experimental.FieldDefaults;
 import pe.gob.pj.prueba.domain.model.negocio.Archivo;
 
 import java.io.Serializable;
 import java.time.LocalDate;
 import java.util.List;
 
-@Data @Builder @NoArgsConstructor @AllArgsConstructor
+@Data
+@Builder
+@NoArgsConstructor
+@AllArgsConstructor
 @JsonInclude(JsonInclude.Include.NON_NULL)
+@FieldDefaults(level = AccessLevel.PRIVATE)
 public class PromocionCulturaResponse implements Serializable {
 
-    // Identificadores
-    private String id;
-    private String distritoJudicialId;
-    private String distritoJudicialNombre;
+    static final long serialVersionUID = 1L;
 
-    // Datos Principales
-    private String nombreActividad;
-    private String tipoActividad;
-    private String tipoActividadOtros;
-    private String areaRiesgo;
-    private String zonaIntervencion;
-    private String modalidad;
+    // --- Identificadores ---
+    Long id;
+    String codigo;
 
-    private String publicoObjetivo;
-    private String publicoObjetivoOtros;
+    Long distritoJudicialId;
+    String distritoJudicialNombre;
 
-    private LocalDate fechaInicio;
-    private LocalDate fechaFin;
+    // --- Datos Principales ---
+    String nombreActividad;
+    String tipoActividad;
+    String tipoActividadOtros;
+    String areaRiesgo;
+    String zonaIntervencion;
+    String modalidad;
 
-    // Documentos / Autorizaciones
-    private String resolucionPlanAnual;
-    private String resolucionAdminPlan;
-    private String documentoAutoriza;
+    String publicoObjetivo;
+    String publicoObjetivoOtros;
 
-    // Ubicación Geográfica
-    private String lugarActividad;
-    private String departamentoId;
-    private String provinciaId;
-    private String distritoGeograficoId;
+    LocalDate fechaInicio;
+    LocalDate fechaFin;
 
-    // Clasificación
-    private String ejeId;
+    // --- Autorizaciones ---
+    String resolucionPlanAnual;
+    String resolucionAdminPlan;
+    String documentoAutoriza;
 
-    // Indicadores de Inclusión
-    private String seDictoLenguaNativa;
-    private String lenguaNativaDesc;
-    private String participaronDiscapacitados;
-    private Integer numeroDiscapacitados;
-    private String requiereInterprete;
+    // --- Ubicación ---
+    String lugarActividad;
+    Long departamentoId;
+    Long provinciaId;
+    Long distritoGeograficoId;
 
-    // Descripciones
-    private String descripcionActividad;
-    private String institucionesAliadas;
-    private String observacion;
+    // --- Clasificación ---
+    Long ejeId;
 
-    // Auditoría y Estado
-    private LocalDate fechaRegistro;
-    private String usuarioRegistro;
-    private String estado;
+    // --- Indicadores ---
+    String seDictoLenguaNativa;
+    String lenguaNativaDesc;
+    String participaronDiscapacitados;
+    Integer numeroDiscapacitados;
+    String requiereInterprete;
 
-    // Listas de Detalle
-    private List<DetallePBResponse> personasBeneficiadas;
-    private List<DetalleTareaResponse> tareasRealizadas;
+    // --- Descripciones ---
+    String descripcionActividad;
+    String institucionesAliadas;
+    String observacion;
 
-    // Archivos Adjuntos
-    private List<Archivo> archivos;
+    // --- Auditoría ---
+    LocalDate fechaRegistro;
+    String usuarioRegistro;
+    String estado;
 
-    // --- DTOs Internos ---
-    @Data @Builder @NoArgsConstructor @AllArgsConstructor
+    // --- Listas ---
+    List<DetallePBResponse> personasBeneficiadas;
+    List<DetalleTareaResponse> tareasRealizadas;
+
+    // --- Archivos ---
+    List<Archivo> archivos;
+
+    // --- CLASES INTERNAS ---
+
+    @Data
+    @Builder
+    @NoArgsConstructor
+    @AllArgsConstructor
+    @FieldDefaults(level = AccessLevel.PRIVATE)
     public static class DetallePBResponse implements Serializable {
-        private String descripcionRango;
-        private String codigoRango;
-        private Integer cantidadFemenino;
-        private Integer cantidadMasculino;
-        private Integer cantidadLgtbiq;
+        static final long serialVersionUID = 1L;
+
+        String descripcionRango;
+        String codigoRango;
+        Integer cantidadFemenino;
+        Integer cantidadMasculino;
+        Integer cantidadLgtbiq;
     }
 
-    @Data @Builder @NoArgsConstructor @AllArgsConstructor
+    @Data
+    @Builder
+    @NoArgsConstructor
+    @AllArgsConstructor
+    @FieldDefaults(level = AccessLevel.PRIVATE)
     public static class DetalleTareaResponse implements Serializable {
-        private String tareaId;
-        private LocalDate fechaInicio;
+        static final long serialVersionUID = 1L;
+
+        Long tareaId;
+        LocalDate fechaInicio;
         String descripcion;
     }
 }

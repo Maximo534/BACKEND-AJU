@@ -112,4 +112,27 @@ public class NegocioAdvise extends DefaultAdvise {
 
     return ResponseEntity.ok(handleResponse(peticion, TipoError.ACCESO_DENEGADO, ex));
   }
+
+  @ExceptionHandler({MovimientoNoEncontradoException.class})
+  public ResponseEntity<GlobalResponse> handleMovimientoNoEncontradoException(
+          MovimientoNoEncontradoException ex, WebRequest request) {
+
+    var peticion = obtenerPeticionServicio(request, TipoError.MOVIMIENTO_NO_ENCONTRADO);
+
+    guardarAuditoria(peticion);
+
+    return ResponseEntity.ok(handleResponse(peticion, TipoError.MOVIMIENTO_NO_ENCONTRADO, ex));
+  }
+
+  @ExceptionHandler({ValidacionNegocioException.class})
+  public ResponseEntity<GlobalResponse> handleValidacionNegocioException(
+          ValidacionNegocioException ex, WebRequest request) {
+
+    var peticion = obtenerPeticionServicio(request, TipoError.VALIDACION_NEGOCIO);
+
+    guardarAuditoria(peticion);
+
+    return ResponseEntity.ok(handleResponse(peticion, TipoError.VALIDACION_NEGOCIO, ex));
+  }
+
 }

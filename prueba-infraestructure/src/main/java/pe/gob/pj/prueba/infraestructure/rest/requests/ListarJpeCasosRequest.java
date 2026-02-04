@@ -1,19 +1,23 @@
 package pe.gob.pj.prueba.infraestructure.rest.requests;
 
+import lombok.AccessLevel;
 import lombok.Data;
+import lombok.experimental.FieldDefaults;
+
 import java.io.Serializable;
 import java.time.LocalDate;
 
 @Data
+@FieldDefaults(level = AccessLevel.PRIVATE)
 public class ListarJpeCasosRequest implements Serializable {
 
-    // (ID o Resumen)
-    private String search;
+    static final long serialVersionUID = 1L;
 
-    private String distritoJudicialId;
-    private String ugelId;
-    private String institucionEducativaId;
+    String search;
 
-    //FILTRO EXACTO POR FECHA
-    private LocalDate fechaRegistro;
+    Long distritoJudicialId;
+    Long ugelId;
+    Long institucionEducativaId;
+
+    LocalDate fechaRegistro;
 }

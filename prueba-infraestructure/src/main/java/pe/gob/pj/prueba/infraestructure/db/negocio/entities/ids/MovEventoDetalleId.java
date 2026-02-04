@@ -14,7 +14,10 @@ import java.io.Serializable;
 public class MovEventoDetalleId implements Serializable {
 
     private static final long serialVersionUID = 1L;
-    private String eventoId;
-    private Integer tipoParticipanteId;
+
+    private Long eventoId;
+
+    private Long tipoParticipanteId;
+
     private String rangoEdad;
 }

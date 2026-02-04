@@ -4,16 +4,19 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Propagation;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.multipart.MultipartFile;
-import pe.gob.pj.prueba.domain.model.common.Pagina;
+import pe.gob.pj.prueba.domain.exceptions.negocio.MovimientoNoEncontradoException;
 import pe.gob.pj.prueba.domain.model.common.RecursoArchivo;
 import pe.gob.pj.prueba.domain.model.negocio.Documento;
 import pe.gob.pj.prueba.domain.port.files.FtpPort;
 import pe.gob.pj.prueba.domain.port.persistence.negocio.DocumentoPersistencePort;
 import pe.gob.pj.prueba.domain.port.usecase.negocio.GestionDocumentosUseCasePort;
 
+import java.io.ByteArrayInputStream;
 import java.io.InputStream;
+import java.sql.SQLException;
 import java.time.LocalDate;
 import java.util.List;
 import java.util.UUID;
@@ -30,153 +33,128 @@ public class GestionDocumentosUseCaseAdapter implements GestionDocumentosUseCase
     @Value("${ftp.puerto}") private Integer ftpPuerto;
     @Value("${ftp.usuario}") private String ftpUsuario;
     @Value("${ftp.clave}") private String ftpClave;
-    @Value("${ftp.ruta-base:/evidencias}") private String ftpRutaBase;
+
+    private static final String RUTA_BASE_DOCUMENTOS = "/evidencias/documentos_gestion";
+    private static final String TX_MANAGER = "txManagerNegocio";
 
     @Override
-    @Transactional(readOnly = true)
-    public List<Documento> listarDocumentosPorTipo(String tipo) throws Exception {
-        return persistencePort.listarPorTipo(tipo);
-    }
-
-//    @Override
-//    @Transactional(readOnly = true)
-//    public Pagina<Documento> listarDocumentos(Documento filtros, int pagina, int tamanio) throws Exception {
-//        return persistencePort.listarConFiltros(filtros, pagina, tamanio);
-//    }
-
-    @Override
-    @Transactional
-    public Documento registrarDocumento(MultipartFile archivo, Documento documento) throws Exception {
-        int anioActual = LocalDate.now().getYear();
-        documento.setPeriodo(anioActual);
-
-        String originalFilename = archivo.getOriginalFilename();
-        String extension = obtenerExtension(originalFilename);
-
-        // Ruta FTP: /evidencias/documentos_gestion/2026/UUID.pdf
-        String rutaCarpetaFtp = String.format("%s/documentos_gestion/%d", ftpRutaBase, anioActual);
-        String nombreUnico = UUID.randomUUID().toString() + extension;
-        String rutaCompletaArchivo = rutaCarpetaFtp + "/" + nombreUnico;
-
-        subirAlFtp(rutaCompletaArchivo, archivo.getInputStream());
-
-        documento.setNombre(originalFilename);
-        documento.setFormato(extension.replace(".", "").toUpperCase());
-        documento.setRutaArchivo(rutaCompletaArchivo);
-        documento.setActivo("1");
-
-        return persistencePort.guardar(documento);
+    @Transactional(transactionManager = TX_MANAGER, propagation = Propagation.REQUIRES_NEW, readOnly = true)
+    public List<Documento> listarDocumentosPorTipo(String cuo, String tipo) throws Exception {
+        return persistencePort.listarPorTipo(cuo, tipo);
     }
 
     @Override
-    @Transactional(readOnly = true)
-    public Documento obtenerDocumento(String id) throws Exception {
-        Documento doc = persistencePort.buscarPorId(id);
-        if (doc == null) throw new Exception("Documento no encontrado con ID: " + id);
+    @Transactional(transactionManager = TX_MANAGER, propagation = Propagation.REQUIRES_NEW, readOnly = true)
+    public Documento obtenerDocumento(String cuo, Long id) throws Exception {
+        Documento doc = persistencePort.buscarPorId(cuo, id);
+        if (doc == null) {
+            throw new MovimientoNoEncontradoException("No se encontró el documento con ID: " + id);
+        }
         return doc;
     }
 
     @Override
-    @Transactional
-    public Documento actualizarDocumento(String id, MultipartFile nuevoArchivo, Documento datosNuevos) throws Exception {
-        Documento docExistente = persistencePort.buscarPorId(id);
-        if (docExistente == null) throw new Exception("Documento no encontrado.");
+    @Transactional(transactionManager = TX_MANAGER, propagation = Propagation.REQUIRES_NEW, rollbackFor = {Exception.class, SQLException.class})
+    public Documento registrarDocumento(String cuo, MultipartFile archivo, Documento documento, String usuario) throws Exception {
+        if (archivo == null || archivo.isEmpty()) throw new IllegalArgumentException("El archivo es obligatorio.");
+
+        int anioActual = LocalDate.now().getYear();
+        documento.setPeriodo(anioActual);
+        documento.setUsuario(usuario); // Auditoría
+
+        String originalFilename = archivo.getOriginalFilename();
+        String extension = obtenerExtension(originalFilename);
+
+        String nuevoNombre = UUID.randomUUID() + extension;
+        String rutaCompletaArchivo = String.format("%s/%d/%s", RUTA_BASE_DOCUMENTOS, anioActual, nuevoNombre);
+
+        // 1. Subir al FTP usando el adaptador del Proyecto Base
+        subirAlFtp(cuo, rutaCompletaArchivo, archivo.getInputStream());
+
+        // 2. Metadata de Negocio
+        documento.setNombre(originalFilename);
+        documento.setFormato(extension.replace(".", "").toUpperCase());
+        documento.setRuta(rutaCompletaArchivo);
+        documento.setActivo("1");
+
+        return persistencePort.guardar(cuo, documento);
+    }
+
+    @Override
+    @Transactional(transactionManager = TX_MANAGER, propagation = Propagation.REQUIRES_NEW, rollbackFor = {Exception.class, SQLException.class})
+    public Documento actualizarDocumento(String cuo, Long id, MultipartFile nuevoArchivo, Documento datosNuevos, String usuario) throws Exception {
+        Documento docExistente = obtenerDocumento(cuo, id);
+        docExistente.setUsuario(usuario);
 
         if (nuevoArchivo != null && !nuevoArchivo.isEmpty()) {
-            // Borrar archivo físico
-            try { eliminarDelFtp(docExistente.getRutaArchivo()); } catch (Exception e) { log.warn("No se borró archivo viejo FTP"); }
-
-            // Subir nuevo
-            int anio = docExistente.getPeriodo();
             String ext = obtenerExtension(nuevoArchivo.getOriginalFilename());
-            String nuevoNombre = UUID.randomUUID().toString() + ext;
-            String nuevaRuta = String.format("%s/documentos_gestion/%d/%s", ftpRutaBase, anio, nuevoNombre);
+            String nuevoNombreFisico = UUID.randomUUID() + ext;
+            String nuevaRuta = String.format("%s/%d/%s", RUTA_BASE_DOCUMENTOS, docExistente.getPeriodo(), nuevoNombreFisico);
 
-            subirAlFtp(nuevaRuta, nuevoArchivo.getInputStream());
+            // Subimos la nueva versión (sin borrar el histórico físico)
+            subirAlFtp(cuo, nuevaRuta, nuevoArchivo.getInputStream());
 
-            docExistente.setRutaArchivo(nuevaRuta);
+            docExistente.setRuta(nuevaRuta);
             docExistente.setNombre(nuevoArchivo.getOriginalFilename());
             docExistente.setFormato(ext.replace(".", "").toUpperCase());
         }
 
         docExistente.setTipo(datosNuevos.getTipo());
-        docExistente.setCategoriaId(datosNuevos.getCategoriaId());
+        docExistente.setCategoriaDocumentoId(datosNuevos.getCategoriaDocumentoId());
 
-        return persistencePort.guardar(docExistente);
+        return persistencePort.guardar(cuo, docExistente);
     }
 
     @Override
-    @Transactional
-    public void eliminarDocumento(String id) throws Exception {
-        Documento doc = persistencePort.buscarPorId(id);
-        if (doc != null) {
-            doc.setActivo("0");
-            persistencePort.guardar(doc);
-        }
+    @Transactional(transactionManager = TX_MANAGER, propagation = Propagation.REQUIRES_NEW, rollbackFor = {Exception.class, SQLException.class})
+    public void eliminarDocumento(String cuo, Long id, String usuario) throws Exception {
+        Documento doc = obtenerDocumento(cuo, id);
+        doc.setUsuario(usuario);
+        doc.setActivo("0");
+        persistencePort.guardar(cuo, doc);
     }
 
     @Override
-    public RecursoArchivo descargarDocumento(String id) throws Exception {
-        Documento doc = persistencePort.buscarPorId(id);
-        if (doc == null) throw new Exception("Documento no encontrado");
+    public RecursoArchivo descargarDocumento(String cuo, Long id) throws Exception {
+        Documento doc = obtenerDocumento(cuo, id);
 
-        java.nio.file.Path tempFile = java.nio.file.Files.createTempFile("doc_" + id, ".tmp");
-        String sessionKey = UUID.randomUUID().toString();
-
-        ftpPort.iniciarSesion(sessionKey, ftpIp, ftpPuerto, ftpUsuario, ftpClave);
-
-        try {
-            InputStream ftpStream = ftpPort.downloadFileStream(sessionKey, doc.getRutaArchivo());
-
-            if (ftpStream == null) {
-                throw new Exception("El archivo físico no existe en el servidor FTP.");
-            }
-
-            try (java.io.OutputStream tempFileStream = java.nio.file.Files.newOutputStream(tempFile)) {
-                ftpStream.transferTo(tempFileStream);
-            }
-            ftpStream.close();
-
-        } catch (Exception e) {
-            java.nio.file.Files.deleteIfExists(tempFile);
-            throw e;
-        } finally {
-            ftpPort.finalizarSession(sessionKey);
-        }
-
-        InputStream autoDeleteStream = new java.io.FileInputStream(tempFile.toFile()) {
-            @Override public void close() throws java.io.IOException {
-                super.close();
-                java.nio.file.Files.deleteIfExists(tempFile);
-            }
-        };
+        // Descargar usando el adaptador del Proyecto Base
+        InputStream stream = descargarDelFtp(cuo, doc.getRuta());
 
         return RecursoArchivo.builder()
-                .stream(autoDeleteStream)
+                .stream(stream)
                 .nombreFileName(doc.getNombre())
                 .build();
     }
 
-    private void subirAlFtp(String ruta, InputStream stream) throws Exception {
+
+    private void subirAlFtp(String cuo, String ruta, InputStream stream) throws Exception {
+        // En tu código original usabas un UUID como sessionKey
         String sessionKey = UUID.randomUUID().toString();
         try {
             ftpPort.iniciarSesion(sessionKey, ftpIp, ftpPuerto, ftpUsuario, ftpClave);
-            if (!ftpPort.uploadFileFTP(sessionKey, ruta, stream, "Carga Doc")) {
-                throw new Exception("Error al subir archivo al FTP");
+            if (!ftpPort.uploadFileFTP(sessionKey, ruta, stream, "Carga Doc Gestion")) {
+                throw new Exception("Error al subir archivo al FTP base.");
             }
         } finally {
             ftpPort.finalizarSession(sessionKey);
         }
     }
 
-    private void eliminarDelFtp(String ruta) throws Exception {
+    private InputStream descargarDelFtp(String cuo, String ruta) throws Exception {
         String sessionKey = UUID.randomUUID().toString();
+        byte[] fileBytes;
         try {
             ftpPort.iniciarSesion(sessionKey, ftpIp, ftpPuerto, ftpUsuario, ftpClave);
-            ftpPort.deleteFileFTP(ruta);
+
+            fileBytes = ftpPort.downloadFileBytes(sessionKey, ruta);
+
+            if (fileBytes == null) throw new Exception("El archivo no existe en el FTP base.");
+
         } finally {
             ftpPort.finalizarSession(sessionKey);
         }
+        return new ByteArrayInputStream(fileBytes);
     }
 
     private String obtenerExtension(String nombre) {

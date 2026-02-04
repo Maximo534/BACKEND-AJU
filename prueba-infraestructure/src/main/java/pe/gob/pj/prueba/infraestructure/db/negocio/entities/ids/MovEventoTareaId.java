@@ -1,9 +1,11 @@
 package pe.gob.pj.prueba.infraestructure.db.negocio.entities.ids;
 
-import lombok.*;
+import lombok.AllArgsConstructor;
+import lombok.Builder;
+import lombok.Data;
+import lombok.NoArgsConstructor;
 
 import java.io.Serializable;
-import java.util.Objects;
 
 @Data
 @Builder
@@ -13,7 +15,7 @@ public class MovEventoTareaId implements Serializable {
 
     private static final long serialVersionUID = 1L;
 
-    private String eventoId;
-    private String tareaId;
+    private Long eventoId;
 
+    private Long tareaId;
 }

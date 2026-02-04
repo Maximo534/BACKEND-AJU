@@ -8,7 +8,7 @@ import java.time.LocalDate;
 public class ListarItineranteRequest implements Serializable {
     private String search;
 
-    private String distritoJudicialId;
+    private Long distritoJudicialId;
 
     private LocalDate fechaInicio;
     private LocalDate fechaFin;

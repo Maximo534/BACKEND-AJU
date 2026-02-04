@@ -1,50 +1,57 @@
 package pe.gob.pj.prueba.infraestructure.rest.responses;
 
 import com.fasterxml.jackson.annotation.JsonInclude;
-import lombok.AllArgsConstructor;
-import lombok.Builder;
-import lombok.Data;
-import lombok.NoArgsConstructor;
+import lombok.*;
+import lombok.experimental.FieldDefaults;
 import pe.gob.pj.prueba.domain.model.negocio.Archivo;
 
 import java.io.Serializable;
 import java.time.LocalDate;
 import java.util.List;
 
-@Data @Builder @NoArgsConstructor @AllArgsConstructor
+@Data
+@Builder
+@NoArgsConstructor
+@AllArgsConstructor
 @JsonInclude(JsonInclude.Include.NON_NULL)
+@FieldDefaults(level = AccessLevel.PRIVATE)
 public class OrientadoraJudicialResponse implements Serializable {
 
-    private String id;
-    private String distritoJudicialId;
-    private String distritoJudicialNombre;
-    private LocalDate fechaAtencion;
-    private String estado; // Calculado o quemado en mapper (Ej: "REGISTRADO")
+    static final long serialVersionUID = 1L;
+
+    Long id;
+    String codigo;
+
+    Long distritoJudicialId;
+    String distritoJudicialNombre;
+
+    LocalDate fechaAtencion;
+    String estado;
 
     // --- DATOS USUARIO ---
-    private String nombreCompleto;
-    private String tipoDocumento;
-    private String numeroDocumento;
-    private String nacionalidad;
-    private Integer edad;
-    private String telefono;
-    private String direccion;
+    String nombreCompleto;
+    String tipoDocumento;
+    String numeroDocumento;
+    String nacionalidad;
+    Integer edad;
+    String telefono;
+    String direccion;
 
     // --- UBIGEO ---
-    private String departamentoId;
-    private String provinciaId;
-    private String distritoId;
+    Long departamentoId;
+    Long provinciaId;
+    Long distritoId;
 
     // --- DETALLE CASO ---
-    private String tipoVulnerabilidad;
-    private String genero;
-    private String lenguaMaterna;
-    private String tipoCasoAtendido;
-    private String numeroExpediente;
-    private String tipoViolencia;
-    private String derivacionInstitucion;
-    private String resenaCaso;
+    String tipoVulnerabilidad;
+    String genero;
+    String lenguaMaterna;
+    String tipoCasoAtendido;
+    String numeroExpediente;
+    String tipoViolencia;
+    String derivacionInstitucion;
+    String resenaCaso;
 
     // --- ARCHIVOS ---
-    private List<Archivo> archivos;
+    List<Archivo> archivos;
 }

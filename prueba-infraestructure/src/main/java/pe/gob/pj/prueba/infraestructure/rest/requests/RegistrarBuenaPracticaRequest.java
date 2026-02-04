@@ -1,159 +1,166 @@
 package pe.gob.pj.prueba.infraestructure.rest.requests;
 
 import jakarta.validation.constraints.*;
+import lombok.AccessLevel;
 import lombok.Data;
+import lombok.experimental.FieldDefaults;
 import org.springframework.format.annotation.DateTimeFormat;
 
 import java.io.Serializable;
 import java.time.LocalDate;
 
 @Data
+@FieldDefaults(level = AccessLevel.PRIVATE)
 public class RegistrarBuenaPracticaRequest implements Serializable {
 
-    @Size(max = 17, message = "El ID no puede exceder los 17 caracteres.")
-    private String id;
+    static final long serialVersionUID = 1L;
 
-    @NotBlank(message = "El Distrito Judicial es obligatorio.")
-    @Size(max = 2, message = "El código de Distrito Judicial debe tener 2 caracteres.")
-    private String distritoJudicialId;
+    Long id;
+    String codigo;
+
+    @NotNull(message = "El Distrito Judicial es obligatorio.")
+    Long distritoJudicialId;
 
     // --- DATOS DE CONTACTO ---
     @NotBlank(message = "El responsable es obligatorio.")
     @Size(max = 80, message = "El responsable no puede exceder los 80 caracteres.")
-    private String responsable;
+    String responsable;
 
     @NotBlank(message = "El email es obligatorio.")
     @Size(max = 80, message = "El email no puede exceder los 80 caracteres.")
     @Email(message = "El formato del correo electrónico no es válido.")
-    private String email;
+    String email;
 
     @NotBlank(message = "El teléfono es obligatorio.")
     @Size(max = 9, message = "El teléfono no puede exceder los 9 caracteres.")
-    private String telefono;
+    String telefono;
 
     @NotBlank(message = "Los integrantes son obligatorios.")
-    private String integrantes;
+    String integrantes;
 
     // --- DATOS GENERALES ---
     @NotNull(message = "La fecha de inicio es obligatoria.")
     @DateTimeFormat(pattern = "yyyy-MM-dd")
-    private LocalDate fechaInicio;
+    LocalDate fechaInicio;
+
+    @DateTimeFormat(pattern = "yyyy-MM-dd")
+    LocalDate fechaFin;
 
     @NotBlank(message = "El título de la Buena Práctica es obligatorio.")
     @Size(max = 200, message = "El título no puede exceder los 200 caracteres.")
-    private String titulo;
+    String titulo;
 
     @NotBlank(message = "La categoría es obligatoria.")
     @Size(max = 150, message = "La categoría no puede exceder los 150 caracteres.")
-    private String categoria;
+    String categoria;
 
     // --- TODOS LOS CAMPOS DE TEXTO (TEXT en BD) ---
 
     @NotBlank(message = "El problema es obligatorio.")
-    private String problema;
+    String problema;
 
     @NotBlank(message = "La causa es obligatoria.")
-    private String causa;
+    String causa;
 
     @NotBlank(message = "La consecuencia es obligatoria.")
-    private String consecuencia;
+    String consecuencia;
 
     @NotBlank(message = "La descripción general es obligatoria.")
-    private String descripcionGeneral;
+    String descripcionGeneral;
 
     @NotBlank(message = "El logro es obligatorio.")
-    private String logro;
+    String logro;
 
     @NotBlank(message = "El objetivo es obligatorio.")
-    private String objetivo;
+    String objetivo;
 
     @NotBlank(message = "El aliado es obligatorio.")
-    private String aliado; // Aliado general
+    String aliado;
 
     @NotBlank(message = "La dificultad es obligatoria.")
-    private String dificultad;
+    String dificultad;
 
     @NotBlank(message = "La norma es obligatoria.")
-    private String norma;
+    String norma;
 
     @NotBlank(message = "El desarrollo es obligatorio.")
-    private String desarrollo;
+    String desarrollo;
 
     @NotBlank(message = "La ejecución es obligatoria.")
-    private String ejecucion;
+    String ejecucion;
 
     @NotBlank(message = "La actividad es obligatoria.")
-    private String actividad;
+    String actividad;
 
     @NotBlank(message = "El aporte es obligatorio.")
-    private String aporte;
+    String aporte;
 
     @NotBlank(message = "El resultado es obligatorio.")
-    private String resultado;
+    String resultado;
 
     @NotBlank(message = "El impacto es obligatorio.")
-    private String impacto;
+    String impacto;
 
     @NotBlank(message = "El público objetivo es obligatorio.")
-    private String publicoObjetivo;
+    String publicoObjetivo;
 
     @NotBlank(message = "La lección aprendida es obligatoria.")
-    private String leccionAprendida;
+    String leccionAprendida;
 
     @NotBlank(message = "La información adicional es obligatoria.")
-    private String infoAdicional;
+    String infoAdicional;
 
     @NotBlank(message = "El aporte relevante es obligatorio.")
-    private String aporteRelevante;
+    String aporteRelevante;
 
     @NotBlank(message = "La situación anterior es obligatoria.")
-    private String situacionAnterior;
+    String situacionAnterior;
 
     @NotBlank(message = "La situación después es obligatoria.")
-    private String situacionDespues;
+    String situacionDespues;
 
     @NotBlank(message = "El impacto principal es obligatorio.")
-    private String impactoPrincipal;
+    String impactoPrincipal;
 
     @NotBlank(message = "La mejora es obligatoria.")
-    private String mejora;
+    String mejora;
 
     @NotBlank(message = "La posibilidad de réplica es obligatoria.")
-    private String posibilidadReplica;
+    String posibilidadReplica;
 
     @NotBlank(message = "Las acciones son obligatorias.")
-    private String acciones;
+    String acciones;
 
     @NotBlank(message = "El objetivo institucional es obligatorio.")
-    private String objInstitucional;
+    String objInstitucional;
 
     @NotBlank(message = "La política pública es obligatoria.")
-    private String politicaPublica;
+    String politicaPublica;
 
     @NotBlank(message = "La importancia es obligatoria.")
-    private String importancia;
+    String importancia;
 
     @NotBlank(message = "Los aspectos de implementación son obligatorios.")
-    private String aspectosImplementacion;
+    String aspectosImplementacion;
 
     @NotBlank(message = "El aporte a la sociedad es obligatorio.")
-    private String aporteSociedad;
+    String aporteSociedad;
 
     @NotBlank(message = "Las medidas son obligatorias.")
-    private String medidas;
+    String medidas;
 
     @NotBlank(message = "La norma interna es obligatoria.")
-    private String normaInterna;
+    String normaInterna;
 
     @NotBlank(message = "La dificultad interna es obligatoria.")
-    private String dificInterna;
+    String dificInterna;
 
     @NotBlank(message = "La dificultad externa es obligatoria.")
-    private String dificExterna;
+    String dificExterna;
 
     @NotBlank(message = "El aliado externo es obligatorio.")
-    private String aliadoExt;
+    String aliadoExt;
 
     @NotBlank(message = "El aliado interno es obligatorio.")
-    private String aliadoInt;
+    String aliadoInt;
 }

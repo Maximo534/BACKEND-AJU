@@ -1,10 +1,8 @@
 package pe.gob.pj.prueba.infraestructure.rest.responses;
 
 import com.fasterxml.jackson.annotation.JsonInclude;
-import lombok.AllArgsConstructor;
-import lombok.Builder;
-import lombok.Data;
-import lombok.NoArgsConstructor;
+import lombok.*;
+import lombok.experimental.FieldDefaults;
 import pe.gob.pj.prueba.domain.model.negocio.Archivo;
 
 import java.io.Serializable;
@@ -16,66 +14,74 @@ import java.util.List;
 @NoArgsConstructor
 @AllArgsConstructor
 @JsonInclude(JsonInclude.Include.NON_NULL)
+@FieldDefaults(level = AccessLevel.PRIVATE)
 public class BuenaPracticaResponse implements Serializable {
 
-    // --- CABECERA ---
-    private String id;
-    private String distritoJudicialId;
-    private String distritoJudicialNombre;
-    private String titulo;
-    private LocalDate fechaInicio;
-    private LocalDate fechaFin;
-    private String categoria;
+    static final long serialVersionUID = 1L;
+
+    Long id;
+    String codigo;
+    Long distritoJudicialId;
+    String distritoJudicialNombre;
+    String titulo;
+    LocalDate fechaInicio;
+    LocalDate fechaFin;
+    String categoria;
+    String estado;
 
     // --- CONTACTO ---
-    private String responsable;
-    private String email;
-    private String telefono;
-    private String integrantes;
+    String responsable;
+    String email;
+    String telefono;
+    String integrantes;
 
     // --- DETALLE COMPLETO ---
-    private String problema;
-    private String causa;
-    private String consecuencia;
-    private String descripcionGeneral;
-    private String logro;
-    private String objetivo;
-    private String aliado;
-    private String dificultad;
-    private String norma;
+    String problema;
+    String causa;
+    String consecuencia;
+    String descripcionGeneral;
+    String logro;
+    String objetivo;
+    String aliado;
+    String dificultad;
+    String norma;
 
-    private String desarrollo;
-    private String ejecucion;
-    private String actividad;
+    String desarrollo;
+    String ejecucion;
+    String actividad;
 
-    private String aporte;
-    private String resultado;
-    private String impacto;
-    private String publicoObjetivo;
+    String aporte;
+    String resultado;
+    String impacto;
+    String publicoObjetivo;
 
-    private String leccionAprendida;
-    private String infoAdicional;
+    String leccionAprendida;
+    String infoAdicional;
 
     // --- CAMPOS EXPUESTOS---
-    private String aporteRelevante;
-    private String situacionAnterior;
-    private String situacionDespues;
-    private String impactoPrincipal;
-    private String mejora;
-    private String posibilidadReplica;
-    private String acciones;
-    private String objInstitucional;
-    private String politicaPublica;
-    private String importancia;
-    private String aspectosImplementacion;
-    private String aporteSociedad;
-    private String medidas;
-    private String normaInterna;
-    private String dificInterna;
-    private String dificExterna;
-    private String aliadoExt;
-    private String aliadoInt;
+    String aporteRelevante;
+    String situacionAnterior;
+    String situacionDespues;
+    String impactoPrincipal;
+    String mejora;
+    String posibilidadReplica;
+    String acciones;
+    String objInstitucional;
+    String politicaPublica;
+    String importancia;
+    String aspectosImplementacion;
+    String aporteSociedad;
+    String medidas;
+    String normaInterna;
+    String dificInterna;
+    String dificExterna;
+    String aliadoExt;
+    String aliadoInt;
+
+    // --- Auditoría ---
+    LocalDate fechaRegistro;
+    String usuarioRegistro;
 
     // --- ARCHIVOS ---
-    private List<Archivo> archivos;
+    List<Archivo> archivos;
 }

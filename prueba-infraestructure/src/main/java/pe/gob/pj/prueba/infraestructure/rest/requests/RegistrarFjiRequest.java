@@ -14,11 +14,12 @@ public class RegistrarFjiRequest implements Serializable {
 
     private static final long serialVersionUID = 1L;
 
-    private String id;
+    private Long id;
 
-    @NotBlank(message = "El Distrito Judicial es obligatorio.")
-    @Size(max = 2, message = "El Distrito Judicial debe tener 2 caracteres.")
-    private String distritoJudicialId;
+    private String codigo;
+
+    @NotNull(message = "El Distrito Judicial es obligatorio.")
+    private Long distritoJudicialId;
 
     @NotNull(message = "La fecha de inicio es obligatoria.")
     @DateTimeFormat(pattern = "yyyy-MM-dd")
@@ -40,9 +41,8 @@ public class RegistrarFjiRequest implements Serializable {
     @Size(max = 60, message = "El documento de autorización excede los 60 caracteres.")
     private String documentoAutoriza;
 
-    @NotBlank(message = "El eje es obligatorio.")
-    @Size(max = 5, message = "El ID del Eje excede los 5 caracteres.")
-    private String ejeId;
+    @NotNull(message = "El eje es obligatorio.")
+    private Long ejeId;
 
     @NotBlank(message = "El público objetivo es obligatorio.")
     @Size(max = 150, message = "El público objetivo excede los 150 caracteres.")
@@ -57,17 +57,14 @@ public class RegistrarFjiRequest implements Serializable {
     private String lugarActividad;
 
     // --- UBIGEO ---
-    @NotBlank(message = "El departamento es obligatorio.")
-    @Size(max = 2, message = "El departamento debe tener 2 caracteres.")
-    private String departamentoId;
+    @NotNull(message = "El departamento es obligatorio.")
+    private Long departamentoId;
 
-    @NotBlank(message = "La provincia es obligatoria.")
-    @Size(max = 4, message = "La provincia debe tener 4 caracteres.")
-    private String provinciaId;
+    @NotNull(message = "La provincia es obligatoria.")
+    private Long provinciaId;
 
-    @NotBlank(message = "El distrito geográfico es obligatorio.")
-    @Size(max = 6, message = "El distrito geográfico debe tener 6 caracteres.")
-    private String distritoGeograficoId;
+    @NotNull(message = "El distrito geográfico es obligatorio.")
+    private Long distritoId;
 
     // --- ESTADÍSTICAS ---
     @NotNull(message = "El número de mesas instaladas es obligatorio.")
@@ -131,7 +128,7 @@ public class RegistrarFjiRequest implements Serializable {
     @Data
     public static class DetallePARequest implements Serializable {
         @NotNull(message = "El tipo de vulnerabilidad es obligatorio.")
-        private Integer tipoVulnerabilidadId;
+        private Long tipoVulnerabilidadId;
 
         @NotBlank(message = "El rango de edad es obligatorio.")
         private String rangoEdad;
@@ -144,7 +141,7 @@ public class RegistrarFjiRequest implements Serializable {
     @Data
     public static class DetallePCARequest implements Serializable {
         @NotNull(message = "La materia es obligatoria.")
-        private Integer materiaId;
+        private Long materiaId;
 
         @NotNull(message = "Num. Demandas obligatorio.") @Min(0) private Integer numDemandas;
         @NotNull(message = "Num. Audiencias obligatorio.") @Min(0) private Integer numAudiencias;
@@ -169,8 +166,8 @@ public class RegistrarFjiRequest implements Serializable {
 
     @Data
     public static class DetalleTRRequest implements Serializable {
-        @NotBlank(message = "El ID de la tarea es obligatorio.")
-        private String tareaId;
+        @NotNull(message = "El ID de la tarea es obligatorio.")
+        private Long tareaId;
 
         private LocalDate fechaInicio;
     }

@@ -12,75 +12,40 @@ import java.time.LocalDate;
 import java.util.List;
 
 @Repository
-public interface MovPromocionCulturaRepository extends JpaRepository<MovPromocionCulturaEntity, String> {
+public interface MovPromocionCulturaRepository extends JpaRepository<MovPromocionCulturaEntity, Long> {
 
-    @Query("SELECT MAX(e.id) FROM MovPromocionCulturaEntity e WHERE e.id LIKE '%-CJ'")
-    String obtenerUltimoId();
+    boolean existsByCodigo(String codigo);
 
-    @Query(value = """
-        SELECT 
-            pc.c_actv_prom_cult_id AS id,
-            pc.f_inicio AS fechaInicio,
-            pc.f_fin AS fechaFin,
-            pc.t_desc_activ AS tipoActividad, 
-            pc.l_activo AS estado,
-            dj.x_nom_corto AS distritoJudicialNombre
-        FROM prueba.mov_aju_actv_prom_culturas pc 
-        INNER JOIN prueba.mae_aju_distrito_judiciales dj ON pc.c_distrito_jud_id = dj.c_distrito_jud_id 
-        WHERE pc.c_usuario_reg = :usuario
-          
-          -- FILTRO COMBO
-          AND (:distrito IS NULL OR pc.c_distrito_jud_id = :distrito)
-          
-          -- FILTRO FECHAS 
-          AND (CAST(:fecIni AS DATE) IS NULL OR pc.f_inicio >= :fecIni)
-          AND (CAST(:fecFin AS DATE) IS NULL OR pc.f_inicio <= :fecFin)
+    @Query(value = "SELECT c_codigo FROM acjust.mov_actividad_promocion_cultura " +
+            "WHERE c_codigo LIKE %:sufijoAnio " +
+            "AND n_distrito_jud_id = :distrito " +
+            "ORDER BY n_actv_prom_cult_id DESC LIMIT 1", nativeQuery = true)
+    String obtenerUltimoCodigo(@Param("distrito") Long distrito, @Param("sufijoAnio") String sufijoAnio);
 
-          -- BUSCADOR GENERAL
-          AND (
-              :search IS NULL OR :search = '' OR
-              UPPER(pc.c_actv_prom_cult_id) LIKE UPPER(CONCAT('%', :search, '%')) OR
-              UPPER(pc.t_desc_activ) LIKE UPPER(CONCAT('%', :search, '%')) OR
-              UPPER(dj.x_nom_corto) LIKE UPPER(CONCAT('%', :search, '%'))
-          )
-        ORDER BY pc.f_inicio DESC
-    """, countQuery = """
-        SELECT count(*) 
-        FROM prueba.mov_aju_actv_prom_culturas pc 
-        INNER JOIN prueba.mae_aju_distrito_judiciales dj ON pc.c_distrito_jud_id = dj.c_distrito_jud_id 
-        WHERE pc.c_usuario_reg = :usuario
-          AND (:distrito IS NULL OR pc.c_distrito_jud_id = :distrito)
-          AND (CAST(:fecIni AS DATE) IS NULL OR pc.f_inicio >= :fecIni)
-          AND (CAST(:fecFin AS DATE) IS NULL OR pc.f_inicio <= :fecFin)
-          AND (
-              :search IS NULL OR :search = '' OR
-              UPPER(pc.c_actv_prom_cult_id) LIKE UPPER(CONCAT('%', :search, '%')) OR
-              UPPER(pc.t_desc_activ) LIKE UPPER(CONCAT('%', :search, '%')) OR
-              UPPER(dj.x_nom_corto) LIKE UPPER(CONCAT('%', :search, '%'))
-          )
-    """, nativeQuery = true)
-    Page<PromocionCulturaProjection> listar(
-            @Param("usuario") String usuario,
+    @Query("SELECT e FROM MovPromocionCulturaEntity e " +
+            "WHERE e.activo = '1' " +
+            "AND (:distrito IS NULL OR e.distritoJudicialId = :distrito) " +
+            "AND (cast(:fecIni as date) IS NULL OR e.fechaInicio >= :fecIni) " +
+            "AND (cast(:fecFin as date) IS NULL OR e.fechaInicio <= :fecFin) " +
+            "AND (:search IS NULL OR :search = '' OR " +
+            "     UPPER(e.codigo) LIKE UPPER(CONCAT('%', :search, '%')) OR " +
+            "     UPPER(e.nombreActividad) LIKE UPPER(CONCAT('%', :search, '%'))) " +
+            "ORDER BY e.id DESC")
+    Page<MovPromocionCulturaEntity> listarCompleto(
             @Param("search") String search,
-            @Param("distrito") String distrito,
+            @Param("distrito") Long distrito,
             @Param("fecIni") LocalDate fecIni,
             @Param("fecFin") LocalDate fecFin,
             Pageable pageable);
 
     @Query("SELECT EXTRACT(MONTH FROM e.fechaInicio) as mes, COUNT(e) as cantidad " +
-            "FROM MovPromocionCulturaEntity e " +
+            "FROM MovJusticiaItineranteEntity e " +
             "WHERE e.activo = '1' " +
             "AND EXTRACT(YEAR FROM e.fechaInicio) = :anio " +
-            "AND e.usuarioRegistro = :usuario " +
+            "AND e.cAudId = :usuario " +
             "GROUP BY EXTRACT(MONTH FROM e.fechaInicio)")
     List<Object[]> contarPorMes(@Param("anio") int anio, @Param("usuario") String usuario);
-
-    interface PromocionCulturaProjection {
-        String getId();
-        LocalDate getFechaInicio();
-        LocalDate getFechaFin();
-        String getTipoActividad();
-        String getEstado();
-        String getDistritoJudicialNombre();
-    }
 }
+
+
+

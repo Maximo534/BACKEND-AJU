@@ -1,145 +1,141 @@
 package pe.gob.pj.prueba.infraestructure.db.negocio.entities;
 
 import jakarta.persistence.*;
-import lombok.Getter;
-import lombok.Setter;
+import lombok.AccessLevel;
+import lombok.Data;
+import lombok.EqualsAndHashCode;
+import lombok.experimental.FieldDefaults;
+import pe.gob.pj.prueba.domain.common.enums.Estado;
+import pe.gob.pj.prueba.infraestructure.common.enums.OperacionBaseDatos;
 import pe.gob.pj.prueba.infraestructure.common.utils.EsquemaConstants;
+import pe.gob.pj.prueba.infraestructure.common.utils.InformacionRedUtils;
 
 import java.io.Serializable;
 import java.time.LocalDate;
+import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
 
-@Getter
-@Setter
+@Data
+@EqualsAndHashCode(callSuper = false)
+@FieldDefaults(level = AccessLevel.PRIVATE)
 @Entity
-@Table(name = "mov_aju_justicia_itinerantes", schema = EsquemaConstants.PRUEBA)
+@Table(name = "mov_justicia_itinerante", schema = EsquemaConstants.PRUEBA)
 public class MovJusticiaItineranteEntity implements Serializable {
 
-    private static final long serialVersionUID = 1L;
+    static final long serialVersionUID = 1L;
 
     @Id
-    @Column(name = "c_just_itin_id", length = 17)
-    private String id;
+    @SequenceGenerator(name = "SEQ_MOV_JI", schema = EsquemaConstants.PRUEBA, sequenceName = "useq_mov_justicia_itinerante", initialValue = 1, allocationSize = 1)
+    @GeneratedValue(strategy = GenerationType.SEQUENCE, generator = "SEQ_MOV_JI")
+    @Column(name = "n_just_itin_id", nullable = false)
+    Long id;
 
-    @Column(name = "c_distrito_jud_id", length = 2, nullable = false)
-    private String distritoJudicialId;
-
+    // --- DATOS PRINCIPALES ---
+    @Column(name = "c_codigo", length = 17, nullable = false, unique = true)
+    String codigo;
+    @Column(name = "n_distrito_jud_id", nullable = false)
+    Long distritoJudicialId;
     @Column(name = "f_inicio", nullable = false)
-    private LocalDate fechaInicio;
-
+    LocalDate fechaInicio;
     @Column(name = "f_fin", nullable = false)
-    private LocalDate fechaFin;
-
+    LocalDate fechaFin;
     @Column(name = "x_res_plan_anual", length = 50)
-    private String resolucionPlanAnual;
-
+    String resolucionPlanAnual;
     @Column(name = "x_res_admin_plan", length = 50)
-    private String resolucionAdminPlan;
-
+    String resolucionAdminPlan;
     @Column(name = "x_doc_autoriza", length = 60)
-    private String documentoAutoriza;
-
-    @Column(name = "c_eje_id", length = 5)
-    private String ejeId;
-
+    String documentoAutoriza;
+    @Column(name = "n_eje_id")
+    Long ejeId;
     @Column(name = "x_publico_obj", length = 150)
-    private String publicoObjetivo;
-
+    String publicoObjetivo;
     @Column(name = "x_publico_obj_det", length = 50)
-    private String publicoObjetivoDetalle;
-
+    String publicoObjetivoDetalle;
     @Column(name = "x_lugar_activ", length = 150)
-    private String lugarActividad;
+    String lugarActividad;
 
     // UBIGEO
-    @Column(name = "c_depa_id", length = 2)
-    private String departamentoId;
+    @Column(name = "n_departamento_id") Long departamentoId;
+    @Column(name = "n_provincia_id") Long provinciaId;
+    @Column(name = "n_distrito_id") Long distritoId;
 
-    @Column(name = "c_prov_id", length = 4)
-    private String provinciaId;
+    // ESTADÍSTICAS
+    @Column(name = "n_num_mesas_inst") Integer numMesasInstaladas;
+    @Column(name = "n_num_ser_bri_ate") Integer numServidores;
+    @Column(name = "n_num_juez_ate") Integer numJueces;
+    @Column(name = "l_adc_pueb_indg", length = 2) String codigoAdcPueblosIndigenas;
+    @Column(name = "x_tambo", length = 100) String tambo;
+    @Column(name = "l_sae_leng_nativa", length = 2) String codigoSaeLenguaNativa;
+    @Column(name = "x_leng_nativa", length = 25) String lenguaNativa;
 
-    @Column(name = "c_dist_id", length = 6)
-    private String distritoGeograficoId;
+    // TEXTOS
+    @Column(name = "t_des_activ_realz", columnDefinition = "TEXT") String descripcionActividad;
+    @Column(name = "t_inst_aliada", columnDefinition = "TEXT") String institucionesAliadas;
+    @Column(name = "t_observacion", columnDefinition = "TEXT") String observaciones;
 
-    // ESTADISTICAS
-    @Column(name = "n_num_mesas_inst")
-    private Integer numMesasInstaladas;
+    // OTROS
+    @Column(name = "f_reg_activ") LocalDate fechaRegistroActividad = LocalDate.now();
+    @Column(name = "n_usuario_reg_id") Long usuarioRegistroId;
+    @Column(name = "l_activo", length = 1, nullable = false) String activo = Estado.ACTIVO_NUMERICO.getNombre();
 
-    @Column(name = "n_num_ser_bri_ate")
-    private Integer numServidores;
+    // --- AUDITORÍA PADRE ---
+    @Column(name = "f_registro", insertable = false, updatable = false) LocalDateTime fRegistro;
+    @Column(name = "f_aud") LocalDateTime fAud = LocalDateTime.now();
+    @Column(name = "b_aud") String bAud = OperacionBaseDatos.INSERTAR.getNombre();
+    @Column(name = "c_aud_uid") String cAudId;
+    @Column(name = "c_aud_uidred") String cAudIdRed = InformacionRedUtils.getNombreRed();
+    @Column(name = "c_aud_pc") String cAudPc = InformacionRedUtils.getPc();
+    @Column(name = "c_aud_ip") String cAudIp = InformacionRedUtils.getIp();
+    @Column(name = "c_aud_mcaddr") String cAudMcAddr = InformacionRedUtils.getMac();
 
-    @Column(name = "n_num_juez_ate")
-    private Integer numJueces;
+    // --- RELACIONES HIJAS (Bidireccionales con mappedBy) ---
 
-    @Column(name = "l_adc_pueb_indg", length = 2)
-    private String codigoAdcPueblosIndigenas;
+    @OneToMany(mappedBy = "justiciaItinerante", cascade = CascadeType.ALL, fetch = FetchType.LAZY, orphanRemoval = true)
+    List<MovJiPersonasAtendidasEntity> personasAtendidas = new ArrayList<>();
 
-    @Column(name = "x_tambo", length = 100)
-    private String tambo;
+    @OneToMany(mappedBy = "justiciaItinerante", cascade = CascadeType.ALL, fetch = FetchType.LAZY, orphanRemoval = true)
+    List<MovJiCasosAtendidosEntity> casosAtendidos = new ArrayList<>();
 
-    @Column(name = "l_sae_leng_nativa", length = 2)
-    private String codigoSaeLenguaNativa;
+    @OneToMany(mappedBy = "justiciaItinerante", cascade = CascadeType.ALL, fetch = FetchType.LAZY, orphanRemoval = true)
+    List<MovJiPersonasBeneficiadasEntity> personasBeneficiadas = new ArrayList<>();
 
-    @Column(name = "x_leng_nativa", length = 25)
-    private String lenguaNativa;
+    @OneToMany(mappedBy = "justiciaItinerante", cascade = CascadeType.ALL, fetch = FetchType.LAZY, orphanRemoval = true)
+    List<MovJiTareasRealizadasEntity> tareasRealizadas = new ArrayList<>();
 
-    // CAMPOS DE TEXTO LARGO
-    @Column(name = "t_des_activ_realz", columnDefinition = "TEXT")
-    private String descripcionActividad;
-
-    @Column(name = "t_inst_aliada", columnDefinition = "TEXT")
-    private String institucionesAliadas;
-
-    @Column(name = "t_observacion", columnDefinition = "TEXT")
-    private String observaciones;
-
-    // AUDITORIA
-    @Column(name = "f_reg_activ")
-    private LocalDate fechaRegistro;
-
-    @Column(name = "c_usuario_reg", length = 25)
-    private String usuarioRegistro;
-
-    @Column(name = "l_activo", length = 1)
-    private String activo;
-
-
-    @OneToMany(cascade = CascadeType.ALL, fetch = FetchType.LAZY, orphanRemoval = true)
-    @JoinColumn(name = "c_just_itin_id", referencedColumnName = "c_just_itin_id", nullable = false, insertable = false, updatable = false)
-    private List<MovJiPersonasAtendidasEntity> personasAtendidas = new ArrayList<>();
-
-    @OneToMany(cascade = CascadeType.ALL, fetch = FetchType.LAZY, orphanRemoval = true)
-    @JoinColumn(name = "c_just_itin_id", referencedColumnName = "c_just_itin_id", nullable = false, insertable = false, updatable = false)
-    private List<MovJiCasosAtendidosEntity> casosAtendidos = new ArrayList<>();
-
-    @OneToMany(cascade = CascadeType.ALL, fetch = FetchType.LAZY, orphanRemoval = true)
-    @JoinColumn(name = "c_just_itin_id", referencedColumnName = "c_just_itin_id", nullable = false, insertable = false, updatable = false)
-    private List<MovJiPersonasBeneficiadasEntity> personasBeneficiadas = new ArrayList<>();
-
-    @OneToMany(cascade = CascadeType.ALL, fetch = FetchType.LAZY, orphanRemoval = true)
-    @JoinColumn(name = "c_just_itin_id", referencedColumnName = "c_just_itin_id", nullable = false, insertable = false, updatable = false)
-    private List<MovJiTareasRealizadasEntity> tareasRealizadas = new ArrayList<>();
-
-    // SOLO LÓGICA ESTRUCTURAL, NADA DE VALORES POR DEFECTO
+    // --- LÓGICA DE PERSISTENCIA ---
     @PrePersist
     public void prePersist() {
-        if (this.fechaRegistro == null) this.fechaRegistro = LocalDate.now();
-        if (this.activo == null) this.activo = "1";
+        // 1. Casos Atendidos
+        if (this.casosAtendidos != null) {
+            this.casosAtendidos.forEach(hijo -> {
+                hijo.setJusticiaItinerante(this);
+                hijo.setCAudId(this.cAudId);
+            });
+        }
 
-        // Mantenemos la lógica de IDs para los hijos
-        if (this.id != null) {
-            if (this.personasAtendidas != null)
-                this.personasAtendidas.forEach(h -> h.setJusticiaItineranteId(this.id));
+        // 2. Personas Atendidas
+        if (this.personasAtendidas != null) {
+            this.personasAtendidas.forEach(hijo -> {
+                hijo.setJusticiaItinerante(this);
+                hijo.setCAudId(this.cAudId);
+            });
+        }
 
-            if (this.casosAtendidos != null)
-                this.casosAtendidos.forEach(h -> h.setJusticiaItineranteId(this.id));
+        // 3. Personas Beneficiadas
+        if (this.personasBeneficiadas != null) {
+            this.personasBeneficiadas.forEach(hijo -> {
+                hijo.setJusticiaItinerante(this);
+                hijo.setCAudId(this.cAudId);
+            });
+        }
 
-            if (this.personasBeneficiadas != null)
-                this.personasBeneficiadas.forEach(h -> h.setJusticiaItineranteId(this.id));
-
-            if (this.tareasRealizadas != null)
-                this.tareasRealizadas.forEach(h -> h.setJusticiaItineranteId(this.id));
+        // 4. Tareas Realizadas
+        if (this.tareasRealizadas != null) {
+            this.tareasRealizadas.forEach(hijo -> {
+                hijo.setJusticiaItinerante(this);
+                hijo.setCAudId(this.cAudId);
+            });
         }
     }
 }

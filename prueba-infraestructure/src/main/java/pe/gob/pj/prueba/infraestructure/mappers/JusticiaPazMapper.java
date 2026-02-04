@@ -1,54 +1,107 @@
 package pe.gob.pj.prueba.infraestructure.mappers;
 
 import org.mapstruct.*;
+import pe.gob.pj.prueba.domain.model.auditoriageneral.PeticionServicios;
 import pe.gob.pj.prueba.domain.model.negocio.JpeCasoAtendido;
+import pe.gob.pj.prueba.domain.model.negocio.query.ListarJpeCasosQuery;
 import pe.gob.pj.prueba.infraestructure.db.negocio.entities.MovJpeCasoAtendidoEntity;
+import pe.gob.pj.prueba.infraestructure.rest.requests.ListarJpeCasosRequest;
 import pe.gob.pj.prueba.infraestructure.rest.requests.RegistrarCasoRequest;
 import pe.gob.pj.prueba.infraestructure.rest.responses.JpeCasoAtendidoResponse;
 
-import java.util.List;
-
 @Mapper(componentModel = MappingConstants.ComponentModel.SPRING,
-        unmappedTargetPolicy = ReportingPolicy.IGNORE)
+        unmappedTargetPolicy = ReportingPolicy.IGNORE,
+        builder = @Builder(disableBuilder = true))
 public interface JusticiaPazMapper {
 
-    // 1. Request -> Domain
-    // Mapeo directo 1 a 1. Si un campo viene null del request (y pasó validación), llegará null al dominio.
-    @Mapping(target = "id", source = "id")
-    @Mapping(target = "fechaRegistro", source = "fechaRegistro")
-    // Ignoramos campos que no vienen del formulario
-    @Mapping(target = "archivosGuardados", ignore = true)
-    @Mapping(target = "usuarioRegistro", ignore = true)
-    @Mapping(target = "distritoJudicialNombre", ignore = true)
-    @Mapping(target = "ugelId", ignore = true)
-    @Mapping(target = "ugelNombre", ignore = true)
-    @Mapping(target = "institucionEducativaId", ignore = true)
-    @Mapping(target = "institucionNombre", ignore = true)
-    @Mapping(target = "juezEscolarNombre", ignore = true)
-    @Mapping(target = "juezGradoSeccion", ignore = true)
-    @Mapping(target = "estado", ignore = true)
-    @Mapping(target = "search", ignore = true)
-    JpeCasoAtendido toDomain(RegistrarCasoRequest request);
+    // =========================================================
+    // 1. QUERY (Request -> Domain Query)
+    // =========================================================
+    ListarJpeCasosQuery toQuery(ListarJpeCasosRequest request);
 
-    // 2. Domain -> Entity
-    @Mapping(target = "juezEscolar", ignore = true) // Se setea manualmente en el Adapter
+    // =========================================================
+    // 2. REGISTRAR (Request + Auditoría -> Domain)
+    // =========================================================
+    @Mapping(target = "id", ignore = true)
+    @Mapping(target = "codigo", ignore = true)
+    @Mapping(target = "fechaRegistroCaso", source = "request.fechaRegistro")
+    @Mapping(target = "archivosGuardados", ignore = true)
+
+    // -- Auditoría Técnica desde PeticionServicios --
+    @Mapping(target = "usuario", source = "peticion.usuarioAuth")
+    @Mapping(target = "nombrePc", source = "peticion.nombrePc")
+    @Mapping(target = "direccionMac", source = "peticion.codigoMac")
+    @Mapping(target = "numeroIp", source = "peticion.ip")
+    @Mapping(target = "red", source = "peticion.red")
+
+    JpeCasoAtendido toDomainRegistrar(RegistrarCasoRequest request, PeticionServicios peticion);
+
+    // =========================================================
+    // 3. ACTUALIZAR (ID + Request + Auditoría -> Domain)
+    // =========================================================
+    @Mapping(target = "id", source = "id")
+    @Mapping(target = "codigo", ignore = true)
+    @Mapping(target = "fechaRegistroCaso", source = "request.fechaRegistro")
+    @Mapping(target = "archivosGuardados", ignore = true)
+
+    // -- Auditoría de Modificación --
+    @Mapping(target = "usuario", source = "peticion.usuarioAuth")
+    @Mapping(target = "nombrePc", source = "peticion.nombrePc")
+    @Mapping(target = "direccionMac", source = "peticion.codigoMac")
+    @Mapping(target = "numeroIp", source = "peticion.ip")
+    @Mapping(target = "red", source = "peticion.red")
+
+    JpeCasoAtendido toDomainActualizar(Long id, RegistrarCasoRequest request, PeticionServicios peticion);
+
+    // =========================================================
+    // 4. PERSISTENCIA (Domain <-> Entity)
+    // =========================================================
+    @Mapping(target = "juezEscolar", ignore = true)
+
+    // -- Mapeo Auditoría a Columnas BD --
+    @Mapping(target = "CAudId", source = "usuario")
+    @Mapping(target = "CAudIp", source = "numeroIp")
+    @Mapping(target = "CAudPc", source = "nombrePc")
+    @Mapping(target = "CAudMcAddr", source = "direccionMac")
+
+    // Ignorar campos automáticos de BD
+    @Mapping(target = "FAud", ignore = true)
+    @Mapping(target = "BAud", ignore = true)
+    @Mapping(target = "FRegistro", ignore = true)
     MovJpeCasoAtendidoEntity toEntity(JpeCasoAtendido domain);
 
-    // 3. Entity -> Domain
     @InheritInverseConfiguration(name = "toEntity")
-    @Mapping(target = "juezEscolarId", source = "juezEscolar.id")
+    @Mapping(target = "usuario", source = "CAudId")
+    @Mapping(target = "nombrePc", source = "CAudPc")
+    @Mapping(target = "numeroIp", source = "CAudIp")
+    @Mapping(target = "direccionMac", source = "CAudMcAddr")
     JpeCasoAtendido toDomain(MovJpeCasoAtendidoEntity entity);
 
-    // 4. Update
+    // =========================================================
+    // 5. UPDATE PARCIAL (Entity Update)
+    // =========================================================
+    @BeanMapping(nullValuePropertyMappingStrategy = NullValuePropertyMappingStrategy.IGNORE)
     @Mapping(target = "id", ignore = true)
-    @Mapping(target = "usuarioRegistro", ignore = true)
-    @Mapping(target = "juezEscolar", ignore = true) // Se maneja en el Adapter si cambia
+    @Mapping(target = "codigo", ignore = true)
+    @Mapping(target = "usuarioRegistroId", ignore = true)
+    @Mapping(target = "activo", ignore = true)
+    @Mapping(target = "FRegistro", ignore = true)
+    @Mapping(target = "juezEscolar", ignore = true)
+
+    // Auditoría Update
+    @Mapping(target = "CAudId", source = "usuario")
+    @Mapping(target = "CAudIp", source = "numeroIp")
+    @Mapping(target = "CAudPc", source = "nombrePc")
+    @Mapping(target = "CAudMcAddr", source = "direccionMac")
     void updateEntityFromDomain(JpeCasoAtendido domain, @MappingTarget MovJpeCasoAtendidoEntity entity);
 
-    // 5. Response
-    @Mapping(target = "estado", constant = "REGISTRADO") // Opcional, si se quiere mostrar algo fijo
+    // =========================================================
+    // 6. RESPUESTA (Domain -> Response)
+    // =========================================================
+    @Mapping(target = "id", source = "id")
+    @Mapping(target = "codigo", source = "codigo")
+    @Mapping(target = "fechaRegistro", source = "fechaRegistroCaso")
     @Mapping(target = "archivos", source = "archivosGuardados")
-    JpeCasoAtendidoResponse toResponse(JpeCasoAtendido dominio);
-
-    List<JpeCasoAtendidoResponse> toResponseListCasos(List<JpeCasoAtendido> list);
+    @Mapping(target = "estado", constant = "REGISTRADO")
+    JpeCasoAtendidoResponse toResponse(JpeCasoAtendido domain);
 }
