@@ -30,10 +30,11 @@ public interface PromocionCulturaMapper {
     @Mapping(target = "codigo", ignore = true)
     @Mapping(target = "archivosGuardados", ignore = true)
     @Mapping(target = "fechaRegistro", source = "request.fechaInicio")
-    @Mapping(target = "usuarioRegistroId", constant = "6L")
+    @Mapping(target = "usuarioRegistroId", ignore = true)
+    @Mapping(target = "usuario", source = "peticion.usuario")
     @Mapping(target = "activo", ignore = true)
 
-    @Mapping(target = "usuario", source = "peticion.usuarioAuth")
+//    @Mapping(target = "usuario", source = "peticion.usuarioAuth")
     @Mapping(target = "nombrePc", source = "peticion.nombrePc")
     @Mapping(target = "direccionMac", source = "peticion.codigoMac")
     @Mapping(target = "numeroIp", source = "peticion.ip")

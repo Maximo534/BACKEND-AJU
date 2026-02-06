@@ -4,6 +4,8 @@ import java.util.List;
 import java.util.Optional;
 
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.core.GrantedAuthority;
+import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.bind.annotation.CrossOrigin;
 
@@ -17,7 +19,6 @@ import lombok.extern.slf4j.Slf4j;
 import pe.gob.pj.prueba.domain.model.auditoriageneral.PeticionServicios;
 import pe.gob.pj.prueba.domain.port.usecase.auditoriageneral.AuditarPeticionUseCasePort;
 import pe.gob.pj.prueba.domain.port.usecase.negocio.masters.GestionarMaestrosUseCasePort;
-import pe.gob.pj.prueba.infraestructure.common.enums.TipoError;
 //import pe.gob.pj.prueba.infraestructure.common.utils.SecurityUtils;
 import pe.gob.pj.prueba.infraestructure.mappers.AuditoriaGeneralMapper;
 import pe.gob.pj.prueba.infraestructure.rest.responses.GlobalResponse;
@@ -27,7 +28,7 @@ import pe.gob.pj.prueba.infraestructure.rest.responses.GlobalResponse;
 @RequiredArgsConstructor
 @CrossOrigin(origins = "*")
 @FieldDefaults(level = AccessLevel.PRIVATE, makeFinal = true)
-public class GestionMaestrosController implements GestionarMaestros, GenerarHttpHeader, MonitorearRequest {
+public class GestionMaestrosController implements GestionMaestros, GenerarHttpHeader, MonitorearRequest {
 
     GestionarMaestrosUseCasePort useCase;
 
@@ -122,9 +123,14 @@ public class GestionMaestrosController implements GestionarMaestros, GenerarHttp
 
     @Override
     public ResponseEntity<GlobalResponse> listarPerfiles(PeticionServicios peticion) {
-//        Integer idRolLogueado = SecurityUtils.obtenerIdRolUsuario();
-        Integer idRolLogueado = 6;
-        return procesarListado(peticion, () -> useCase.listarPerfiles(peticion.getCuo(), idRolLogueado));
+
+        String nombrePerfilToken = SecurityContextHolder.getContext().getAuthentication()
+                .getAuthorities().stream()
+                .findFirst()
+                .map(GrantedAuthority::getAuthority)
+                .orElseThrow(() -> new RuntimeException("El token no tiene un perfil asociado."));
+
+        return procesarListado(peticion, () -> useCase.listarPerfiles(peticion.getCuo(), nombrePerfilToken));
     }
 
     private ResponseEntity<GlobalResponse> procesarListado(PeticionServicios peticion, java.util.function.Supplier<List<?>> supplier) {

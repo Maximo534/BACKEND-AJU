@@ -23,8 +23,8 @@ import pe.gob.pj.prueba.infraestructure.rest.responses.GlobalResponse;
 @RestController
 @Validated
 @RequestMapping(value = "/maestros", produces = {MediaType.APPLICATION_JSON_VALUE})
-@Tag(name = "GestionarMaestros", description = "API para consultar catálogos y maestros del sistema")
-public interface GestionarMaestros {
+@Tag(name = "GestionMaestros", description = "API para consultar catálogos y maestros del sistema")
+public interface GestionMaestros {
 
     // --- PLANIFICACIÓN ---
     @GetMapping("/actividades-operativas")

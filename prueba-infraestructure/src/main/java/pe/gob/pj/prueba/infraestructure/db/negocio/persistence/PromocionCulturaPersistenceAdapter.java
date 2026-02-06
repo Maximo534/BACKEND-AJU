@@ -18,6 +18,7 @@ import pe.gob.pj.prueba.infraestructure.db.negocio.entities.MovArchivoEntity;
 import pe.gob.pj.prueba.infraestructure.db.negocio.entities.MovPromocionCulturaEntity;
 import pe.gob.pj.prueba.infraestructure.db.negocio.repositories.MovArchivosRepository;
 import pe.gob.pj.prueba.infraestructure.db.negocio.repositories.MovPromocionCulturaRepository;
+import pe.gob.pj.prueba.infraestructure.db.negocio.repositories.MovUsuarioRepository;
 import pe.gob.pj.prueba.infraestructure.db.negocio.repositories.masters.MaeDistritoJudicialRepository;
 import pe.gob.pj.prueba.infraestructure.db.negocio.repositories.masters.MaeTareaRepository;
 import pe.gob.pj.prueba.infraestructure.mappers.PromocionCulturaMapper;
@@ -35,6 +36,7 @@ public class PromocionCulturaPersistenceAdapter implements PromocionCulturaPersi
     MovArchivosRepository repoArchivos;
     MaeDistritoJudicialRepository repoDistrito;
     MaeTareaRepository repoTareas;
+    MovUsuarioRepository usuarioRepository;
     PromocionCulturaMapper mapper;
 
     @Override
@@ -75,6 +77,15 @@ public class PromocionCulturaPersistenceAdapter implements PromocionCulturaPersi
     @Transactional
     public PromocionCultura guardar(String cuo, PromocionCultura dominio) {
         log.info("[{}] Guardando Promoción Cultura: {}", cuo, dominio.getCodigo());
+
+        if (dominio.getUsuario() != null) {
+            var usuarioEntity = usuarioRepository.findByActivoAndUsuario("1", dominio.getUsuario())
+                    .orElseThrow(() -> new MovimientoNoEncontradoException(
+                            "No se encontró el usuario '"+ dominio.getUsuario() +"' en la BD."));
+
+            dominio.setUsuarioRegistroId(usuarioEntity.getId().longValue());
+        }
+
         MovPromocionCulturaEntity entity = mapper.toEntity(dominio);
 
         if (entity.getTareas() != null) {

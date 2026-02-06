@@ -9,11 +9,14 @@ import lombok.AccessLevel;
 import lombok.RequiredArgsConstructor;
 import lombok.experimental.FieldDefaults;
 import lombok.extern.slf4j.Slf4j;
+import pe.gob.pj.prueba.domain.exceptions.negocio.MovimientoNoEncontradoException;
 import pe.gob.pj.prueba.domain.model.negocio.Perfil;
 import pe.gob.pj.prueba.domain.model.negocio.masters.*;
 import pe.gob.pj.prueba.domain.port.persistence.negocio.masters.MaestrosPersistencePort;
+import pe.gob.pj.prueba.infraestructure.db.negocio.entities.MovUsuarioEntity;
 import pe.gob.pj.prueba.infraestructure.db.negocio.entities.masters.*;
 import pe.gob.pj.prueba.infraestructure.db.negocio.repositories.MaePerfilRepository;
+import pe.gob.pj.prueba.infraestructure.db.negocio.repositories.MovUsuarioRepository;
 import pe.gob.pj.prueba.infraestructure.db.negocio.repositories.masters.*;
 import pe.gob.pj.prueba.infraestructure.mappers.PerfilMapper;
 
@@ -23,6 +26,7 @@ import pe.gob.pj.prueba.infraestructure.mappers.PerfilMapper;
 @FieldDefaults(level = AccessLevel.PRIVATE, makeFinal = true)
 public class MaestrosPersistenceAdapter implements MaestrosPersistencePort {
 
+    MovUsuarioRepository usuarioRepository;
     MaeActividadOperativaRepository repoActividad;
     MaeIndicadorRepository repoIndicador;
     MaeTareaRepository repoTarea;
@@ -118,8 +122,16 @@ public class MaestrosPersistenceAdapter implements MaestrosPersistencePort {
     }
 
     @Override
-    public List<Perfil> listarPerfilesPermitidos(String cuo, Integer idRolLogueado) {
-        return perfilMapper.toDomainList(perfilRepository.listarPerfilesPermitidos(idRolLogueado));
+    public List<Perfil> listarPerfilesPermitidos(String cuo, String nombrePerfil) {
+
+        var perfilEntity = perfilRepository.findByRolAndActivo(nombrePerfil, "1")
+                .orElseThrow(() -> new MovimientoNoEncontradoException("El perfil del token no existe en BD: " + nombrePerfil));
+
+        Integer idPerfilLogueado = perfilEntity.getId();
+
+        var listaEntidades = perfilRepository.listarPerfilesPermitidos(idPerfilLogueado);
+
+        return perfilMapper.toDomainList(listaEntidades);
     }
 
     // ... MÉTODOS PRIVADOS DE MAPEO  ...

@@ -114,7 +114,7 @@ public class GestionarMaestrosUseCaseAdapter implements GestionarMaestrosUseCase
 
     @Override
     @Transactional(transactionManager = TX_MANAGER, propagation = Propagation.REQUIRES_NEW, readOnly = true, rollbackFor = {Exception.class, SQLException.class})
-    public List<Perfil> listarPerfiles(String cuo, Integer idRolLogueado) {
-        return persistencePort.listarPerfilesPermitidos(cuo, idRolLogueado);
+    public List<Perfil> listarPerfiles(String cuo, String nombrePerfil) {
+        return persistencePort.listarPerfilesPermitidos(cuo, nombrePerfil);
     }
 }

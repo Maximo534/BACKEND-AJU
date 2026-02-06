@@ -18,6 +18,7 @@ import pe.gob.pj.prueba.infraestructure.db.negocio.entities.MovArchivoEntity;
 import pe.gob.pj.prueba.infraestructure.db.negocio.entities.MovEventoFcEntity;
 import pe.gob.pj.prueba.infraestructure.db.negocio.repositories.MovArchivosRepository;
 import pe.gob.pj.prueba.infraestructure.db.negocio.repositories.MovEventoFcRepository;
+import pe.gob.pj.prueba.infraestructure.db.negocio.repositories.MovUsuarioRepository;
 import pe.gob.pj.prueba.infraestructure.db.negocio.repositories.masters.MaeDistritoJudicialRepository;
 import pe.gob.pj.prueba.infraestructure.db.negocio.repositories.masters.MaeTareaRepository;
 import pe.gob.pj.prueba.infraestructure.mappers.FortalecimientoMapper;
@@ -34,7 +35,8 @@ public class FortalecimientoPersistenceAdapter implements FortalecimientoPersist
     MovEventoFcRepository repository;
     MovArchivosRepository repoArchivos;
     MaeDistritoJudicialRepository repoDistrito;
-    MaeTareaRepository repoTareas;              
+    MaeTareaRepository repoTareas;
+    MovUsuarioRepository usuarioRepository;
     FortalecimientoMapper mapper;
 
     @Override
@@ -77,6 +79,15 @@ public class FortalecimientoPersistenceAdapter implements FortalecimientoPersist
     @Transactional
     public FortalecimientoCapacidades guardar(String cuo, FortalecimientoCapacidades dominio) {
         log.info("[{}] Guardando Fortalecimiento: {}", cuo, dominio.getCodigo());
+
+        if (dominio.getUsuario() != null) {
+            var usuarioEntity = usuarioRepository.findByActivoAndUsuario("1", dominio.getUsuario())
+                    .orElseThrow(() -> new MovimientoNoEncontradoException(
+                            "No se encontró el usuario '"+ dominio.getUsuario() +"' en la BD."));
+
+            dominio.setUsuarioRegistroId(usuarioEntity.getId().longValue());
+        }
+
         MovEventoFcEntity entity = mapper.toEntity(dominio);
 
         if (entity.getTareasRealizadas() != null) {

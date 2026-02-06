@@ -31,5 +31,5 @@ public interface MaestrosPersistencePort {
 
     // --- PARTICIPANTES Y PERFILES ---
     List<TipoParticipante> listarTiposParticipantes(String cuo);
-    List<Perfil> listarPerfilesPermitidos(String cuo, Integer idRolLogueado);
+    List<Perfil> listarPerfilesPermitidos(String cuo, String usuarioLogueado);
 }

@@ -30,9 +30,10 @@ public interface JusticiaItineranteMapper {
     @Mapping(target = "id", ignore = true)
     @Mapping(target = "codigo", ignore = true)
     @Mapping(target = "fechaRegistroActividad", source = "request.fechaInicio")
-    @Mapping(target = "usuarioRegistroId", constant = "6L")//
+    @Mapping(target = "usuarioRegistroId", ignore = true)
+    @Mapping(target = "usuario", source = "peticion.usuario")
     // -- Auditoría desde PeticionServicios --
-    @Mapping(target = "usuario", source = "peticion.usuarioAuth")
+//    @Mapping(target = "usuario", source = "peticion.usuarioAuth")
     @Mapping(target = "nombrePc", source = "peticion.nombrePc")
     @Mapping(target = "direccionMac", source = "peticion.codigoMac")
     @Mapping(target = "numeroIp", source = "peticion.ip")

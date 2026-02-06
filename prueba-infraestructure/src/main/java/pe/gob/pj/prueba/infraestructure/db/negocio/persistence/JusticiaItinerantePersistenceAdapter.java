@@ -18,6 +18,7 @@ import pe.gob.pj.prueba.infraestructure.db.negocio.entities.MovArchivoEntity;
 import pe.gob.pj.prueba.infraestructure.db.negocio.entities.MovJusticiaItineranteEntity;
 import pe.gob.pj.prueba.infraestructure.db.negocio.repositories.MovArchivosRepository;
 import pe.gob.pj.prueba.infraestructure.db.negocio.repositories.MovJusticiaItineranteRepository;
+import pe.gob.pj.prueba.infraestructure.db.negocio.repositories.MovUsuarioRepository;
 import pe.gob.pj.prueba.infraestructure.db.negocio.repositories.masters.MaeDistritoJudicialRepository;
 import pe.gob.pj.prueba.infraestructure.db.negocio.repositories.masters.MaeTareaRepository; // Importar Repo Tarea
 import pe.gob.pj.prueba.infraestructure.mappers.JusticiaItineranteMapper;
@@ -35,6 +36,7 @@ public class JusticiaItinerantePersistenceAdapter implements JusticiaItineranteP
     MaeDistritoJudicialRepository repoDistrito;
     MovArchivosRepository repoArchivos;
     MaeTareaRepository repoTareas;
+    MovUsuarioRepository usuarioRepository;
     JusticiaItineranteMapper mapper;
 
     @Override
@@ -74,7 +76,16 @@ public class JusticiaItinerantePersistenceAdapter implements JusticiaItineranteP
     @Override
     @Transactional
     public JusticiaItinerante guardar(String cuo, JusticiaItinerante dominio) {
-        log.info("[{}] Guardando Justicia Itinerante: {}", cuo, dominio.getCodigo());
+        log.info("[{}] Guardando Justicia Itinerante: {}", cuo, dominio.getUsuario());
+
+        if (dominio.getUsuario() != null) {
+            var usuarioEntity = usuarioRepository.findByActivoAndUsuario("1", dominio.getUsuario())
+                    .orElseThrow(() -> new MovimientoNoEncontradoException(
+                            "No se encontró el usuario '"+ dominio.getUsuario() +"' en la BD."));
+
+            dominio.setUsuarioRegistroId(usuarioEntity.getId().longValue());
+        }
+
         MovJusticiaItineranteEntity entity = mapper.toEntity(dominio);
 
         if (entity.getTareasRealizadas() != null) {

@@ -31,5 +31,5 @@ public interface GestionarMaestrosUseCasePort {
 
     // --- PARTICIPANTES Y PERFILES ---
     List<TipoParticipante> listarTiposParticipantes(String cuo);
-    List<Perfil> listarPerfiles(String cuo, Integer idRolLogueado);
+    List<Perfil> listarPerfiles(String cuo, String usuarioLogueado);
 }

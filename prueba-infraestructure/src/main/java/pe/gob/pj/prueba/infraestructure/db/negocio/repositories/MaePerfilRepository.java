@@ -6,6 +6,7 @@ import org.springframework.data.repository.query.Param;
 import pe.gob.pj.prueba.infraestructure.db.negocio.entities.MaePerfilEntity;
 
 import java.util.List;
+import java.util.Optional;
 
 /**
  * 
@@ -18,7 +19,7 @@ import java.util.List;
 public interface MaePerfilRepository extends JpaRepository<MaePerfilEntity, Integer> {
 
     List<MaePerfilEntity> findByActivo(String activo);
-
+    Optional<MaePerfilEntity> findByRolAndActivo(String nombre, String activo);
     /**
      * Lista los perfiles que un rol específico (idRolPadre) tiene permiso de ver/crear.
      * Hace un cruce con la entidad MaeRolJerarquiaEntity sin necesidad de relacionarlas en Java.
