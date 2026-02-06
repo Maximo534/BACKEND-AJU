@@ -32,7 +32,7 @@ public class PromocionCultura extends Auditoria implements Serializable {
     String tipoActividadOtros;
     String areaRiesgo;
     String zonaIntervencion;
-    String modalidad;
+    String modalidadProyecto;
 
     String publicoObjetivo;
     String publicoObjetivoOtros;
@@ -56,7 +56,7 @@ public class PromocionCultura extends Auditoria implements Serializable {
 
     // --- Indicadores ---
     String seDictoLenguaNativa;
-    String lenguaNativaDesc;
+    String lenguaNativa;
 
     String participaronDiscapacitados;
     Integer numeroDiscapacitados;

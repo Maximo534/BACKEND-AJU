@@ -56,7 +56,7 @@ public class MovPromocionCulturaEntity implements Serializable {
     String seDictoLenguaNativa;
 
     @Column(name = "x_lengua_nat", length = 25)
-    String lenguaNativaDesc;
+    String lenguaNativa;
 
     @Column(name = "l_cod_prog_presu", length = 2)
     String participaronDiscapacitados;
@@ -109,7 +109,7 @@ public class MovPromocionCulturaEntity implements Serializable {
     String observacion;
 
     // --- Auditoría ---
-    @Column(name = "f_reg_activ")
+    @Column(name = "f_registro")
     LocalDate fechaRegistroActividad = LocalDate.now();
 
     @Column(name = "n_usuario_reg_id")

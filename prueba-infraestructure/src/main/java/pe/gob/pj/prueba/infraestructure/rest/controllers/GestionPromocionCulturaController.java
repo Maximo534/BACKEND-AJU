@@ -53,7 +53,7 @@ public class GestionPromocionCulturaController implements GestionPromocion, Gene
         var paginaDominio = useCase.listar(peticion.getCuo(), query, pagina, tamanio);
 
         List<PromocionCulturaResponse> listaResponse = paginaDominio.getContenido().stream()
-                .map(mapper::toResponse)
+                .map(mapper::toResponseListado)
                 .collect(Collectors.toList());
 
         GlobalResponse response = new GlobalResponse(peticion.getCuo());
@@ -73,7 +73,7 @@ public class GestionPromocionCulturaController implements GestionPromocion, Gene
         PromocionCultura encontrado = useCase.buscarPorId(peticion.getCuo(), id);
 
         GlobalResponse response = new GlobalResponse(peticion.getCuo());
-        response.setData(mapper.toResponse(encontrado));
+        response.setData(mapper.toResponseDetalle(encontrado));
 
         guardarAuditoria(Optional.ofNullable(peticion));
         return ResponseEntity.ok(response);
@@ -91,7 +91,7 @@ public class GestionPromocionCulturaController implements GestionPromocion, Gene
 
             GlobalResponse response = new GlobalResponse(peticion.getCuo());
             response.setDescripcion("Registro exitoso. Código: " + registrado.getCodigo());
-            response.setData(mapper.toResponse(registrado));
+            response.setData(mapper.toResponseDetalle(registrado));
 
             guardarAuditoria(Optional.ofNullable(peticion));
             return ResponseEntity.ok(response);
@@ -116,7 +116,7 @@ public class GestionPromocionCulturaController implements GestionPromocion, Gene
 
             GlobalResponse response = new GlobalResponse(peticion.getCuo());
             response.setDescripcion("Actualización exitosa.");
-            response.setData(mapper.toResponse(actualizado));
+            response.setData(mapper.toResponseDetalle(actualizado));
 
             guardarAuditoria(Optional.ofNullable(peticion));
             return ResponseEntity.ok(response);

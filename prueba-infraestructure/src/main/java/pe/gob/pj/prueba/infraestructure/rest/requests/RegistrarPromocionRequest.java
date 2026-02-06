@@ -19,6 +19,8 @@ public class RegistrarPromocionRequest implements Serializable {
 
     Long id;
 
+    private String codigo;
+
     @NotNull(message = "El Distrito Judicial es obligatorio")
     Long distritoJudicialId;
 

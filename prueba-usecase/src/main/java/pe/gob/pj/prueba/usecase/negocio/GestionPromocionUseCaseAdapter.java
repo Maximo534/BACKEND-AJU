@@ -29,10 +29,10 @@ import java.util.List;
 public class GestionPromocionUseCaseAdapter implements GestionPromocionUseCasePort {
 
     PromocionCulturaPersistencePort persistencePort;
-    GenerarReportePort reportePort;
     GestionArchivosUseCasePort gestorArchivos;
+    GenerarReportePort reportePort;
 
-    static final String MODULO_PC = "evidencias_apcj";
+    static final String MODULO_PC = "evidencias_pc";
     static final String TX_MANAGER = "txManagerNegocio";
 
     @Override
@@ -48,16 +48,15 @@ public class GestionPromocionUseCaseAdapter implements GestionPromocionUseCasePo
         // 1. Validaciones
         validarReglasNegocio(dominio);
 
-        // 2. Generar Código Correlativo (Ej: 00001-15-2026-PC)
+        // 2. Generar Correlativo (Formato: 000001-01-2025-PC)
         String anio = String.valueOf(dominio.getFechaInicio().getYear());
-        Long distritoId = dominio.getDistritoJudicialId(); // Long
+        Long distritoId = dominio.getDistritoJudicialId();
 
         String ultimoCodigo = persistencePort.obtenerUltimoCodigo(cuo, distritoId, anio);
         long correlativo = 1;
 
         if (ultimoCodigo != null && !ultimoCodigo.isBlank()) {
             try {
-                // Formato esperado: 000005-15-2026-PC
                 String numeroStr = ultimoCodigo.split("-")[0];
                 correlativo = Long.parseLong(numeroStr) + 1;
             } catch (Exception e) {
@@ -69,8 +68,10 @@ public class GestionPromocionUseCaseAdapter implements GestionPromocionUseCasePo
         dominio.setCodigo(nuevoCodigo);
         dominio.setActivo("1");
 
+        // 3. Guardar
         PromocionCultura registrado = persistencePort.guardar(cuo, dominio);
 
+        // 4. Archivos
         subirArchivosAdjuntos(cuo, registrado, anexo, videos, fotos);
 
         return registrado;
@@ -91,7 +92,9 @@ public class GestionPromocionUseCaseAdapter implements GestionPromocionUseCasePo
     @Override
     @Transactional(transactionManager = TX_MANAGER, propagation = Propagation.REQUIRES_NEW, rollbackFor = {Exception.class, SQLException.class})
     public PromocionCultura actualizar(String cuo, PromocionCultura dominio) throws Exception {
-        if (dominio.getId() == null) throw new IllegalArgumentException("El ID es obligatorio para actualizar.");
+        if (dominio.getId() == null) {
+            throw new IllegalArgumentException("El ID es obligatorio para actualizar.");
+        }
 
         validarReglasNegocio(dominio);
 
@@ -122,7 +125,6 @@ public class GestionPromocionUseCaseAdapter implements GestionPromocionUseCasePo
     public void eliminarArchivo(String cuo, Long idArchivo, String usuarioOperacion) throws Exception {
         PromocionCultura audit = new PromocionCultura();
         audit.setUsuario(usuarioOperacion);
-
         gestorArchivos.eliminarPorId(idArchivo, audit);
     }
 
@@ -132,13 +134,13 @@ public class GestionPromocionUseCaseAdapter implements GestionPromocionUseCasePo
         PromocionCultura evento = buscarPorId(cuo, idEvento);
 
         if (evento.getArchivosGuardados() == null || evento.getArchivosGuardados().isEmpty()) {
-            throw new MovimientoNoEncontradoException("El evento no tiene archivos adjuntos.");
+            throw new MovimientoNoEncontradoException("El registro no tiene archivos adjuntos.");
         }
 
         Archivo archivoAnexo = evento.getArchivosGuardados().stream()
                 .filter(a -> "ANEXO".equalsIgnoreCase(a.getTipo()))
                 .findFirst()
-                .orElseThrow(() -> new MovimientoNoEncontradoException("No existe anexo principal para este evento."));
+                .orElseThrow(() -> new MovimientoNoEncontradoException("No existe anexo principal para este registro."));
 
         return gestorArchivos.descargarPorId(archivoAnexo.getId());
     }
@@ -149,9 +151,12 @@ public class GestionPromocionUseCaseAdapter implements GestionPromocionUseCasePo
     }
 
     @Override
+    @Transactional(transactionManager = TX_MANAGER, propagation = Propagation.REQUIRED, readOnly = true, rollbackFor = {Exception.class, SQLException.class})
     public byte[] generarFichaPdf(String cuo, Long idEvento) throws Exception {
-        buscarPorId(cuo, idEvento);
-        return reportePort.generarFichaPromocion(String.valueOf(idEvento));
+        if (persistencePort.obtenerPorId(cuo, idEvento) == null) {
+            throw new MovimientoNoEncontradoException("Registro no existe");
+        }
+        return reportePort.generarFichaPromocion(idEvento);
     }
 
     // --- PRIVADOS ---
@@ -164,6 +169,7 @@ public class GestionPromocionUseCaseAdapter implements GestionPromocionUseCasePo
             throw new IllegalArgumentException("La fecha fin no puede ser anterior a la fecha inicio.");
         }
 
+        // Consistencia de datos para tareas
         if (dominio.getTareasRealizadas() != null) {
             for (var tarea : dominio.getTareasRealizadas()) {
                 if (tarea.getFechaInicio() == null) {

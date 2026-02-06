@@ -28,7 +28,7 @@ public class GenerarReporteAdapter implements GenerarReportePort {
     }
 
     @Override
-    public byte[] generarFichaPromocion(String idEvento) throws Exception {
+    public byte[] generarFichaPromocion(Long idEvento) throws Exception {
         return servicioPromocion.generarPdf(idEvento);
     }
 

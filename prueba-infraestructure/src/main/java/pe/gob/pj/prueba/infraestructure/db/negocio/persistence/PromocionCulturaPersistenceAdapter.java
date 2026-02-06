@@ -18,6 +18,8 @@ import pe.gob.pj.prueba.infraestructure.db.negocio.entities.MovArchivoEntity;
 import pe.gob.pj.prueba.infraestructure.db.negocio.entities.MovPromocionCulturaEntity;
 import pe.gob.pj.prueba.infraestructure.db.negocio.repositories.MovArchivosRepository;
 import pe.gob.pj.prueba.infraestructure.db.negocio.repositories.MovPromocionCulturaRepository;
+import pe.gob.pj.prueba.infraestructure.db.negocio.repositories.masters.MaeDistritoJudicialRepository;
+import pe.gob.pj.prueba.infraestructure.db.negocio.repositories.masters.MaeTareaRepository;
 import pe.gob.pj.prueba.infraestructure.mappers.PromocionCulturaMapper;
 
 import java.util.List;
@@ -31,13 +33,14 @@ public class PromocionCulturaPersistenceAdapter implements PromocionCulturaPersi
 
     MovPromocionCulturaRepository repository;
     MovArchivosRepository repoArchivos;
+    MaeDistritoJudicialRepository repoDistrito;
+    MaeTareaRepository repoTareas;
     PromocionCulturaMapper mapper;
 
     @Override
     public Pagina<PromocionCultura> listar(String cuo, ListarPromocionQuery query, int pagina, int tamanio) {
         Pageable pageable = PageRequest.of(pagina - 1, tamanio);
 
-        // Filtro por ID
         var pageResult = repository.listarCompleto(
                 query.getSearch(),
                 query.getDistritoJudicialId(),
@@ -49,7 +52,12 @@ public class PromocionCulturaPersistenceAdapter implements PromocionCulturaPersi
         List<PromocionCultura> contenido = pageResult.getContent().stream()
                 .map(entity -> {
                     PromocionCultura dominio = mapper.toDomain(entity);
-                    cargarArchivosEnDominio(dominio);
+
+                    if (dominio.getDistritoJudicialId() != null) {
+                        repoDistrito.findById(dominio.getDistritoJudicialId())
+                                .ifPresent(dj -> dominio.setDistritoJudicialNombre(dj.getNombre()));
+                    }
+
                     return dominio;
                 })
                 .collect(Collectors.toList());
@@ -66,8 +74,17 @@ public class PromocionCulturaPersistenceAdapter implements PromocionCulturaPersi
     @Override
     @Transactional
     public PromocionCultura guardar(String cuo, PromocionCultura dominio) {
-        log.info("[{}] Guardando Promocion Cultura: {}", cuo, dominio.getCodigo());
+        log.info("[{}] Guardando Promoción Cultura: {}", cuo, dominio.getCodigo());
         MovPromocionCulturaEntity entity = mapper.toEntity(dominio);
+
+        if (entity.getTareas() != null) {
+            entity.getTareas().forEach(child -> {
+                if (child.getTareaId() != null) {
+                    repoTareas.findById(child.getTareaId()).ifPresent(child::setTareaMaestra);
+                }
+            });
+        }
+
         MovPromocionCulturaEntity saved = repository.save(entity);
         return mapper.toDomain(saved);
     }
@@ -75,15 +92,13 @@ public class PromocionCulturaPersistenceAdapter implements PromocionCulturaPersi
     @Override
     @Transactional
     public PromocionCultura actualizar(String cuo, PromocionCultura dominio) {
-        log.info("[{}] Actualizando Promocion Cultura ID: {}", cuo, dominio.getId());
+        log.info("[{}] Actualizando Promoción Cultura ID: {}", cuo, dominio.getId());
 
-        // Buscamos por ID Long
         MovPromocionCulturaEntity entityDb = repository.findById(dominio.getId())
                 .orElseThrow(() -> new MovimientoNoEncontradoException("No se encontró el registro con ID: " + dominio.getId()));
 
         mapper.updateEntityFromDomain(dominio, entityDb);
 
-        // Actualizar Listas Hijas (Orphan Removal Manual)
         actualizarHijos(entityDb, dominio);
 
         MovPromocionCulturaEntity saved = repository.save(entityDb);
@@ -97,7 +112,24 @@ public class PromocionCulturaPersistenceAdapter implements PromocionCulturaPersi
                 .orElse(null);
 
         if (dominio != null) {
+            // 1. Cargar Archivos (Solo para detalle)
             cargarArchivosEnDominio(dominio);
+
+            // 2. Nombre Corte
+            if (dominio.getDistritoJudicialId() != null) {
+                repoDistrito.findById(dominio.getDistritoJudicialId())
+                        .ifPresent(dj -> dominio.setDistritoJudicialNombre(dj.getNombre()));
+            }
+
+            // 3. Descripción Tareas
+            if (dominio.getTareasRealizadas() != null) {
+                dominio.getTareasRealizadas().forEach(t -> {
+                    if (t.getTareaId() != null) {
+                        repoTareas.findById(t.getTareaId())
+                                .ifPresent(tm -> t.setDescripcion(tm.getDescripcion()));
+                    }
+                });
+            }
         }
         return dominio;
     }
@@ -125,28 +157,84 @@ public class PromocionCulturaPersistenceAdapter implements PromocionCulturaPersi
     }
 
     private void actualizarHijos(MovPromocionCulturaEntity entityDb, PromocionCultura dominio) {
-        // 1. Personas Beneficiadas
-        if (entityDb.getPersonasBeneficiadas() != null) {
-            entityDb.getPersonasBeneficiadas().clear();
-        }
-        if (dominio.getPersonasBeneficiadas() != null) {
-            dominio.getPersonasBeneficiadas().forEach(d -> {
-                var child = mapper.toEntityPB(d);
-                child.setPromocionCulturaId(entityDb.getId());
-                entityDb.getPersonasBeneficiadas().add(child);
+
+        // 1. Personas Beneficiadas (Merge por CodigoRango)
+        var benBd = entityDb.getPersonasBeneficiadas();
+        var benNuevas = dominio.getPersonasBeneficiadas();
+
+        if (benNuevas != null) {
+            // Eliminar
+            benBd.removeIf(bd -> benNuevas.stream().noneMatch(dto ->
+                    dto.getCodigoRango().trim().equals(bd.getCodigoRango().trim())
+            ));
+
+            // Actualizar o Agregar
+            benNuevas.forEach(dto -> {
+                var existente = benBd.stream()
+                        .filter(bd -> bd.getCodigoRango().trim().equals(dto.getCodigoRango().trim()))
+                        .findFirst();
+
+                if (existente.isPresent()) {
+                    var item = existente.get();
+                    var temp = mapper.toEntityPB(dto);
+
+                    item.setCantidadFemenino(temp.getCantidadFemenino());
+                    item.setCantidadMasculino(temp.getCantidadMasculino());
+                    item.setCantidadLgtbiq(temp.getCantidadLgtbiq());
+                    item.setDescripcionRango(temp.getDescripcionRango()); // Por si cambia la descripción
+
+                    item.setFAud(java.time.LocalDateTime.now());
+                    item.setBAud("M");
+                    item.setCAudId(entityDb.getCAudId());
+                } else {
+                    var nuevo = mapper.toEntityPB(dto);
+                    nuevo.setPromocionCultura(entityDb);
+                    nuevo.setCAudId(entityDb.getCAudId());
+                    benBd.add(nuevo);
+                }
             });
+        } else {
+            benBd.clear();
         }
 
         // 2. Tareas Realizadas
-        if (entityDb.getTareas() != null) {
-            entityDb.getTareas().clear();
-        }
-        if (dominio.getTareasRealizadas() != null) {
-            dominio.getTareasRealizadas().forEach(d -> {
-                var child = mapper.toEntityTarea(d);
-                child.setPromocionCulturaId(entityDb.getId());
-                entityDb.getTareas().add(child);
+        var tarBd = entityDb.getTareas();
+        var tarNuevas = dominio.getTareasRealizadas();
+
+        if (tarNuevas != null) {
+            List<Long> idsNuevos = tarNuevas.stream().map(PromocionCultura.DetalleTarea::getTareaId).toList();
+            tarBd.removeIf(bd -> !idsNuevos.contains(bd.getTareaId()));
+
+            tarNuevas.forEach(dto -> {
+                var existente = tarBd.stream()
+                        .filter(bd -> bd.getTareaId().equals(dto.getTareaId()))
+                        .findFirst();
+
+                if (existente.isPresent()) {
+                    var item = existente.get();
+                    var temp = mapper.toEntityTarea(dto);
+
+                    item.setFechaInicio(temp.getFechaInicio());
+
+                    if(item.getTareaMaestra() == null) {
+                        repoTareas.findById(item.getTareaId()).ifPresent(item::setTareaMaestra);
+                    }
+
+                    item.setFAud(java.time.LocalDateTime.now());
+                    item.setBAud("M");
+                    item.setCAudId(entityDb.getCAudId());
+                } else {
+                    var nuevo = mapper.toEntityTarea(dto);
+                    nuevo.setPromocionCultura(entityDb);
+                    nuevo.setCAudId(entityDb.getCAudId());
+
+                    repoTareas.findById(nuevo.getTareaId()).ifPresent(nuevo::setTareaMaestra);
+
+                    tarBd.add(nuevo);
+                }
             });
+        } else {
+            tarBd.clear();
         }
     }
 }
