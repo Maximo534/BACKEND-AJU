@@ -18,6 +18,8 @@ import pe.gob.pj.prueba.infraestructure.db.negocio.entities.MovArchivoEntity;
 import pe.gob.pj.prueba.infraestructure.db.negocio.entities.MovEventoFcEntity;
 import pe.gob.pj.prueba.infraestructure.db.negocio.repositories.MovArchivosRepository;
 import pe.gob.pj.prueba.infraestructure.db.negocio.repositories.MovEventoFcRepository;
+import pe.gob.pj.prueba.infraestructure.db.negocio.repositories.masters.MaeDistritoJudicialRepository;
+import pe.gob.pj.prueba.infraestructure.db.negocio.repositories.masters.MaeTareaRepository;
 import pe.gob.pj.prueba.infraestructure.mappers.FortalecimientoMapper;
 
 import java.util.List;
@@ -31,6 +33,8 @@ public class FortalecimientoPersistenceAdapter implements FortalecimientoPersist
 
     MovEventoFcRepository repository;
     MovArchivosRepository repoArchivos;
+    MaeDistritoJudicialRepository repoDistrito;
+    MaeTareaRepository repoTareas;              
     FortalecimientoMapper mapper;
 
     @Override
@@ -49,7 +53,13 @@ public class FortalecimientoPersistenceAdapter implements FortalecimientoPersist
         List<FortalecimientoCapacidades> contenido = pageResult.getContent().stream()
                 .map(entity -> {
                     FortalecimientoCapacidades dominio = mapper.toDomain(entity);
-                    cargarArchivosEnDominio(dominio);
+
+                    // Lógica optimizada: Solo nombre de corte, NO archivos
+                    if (dominio.getDistritoJudicialId() != null) {
+                        repoDistrito.findById(dominio.getDistritoJudicialId())
+                                .ifPresent(dj -> dominio.setDistritoJudicialNombre(dj.getNombre()));
+                    }
+
                     return dominio;
                 })
                 .collect(Collectors.toList());
@@ -68,6 +78,15 @@ public class FortalecimientoPersistenceAdapter implements FortalecimientoPersist
     public FortalecimientoCapacidades guardar(String cuo, FortalecimientoCapacidades dominio) {
         log.info("[{}] Guardando Fortalecimiento: {}", cuo, dominio.getCodigo());
         MovEventoFcEntity entity = mapper.toEntity(dominio);
+
+        if (entity.getTareasRealizadas() != null) {
+            entity.getTareasRealizadas().forEach(child -> {
+                if (child.getTareaId() != null) {
+                    repoTareas.findById(child.getTareaId()).ifPresent(child::setTareaMaestra);
+                }
+            });
+        }
+
         MovEventoFcEntity saved = repository.save(entity);
         return mapper.toDomain(saved);
     }
@@ -77,12 +96,12 @@ public class FortalecimientoPersistenceAdapter implements FortalecimientoPersist
     public FortalecimientoCapacidades actualizar(String cuo, FortalecimientoCapacidades dominio) {
         log.info("[{}] Actualizando Fortalecimiento ID: {}", cuo, dominio.getId());
 
-        // Buscamos por ID
         MovEventoFcEntity entityDb = repository.findById(dominio.getId())
                 .orElseThrow(() -> new MovimientoNoEncontradoException("No se encontró el evento con ID: " + dominio.getId()));
 
         mapper.updateEntityFromDomain(dominio, entityDb);
 
+        // Actualización inteligente de hijos (Merge)
         actualizarHijos(entityDb, dominio);
 
         MovEventoFcEntity saved = repository.save(entityDb);
@@ -97,6 +116,22 @@ public class FortalecimientoPersistenceAdapter implements FortalecimientoPersist
 
         if (dominio != null) {
             cargarArchivosEnDominio(dominio);
+
+            // 2. Nombre de Corte
+            if (dominio.getDistritoJudicialId() != null) {
+                repoDistrito.findById(dominio.getDistritoJudicialId())
+                        .ifPresent(dj -> dominio.setDistritoJudicialNombre(dj.getNombre()));
+            }
+
+            // 3. Descripciones de Tareas
+            if (dominio.getTareasRealizadas() != null) {
+                dominio.getTareasRealizadas().forEach(t -> {
+                    if (t.getTareaId() != null) {
+                        repoTareas.findById(t.getTareaId())
+                                .ifPresent(tm -> t.setDescripcion(tm.getDescripcion()));
+                    }
+                });
+            }
         }
         return dominio;
     }
@@ -106,7 +141,7 @@ public class FortalecimientoPersistenceAdapter implements FortalecimientoPersist
         return repository.obtenerUltimoCodigo(distritoId, "-" + anio + "-FC");
     }
 
-    // --- PRIVADOS ---
+    // --- MÉTODOS PRIVADOS ---
 
     private void cargarArchivosEnDominio(FortalecimientoCapacidades dominio) {
         List<MovArchivoEntity> archivosEntities = repoArchivos.findByNumeroIdentificacionAndActivo(dominio.getCodigo(), "1");
@@ -124,28 +159,86 @@ public class FortalecimientoPersistenceAdapter implements FortalecimientoPersist
     }
 
     private void actualizarHijos(MovEventoFcEntity entityDb, FortalecimientoCapacidades dominio) {
-        // 1. Participantes
-        if (entityDb.getParticipantes() != null) {
-            entityDb.getParticipantes().clear();
-        }
-        if (dominio.getParticipantes() != null) {
-            dominio.getParticipantes().forEach(d -> {
-                var child = mapper.toEntityPart(d);
-                child.setEventoId(entityDb.getId()); // ID Long del padre
-                entityDb.getParticipantes().add(child);
+
+        var partBd = entityDb.getParticipantes();
+        var partNuevos = dominio.getParticipantes();
+
+        if (partNuevos != null) {
+            partBd.removeIf(bd -> partNuevos.stream().noneMatch(dto ->
+                    dto.getTipoParticipanteId().equals(bd.getTipoParticipanteId()) &&
+                            dto.getRangoEdad().trim().equals(bd.getRangoEdad().trim())
+            ));
+
+            partNuevos.forEach(dto -> {
+                var existente = partBd.stream()
+                        .filter(bd -> bd.getTipoParticipanteId().equals(dto.getTipoParticipanteId()) &&
+                                bd.getRangoEdad().trim().equals(dto.getRangoEdad().trim()))
+                        .findFirst();
+
+                if (existente.isPresent()) {
+                    // Actualizar existente
+                    var item = existente.get();
+                    var temp = mapper.toEntityPart(dto);
+
+                    item.setCantidadFemenino(temp.getCantidadFemenino());
+                    item.setCantidadMasculino(temp.getCantidadMasculino());
+                    item.setCantidadLgtbiq(temp.getCantidadLgtbiq());
+
+                    // Actualizar auditoría
+                    item.setFAud(java.time.LocalDateTime.now());
+                    item.setBAud("M");
+                    item.setCAudId(entityDb.getCAudId());
+                } else {
+                    // Agregar nuevo
+                    var nuevo = mapper.toEntityPart(dto);
+                    nuevo.setEvento(entityDb);
+                    nuevo.setCAudId(entityDb.getCAudId());
+                    partBd.add(nuevo);
+                }
             });
+        } else {
+            partBd.clear();
         }
 
-        // 2. Tareas Realizadas
-        if (entityDb.getTareasRealizadas() != null) {
-            entityDb.getTareasRealizadas().clear();
-        }
-        if (dominio.getTareasRealizadas() != null) {
-            dominio.getTareasRealizadas().forEach(d -> {
-                var child = mapper.toEntityTarea(d);
-                child.setEventoId(entityDb.getId()); // ID Long del padre
-                entityDb.getTareasRealizadas().add(child);
+
+        var tarBd = entityDb.getTareasRealizadas();
+        var tarNuevas = dominio.getTareasRealizadas();
+
+        if (tarNuevas != null) {
+            List<Long> idsTareasNuevos = tarNuevas.stream().map(FortalecimientoCapacidades.DetalleTarea::getTareaId).toList();
+            tarBd.removeIf(bd -> !idsTareasNuevos.contains(bd.getTareaId()));
+
+            tarNuevas.forEach(dto -> {
+                var existente = tarBd.stream()
+                        .filter(bd -> bd.getTareaId().equals(dto.getTareaId()))
+                        .findFirst();
+
+                if (existente.isPresent()) {
+                    var item = existente.get();
+                    var temp = mapper.toEntityTarea(dto);
+
+                    item.setFechaInicio(temp.getFechaInicio());
+
+                    // Cargar Maestra si falta
+                    if(item.getTareaMaestra() == null) {
+                        repoTareas.findById(item.getTareaId()).ifPresent(item::setTareaMaestra);
+                    }
+
+                    item.setFAud(java.time.LocalDateTime.now());
+                    item.setBAud("M");
+                    item.setCAudId(entityDb.getCAudId());
+                } else {
+                    var nuevo = mapper.toEntityTarea(dto);
+                    nuevo.setEvento(entityDb);
+                    nuevo.setCAudId(entityDb.getCAudId());
+
+                    repoTareas.findById(nuevo.getTareaId()).ifPresent(nuevo::setTareaMaestra);
+
+                    tarBd.add(nuevo);
+                }
             });
+        } else {
+            tarBd.clear();
         }
     }
 }

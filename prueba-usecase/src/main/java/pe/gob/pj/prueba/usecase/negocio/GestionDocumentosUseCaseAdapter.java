@@ -58,22 +58,23 @@ public class GestionDocumentosUseCaseAdapter implements GestionDocumentosUseCase
     public Documento registrarDocumento(String cuo, MultipartFile archivo, Documento documento, String usuario) throws Exception {
         if (archivo == null || archivo.isEmpty()) throw new IllegalArgumentException("El archivo es obligatorio.");
 
-        int anioActual = LocalDate.now().getYear();
-        documento.setPeriodo(anioActual);
-        documento.setUsuario(usuario); // Auditoría
+        if (documento.getPeriodo() == null) {
+            documento.setPeriodo(LocalDate.now().getYear());
+        }
+
+        documento.setUsuario(usuario);
 
         String originalFilename = archivo.getOriginalFilename();
         String extension = obtenerExtension(originalFilename);
+        String formato = extension.replace(".", "").toUpperCase();
 
-        String nuevoNombre = UUID.randomUUID() + extension;
-        String rutaCompletaArchivo = String.format("%s/%d/%s", RUTA_BASE_DOCUMENTOS, anioActual, nuevoNombre);
+        String nuevoNombreFisico = UUID.randomUUID() + extension;
+        String rutaCompletaArchivo = String.format("%s/%d/%s", RUTA_BASE_DOCUMENTOS, documento.getPeriodo(), nuevoNombreFisico);
 
-        // 1. Subir al FTP usando el adaptador del Proyecto Base
         subirAlFtp(cuo, rutaCompletaArchivo, archivo.getInputStream());
 
-        // 2. Metadata de Negocio
         documento.setNombre(originalFilename);
-        documento.setFormato(extension.replace(".", "").toUpperCase());
+        documento.setFormato(formato);
         documento.setRuta(rutaCompletaArchivo);
         documento.setActivo("1");
 
@@ -86,23 +87,26 @@ public class GestionDocumentosUseCaseAdapter implements GestionDocumentosUseCase
         Documento docExistente = obtenerDocumento(cuo, id);
         docExistente.setUsuario(usuario);
 
+        if (datosNuevos.getPeriodo() != null) docExistente.setPeriodo(datosNuevos.getPeriodo());
+        if (datosNuevos.getTipo() != null) docExistente.setTipo(datosNuevos.getTipo());
+        if (datosNuevos.getCategoriaDocumentoId() != null) docExistente.setCategoriaDocumentoId(datosNuevos.getCategoriaDocumentoId());
+
         if (nuevoArchivo != null && !nuevoArchivo.isEmpty()) {
-            String ext = obtenerExtension(nuevoArchivo.getOriginalFilename());
+            String originalFilename = nuevoArchivo.getOriginalFilename();
+            String ext = obtenerExtension(originalFilename);
+            String formato = ext.replace(".", "").toUpperCase();
+
             String nuevoNombreFisico = UUID.randomUUID() + ext;
             String nuevaRuta = String.format("%s/%d/%s", RUTA_BASE_DOCUMENTOS, docExistente.getPeriodo(), nuevoNombreFisico);
 
-            // Subimos la nueva versión (sin borrar el histórico físico)
             subirAlFtp(cuo, nuevaRuta, nuevoArchivo.getInputStream());
 
             docExistente.setRuta(nuevaRuta);
-            docExistente.setNombre(nuevoArchivo.getOriginalFilename());
-            docExistente.setFormato(ext.replace(".", "").toUpperCase());
+            docExistente.setNombre(originalFilename);
+            docExistente.setFormato(formato);
         }
 
-        docExistente.setTipo(datosNuevos.getTipo());
-        docExistente.setCategoriaDocumentoId(datosNuevos.getCategoriaDocumentoId());
-
-        return persistencePort.guardar(cuo, docExistente);
+        return persistencePort.actualizar(cuo, docExistente);
     }
 
     @Override
@@ -111,7 +115,7 @@ public class GestionDocumentosUseCaseAdapter implements GestionDocumentosUseCase
         Documento doc = obtenerDocumento(cuo, id);
         doc.setUsuario(usuario);
         doc.setActivo("0");
-        persistencePort.guardar(cuo, doc);
+        persistencePort.actualizar(cuo, doc);
     }
 
     @Override

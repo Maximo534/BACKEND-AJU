@@ -16,9 +16,18 @@ public interface DocumentoMapper {
     // 1. REQUEST -> DOMAIN (Registro y Actualización)
     // =========================================================
     @Mapping(target = "id", ignore = true)
+
+    @Mapping(target = "nombre", ignore = true)
+    @Mapping(target = "formato", ignore = true)
     @Mapping(target = "ruta", ignore = true)
+
+    @Mapping(target = "tipo", source = "request.tipo")
+    @Mapping(target = "periodo", source = "request.periodo")
+    @Mapping(target = "categoriaDocumentoId", source = "request.categoriaDocumentoId")
+
     @Mapping(target = "activo", constant = "1")
 
+    // Auditoría
     @Mapping(target = "usuario", source = "peticion.usuarioAuth")
     @Mapping(target = "nombrePc", source = "peticion.nombrePc")
     @Mapping(target = "direccionMac", source = "peticion.codigoMac")
@@ -26,11 +35,17 @@ public interface DocumentoMapper {
     @Mapping(target = "red", source = "peticion.red")
     Documento toDomainRegistrar(RegistrarDocumentoRequest request, PeticionServicios peticion);
 
-
     @Mapping(target = "id", source = "id")
+
+    @Mapping(target = "nombre", ignore = true)
+    @Mapping(target = "formato", ignore = true)
     @Mapping(target = "ruta", ignore = true)
 
-    // -- Auditoría Técnica para Modificación --
+    @Mapping(target = "tipo", source = "request.tipo")
+    @Mapping(target = "periodo", source = "request.periodo")
+    @Mapping(target = "categoriaDocumentoId", source = "request.categoriaDocumentoId")
+
+    // Auditoría
     @Mapping(target = "usuario", source = "peticion.usuarioAuth")
     @Mapping(target = "nombrePc", source = "peticion.nombrePc")
     @Mapping(target = "direccionMac", source = "peticion.codigoMac")

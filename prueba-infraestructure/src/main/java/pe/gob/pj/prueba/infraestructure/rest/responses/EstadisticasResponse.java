@@ -23,7 +23,6 @@ public class EstadisticasResponse implements Serializable {
     GraficoSimpleResponse chartPorEje;
     GraficoSimpleResponse chartTopDistrito;
 
-    // Gráficos Multiseries
     GraficoMultiserieResponse chartResumenMagistrados;
     GraficoMultiserieResponse chartEvolucionMensual;
 

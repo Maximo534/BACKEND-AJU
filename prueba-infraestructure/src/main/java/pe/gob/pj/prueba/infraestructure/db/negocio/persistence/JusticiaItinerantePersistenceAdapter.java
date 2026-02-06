@@ -40,11 +40,10 @@ public class JusticiaItinerantePersistenceAdapter implements JusticiaItineranteP
     @Override
     public Pagina<JusticiaItinerante> listar(String cuo, ListarJusticiaItineranteQuery query, int pagina, int tamanio) {
         Pageable pageable = PageRequest.of(pagina - 1, tamanio);
-        Long distritoId = query.getDistritoJudicialId();
 
         var pageResult = repository.listarCompleto(
                 query.getSearch(),
-                distritoId,
+                query.getDistritoJudicialId(),
                 query.getFechaInicio(),
                 query.getFechaFin(),
                 pageable

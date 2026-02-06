@@ -21,6 +21,7 @@ import java.time.LocalDateTime;
 @IdClass(MovEventoDetalleId.class)
 public class MovEventoDetalleEntity implements Serializable {
 
+    // --- ID COMPUESTO ---
     @Id
     @Column(name = "n_evento_id")
     Long eventoId;
@@ -34,19 +35,21 @@ public class MovEventoDetalleEntity implements Serializable {
     @Convert(converter = TrimStringConverter.class)
     String rangoEdad;
 
-    @Column(name = "n_cant_fem")
-    Integer cantidadFemenino;
+    // --- DATOS ---
+    @Column(name = "n_cant_fem") Integer cantidadFemenino;
+    @Column(name = "n_cant_mas") Integer cantidadMasculino;
+    @Column(name = "n_cant_lgtbiq") Integer cantidadLgtbiq;
 
-    @Column(name = "n_cant_mas")
-    Integer cantidadMasculino;
-
-    @Column(name = "n_cant_lgtbiq")
-    Integer cantidadLgtbiq;
-
-    // --- AUDITORÍA ESTÁNDAR ---
     @Column(name = "l_activo", length = 1, nullable = false)
     String activo = Estado.ACTIVO_NUMERICO.getNombre();
 
+    // --- RELACIÓN CON PADRE ---
+    @ManyToOne(fetch = FetchType.LAZY)
+    @MapsId("eventoId")
+    @JoinColumn(name = "n_evento_id")
+    private MovEventoFcEntity evento;
+
+    // --- AUDITORÍA AUTOMÁTICA ---
     @Column(name = "f_registro", insertable = false, updatable = false)
     LocalDateTime fRegistro;
 
@@ -59,15 +62,8 @@ public class MovEventoDetalleEntity implements Serializable {
     @Column(name = "c_aud_uid")
     String cAudId;
 
-    @Column(name = "c_aud_uidred")
-    String cAudIdRed = InformacionRedUtils.getNombreRed();
-
-    @Column(name = "c_aud_pc")
-    String cAudPc = InformacionRedUtils.getPc();
-
-    @Column(name = "c_aud_ip")
-    String cAudIp = InformacionRedUtils.getIp();
-
-    @Column(name = "c_aud_mcaddr")
-    String cAudMcAddr = InformacionRedUtils.getMac();
+    @Column(name = "c_aud_uidred") String cAudIdRed = InformacionRedUtils.getNombreRed();
+    @Column(name = "c_aud_pc") String cAudPc = InformacionRedUtils.getPc();
+    @Column(name = "c_aud_ip") String cAudIp = InformacionRedUtils.getIp();
+    @Column(name = "c_aud_mcaddr") String cAudMcAddr = InformacionRedUtils.getMac();
 }

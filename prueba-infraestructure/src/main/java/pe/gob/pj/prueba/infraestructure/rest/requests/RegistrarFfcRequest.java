@@ -85,8 +85,8 @@ public class RegistrarFfcRequest implements Serializable {
     @NotNull(message = "La provincia es obligatoria")
     Long provinciaId;
 
-    @NotNull(message = "El distrito geográfico es obligatorio")
-    Long distritoGeograficoId;
+    @NotNull(message = "El distrito es obligatorio")
+    Long distritoId;
 
     @NotBlank(message = "La descripción de la actividad es obligatoria")
     String descripcionActividad;

@@ -30,11 +30,12 @@ public class MovPromocionCulturaEntity implements Serializable {
     @GeneratedValue(strategy = GenerationType.SEQUENCE, generator = "SEQ_MOV_PROM_CULT")
     @Column(name = "n_actv_prom_cult_id", nullable = false)
     Long id;
+
     @Column(name = "c_codigo", length = 17, nullable = false, unique = true)
     String codigo;
 
     @Column(name = "n_distrito_jud_id", nullable = false)
-    Long distritoJudicialId; // Long
+    Long distritoJudicialId;
 
     @Column(name = "x_nom_autoridad", length = 100)
     String nombreActividad;
@@ -93,7 +94,7 @@ public class MovPromocionCulturaEntity implements Serializable {
     @Column(name = "x_lugar_actv", length = 60)
     String lugarActividad;
 
-    // --- Ubigeo Long ---
+    // --- Ubigeo ---
     @Column(name = "n_depa_id") Long departamentoId;
     @Column(name = "n_prov_id") Long provinciaId;
     @Column(name = "n_dist_id") Long distritoGeograficoId;
@@ -132,22 +133,29 @@ public class MovPromocionCulturaEntity implements Serializable {
     @Column(name = "c_aud_ip") String cAudIp = InformacionRedUtils.getIp();
     @Column(name = "c_aud_mcaddr") String cAudMcAddr = InformacionRedUtils.getMac();
 
-    // --- Relaciones ---
+    // --- Relaciones Corregidas (mappedBy) ---
 
-    @OneToMany(cascade = CascadeType.ALL, fetch = FetchType.LAZY, orphanRemoval = true)
-    @JoinColumn(name = "n_actv_prom_cult_id", referencedColumnName = "n_actv_prom_cult_id", nullable = false)
+    @OneToMany(mappedBy = "promocionCultura", cascade = CascadeType.ALL, fetch = FetchType.LAZY, orphanRemoval = true)
     List<MovPromCulturaDetalleEntity> personasBeneficiadas = new ArrayList<>();
 
-    @OneToMany(cascade = CascadeType.ALL, fetch = FetchType.LAZY, orphanRemoval = true)
-    @JoinColumn(name = "n_actv_prom_cult_id", referencedColumnName = "n_actv_prom_cult_id", nullable = false)
+    @OneToMany(mappedBy = "promocionCultura", cascade = CascadeType.ALL, fetch = FetchType.LAZY, orphanRemoval = true)
     List<MovPromCulturaTareaEntity> tareas = new ArrayList<>();
 
     @PrePersist
     public void prePersist() {
-        if (this.id != null) {
-            if (this.personasBeneficiadas != null) this.personasBeneficiadas.forEach(p -> p.setPromocionCulturaId(this.id));
-            if (this.tareas != null) this.tareas.forEach(t -> t.setPromocionCulturaId(this.id));
+        if (this.personasBeneficiadas != null) {
+            this.personasBeneficiadas.forEach(p -> {
+                p.setPromocionCultura(this);
+                p.setCAudId(this.cAudId);
+            });
         }
+        if (this.tareas != null) {
+            this.tareas.forEach(t -> {
+                t.setPromocionCultura(this);
+                t.setCAudId(this.cAudId);
+            });
+        }
+
         if (this.areaRiesgo == null || this.areaRiesgo.isBlank()) {
             this.areaRiesgo = "00";
         }

@@ -53,7 +53,7 @@ public class FortalecimientoCapacidades extends Auditoria implements Serializabl
     // --- Ubigeo (Long) ---
     Long departamentoId;
     Long provinciaId;
-    Long distritoGeograficoId;
+    Long distritoId;
 
     String descripcionActividad;
     String institucionesAliadas;

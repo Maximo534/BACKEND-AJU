@@ -35,7 +35,7 @@ public class MovEventoFcEntity implements Serializable {
     @Column(name = "c_codigo", length = 17, nullable = false, unique = true)
     String codigo;
 
-    // --- DATOS NEGOCIO (FKs Long) ---
+    // --- DATOS NEGOCIO ---
     @Column(name = "n_distrito_jud_id", nullable = false)
     Long distritoJudicialId;
 
@@ -77,7 +77,7 @@ public class MovEventoFcEntity implements Serializable {
     // --- UBIGEO  ---
     @Column(name = "n_departamento_id", nullable = false) Long departamentoId;
     @Column(name = "n_provincia_id", nullable = false) Long provinciaId;
-    @Column(name = "n_distrito_id", nullable = false) Long distritoGeograficoId;
+    @Column(name = "n_distrito_id", nullable = false) Long distritoId;
 
     @Column(name = "x_desc_activ", length = 500) String descripcionActividad;
     @Column(name = "x_inst_aliada", length = 500) String institucionesAliadas;
@@ -108,21 +108,28 @@ public class MovEventoFcEntity implements Serializable {
     @Column(name = "c_aud_ip") String cAudIp = InformacionRedUtils.getIp();
     @Column(name = "c_aud_mcaddr") String cAudMcAddr = InformacionRedUtils.getMac();
 
-    // --- RELACIONES ---
-    @OneToMany(cascade = CascadeType.ALL, fetch = FetchType.LAZY, orphanRemoval = true)
-    @JoinColumn(name = "n_evento_id", referencedColumnName = "n_evento_id", nullable = false)
+    // --- RELACIONES CORREGIDAS (mappedBy) ---
+
+    @OneToMany(mappedBy = "evento", cascade = CascadeType.ALL, fetch = FetchType.LAZY, orphanRemoval = true)
     List<MovEventoDetalleEntity> participantes = new ArrayList<>();
 
-    @OneToMany(cascade = CascadeType.ALL, fetch = FetchType.LAZY, orphanRemoval = true)
-    @JoinColumn(name = "n_evento_id", referencedColumnName = "n_evento_id", nullable = false)
+    @OneToMany(mappedBy = "evento", cascade = CascadeType.ALL, fetch = FetchType.LAZY, orphanRemoval = true)
     List<MovEventoTareaEntity> tareasRealizadas = new ArrayList<>();
 
+    // --- PRE-PERSIST: VINCULAR PADRE E HIJOS ---
     @PrePersist
     public void prePersist() {
-        if (this.id != null) {
-            // Pasamos el ID Long a los hijos
-            if(this.participantes != null) this.participantes.forEach(p -> p.setEventoId(this.id));
-            if(this.tareasRealizadas != null) this.tareasRealizadas.forEach(t -> t.setEventoId(this.id));
+        if (this.participantes != null) {
+            this.participantes.forEach(p -> {
+                p.setEvento(this);
+                p.setCAudId(this.cAudId);
+            });
+        }
+        if (this.tareasRealizadas != null) {
+            this.tareasRealizadas.forEach(t -> {
+                t.setEvento(this);
+                t.setCAudId(this.cAudId);
+            });
         }
     }
 }

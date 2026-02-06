@@ -56,7 +56,7 @@ public class FortalecimientoResponse implements Serializable {
     // Ubigeo
     Long departamentoId;
     Long provinciaId;
-    Long distritoGeograficoId;
+    Long distritoId;
 
     String descripcionActividad;
     String institucionesAliadas;

@@ -45,10 +45,8 @@ public class GestionFortalecimientoUseCaseAdapter implements GestionFortalecimie
     @Transactional(transactionManager = TX_MANAGER, propagation = Propagation.REQUIRES_NEW, rollbackFor = {Exception.class, SQLException.class})
     public FortalecimientoCapacidades registrar(String cuo, FortalecimientoCapacidades dominio, MultipartFile anexo, List<MultipartFile> videos, List<MultipartFile> fotos) throws Exception {
 
-        // 1. Validaciones
         validarReglasNegocio(dominio);
 
-        // 2. Generar Correlativo
         String anio = String.valueOf(dominio.getFechaInicio().getYear());
         Long distritoId = dominio.getDistritoJudicialId();
 
@@ -57,8 +55,7 @@ public class GestionFortalecimientoUseCaseAdapter implements GestionFortalecimie
 
         if (ultimoCodigo != null && !ultimoCodigo.isBlank()) {
             try {
-                // Formato esperado BD: 000005-15-2026-FC
-                String numeroStr = ultimoCodigo.split("-")[0];
+                String numeroStr = ultimoCodigo.split("-")[0]; // Toma "000005"
                 correlativo = Long.parseLong(numeroStr) + 1;
             } catch (Exception e) {
                 log.warn("[{}] Error parseando ultimo codigo {}. Reiniciando a 1.", cuo, ultimoCodigo);
@@ -70,6 +67,7 @@ public class GestionFortalecimientoUseCaseAdapter implements GestionFortalecimie
         dominio.setActivo("1");
 
         FortalecimientoCapacidades registrado = persistencePort.guardar(cuo, dominio);
+
         subirArchivosAdjuntos(cuo, registrado, anexo, videos, fotos);
 
         return registrado;
@@ -105,7 +103,7 @@ public class GestionFortalecimientoUseCaseAdapter implements GestionFortalecimie
         if (archivo == null || archivo.isEmpty()) throw new IllegalArgumentException("El archivo no puede estar vacío.");
 
         FortalecimientoCapacidades evento = buscarPorId(cuo, idEvento);
-        evento.setUsuario(usuarioOperacion); // Para auditoría del archivo
+        evento.setUsuario(usuarioOperacion); // Auditoría para el archivo
 
         gestorArchivos.subirArchivo(
                 archivo,
@@ -113,7 +111,7 @@ public class GestionFortalecimientoUseCaseAdapter implements GestionFortalecimie
                 tipoArchivo,
                 MODULO_FFC,
                 evento.getFechaInicio(),
-                evento.getCodigo(), // Carpeta/Nombre lógico
+                evento.getCodigo(),
                 evento
         );
     }
@@ -128,6 +126,7 @@ public class GestionFortalecimientoUseCaseAdapter implements GestionFortalecimie
     }
 
     @Override
+    // ✅ CRÍTICO: @Transactional agregado para evitar LazyInitializationException al leer archivos
     @Transactional(transactionManager = TX_MANAGER, propagation = Propagation.REQUIRED, readOnly = true, rollbackFor = {Exception.class, SQLException.class})
     public RecursoArchivo descargarAnexo(String cuo, Long idEvento) throws Exception {
         FortalecimientoCapacidades evento = buscarPorId(cuo, idEvento);
@@ -150,12 +149,17 @@ public class GestionFortalecimientoUseCaseAdapter implements GestionFortalecimie
     }
 
     @Override
+    // ✅ CRÍTICO: @Transactional y cambio a Long para el reporte
+    @Transactional(transactionManager = TX_MANAGER, propagation = Propagation.REQUIRED, readOnly = true, rollbackFor = {Exception.class, SQLException.class})
     public byte[] generarFichaPdf(String cuo, Long idEvento) throws Exception {
-        buscarPorId(cuo, idEvento);
-        return reportePort.generarFichaFortalecimiento(String.valueOf(idEvento));
+        if (persistencePort.obtenerPorId(cuo, idEvento) == null) {
+            throw new MovimientoNoEncontradoException("Evento no existe");
+        }
+        // Nota: Asegúrate de que GenerarReportePort.generarFichaFortalecimiento también acepte Long
+        return reportePort.generarFichaFortalecimiento(idEvento);
     }
 
-    // --- PRIVADOS ---
+    // --- MÉTODOS PRIVADOS ---
 
     private void validarReglasNegocio(FortalecimientoCapacidades dominio) {
         if (dominio.getFechaInicio() == null || dominio.getFechaFin() == null) {
@@ -165,7 +169,7 @@ public class GestionFortalecimientoUseCaseAdapter implements GestionFortalecimie
             throw new IllegalArgumentException("La fecha fin no puede ser anterior a la fecha inicio.");
         }
 
-        // Asignar fecha del evento a las tareas si no la tienen
+        // Asignar fecha del evento a las tareas si no la tienen (Consistencia de Datos)
         if (dominio.getTareasRealizadas() != null) {
             for (var tarea : dominio.getTareasRealizadas()) {
                 if (tarea.getFechaInicio() == null) {
