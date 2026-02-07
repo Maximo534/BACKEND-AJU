@@ -5,7 +5,9 @@ import pe.gob.pj.prueba.infraestructure.db.negocio.entities.MovProgramacionEjeEn
 import pe.gob.pj.prueba.infraestructure.db.negocio.entities.ids.MovProgramacionEjeId;
 
 import java.util.List;
+import java.util.Optional;
 
 public interface MovProgramacionEjeRepository extends JpaRepository<MovProgramacionEjeEntity, MovProgramacionEjeId> {
     List<MovProgramacionEjeEntity> findByIdUsuarioAndPeriodo(Integer idUsuario, String periodo);
+    Optional<MovProgramacionEjeEntity> findFirstByIdUsuarioAndActivo(Integer idUsuario, String activo);
 }

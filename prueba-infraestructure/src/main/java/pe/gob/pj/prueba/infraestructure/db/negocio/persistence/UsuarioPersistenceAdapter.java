@@ -26,6 +26,8 @@ import pe.gob.pj.prueba.infraestructure.db.negocio.repositories.MaeRolJerarquiaR
 import pe.gob.pj.prueba.infraestructure.db.negocio.repositories.MovProgramacionEjeRepository;
 import pe.gob.pj.prueba.infraestructure.db.negocio.repositories.MovUsuarioPerfilRepository;
 import pe.gob.pj.prueba.infraestructure.db.negocio.repositories.MovUsuarioRepository;
+import pe.gob.pj.prueba.infraestructure.db.negocio.repositories.masters.MaeDistritoJudicialRepository;
+import pe.gob.pj.prueba.infraestructure.db.negocio.repositories.masters.MaeInstanciaRepository;
 import pe.gob.pj.prueba.infraestructure.mappers.UsuarioMapper;
 
 @Slf4j
@@ -40,6 +42,9 @@ public class UsuarioPersistenceAdapter implements UsuarioPersistencePort {
     MovUsuarioPerfilRepository usuarioPerfilRepository;
     MovProgramacionEjeRepository programacionEjeRepository;
     MaeRolJerarquiaRepository jerarquiaRepository;
+    MaeDistritoJudicialRepository repoDistrito;
+    MaeInstanciaRepository repoInstancia;
+
     @Override
     public Pagina<Usuario> listar(String cuo, ListarUsuarioQuery query, int pagina, int tamanio) {
 
@@ -47,7 +52,6 @@ public class UsuarioPersistenceAdapter implements UsuarioPersistencePort {
 
         if (query == null) query = ListarUsuarioQuery.builder().build();
 
-        // Llamamos al repositorio
         var pageResult = repository.listar(
                 query.idUsuario(),
                 query.usuario(),
@@ -57,7 +61,34 @@ public class UsuarioPersistenceAdapter implements UsuarioPersistencePort {
         );
 
         var contenido = pageResult.getContent().stream()
-                .map(mapper::toUsuario)
+                .map(entity -> {
+                    Usuario dominio = mapper.toUsuario(entity);
+
+                    var programacionOpt = programacionEjeRepository.findFirstByIdUsuarioAndActivo(entity.getId(), "1");
+
+                    if (programacionOpt.isPresent()) {
+                        var prog = programacionOpt.get();
+                        if (prog.getIdDistritoJudicial() != null) {
+                            dominio.setIdDistritoJudicial(prog.getIdDistritoJudicial());
+                        }
+                        if (prog.getIdEje() != null) {
+                            dominio.setIdInstancia(prog.getIdEje());
+                        }
+                    }
+
+
+                    if (dominio.getIdDistritoJudicial() != null) {
+                        repoDistrito.findById(dominio.getIdDistritoJudicial().longValue())
+                                .ifPresent(dj -> dominio.setNombreDistritoJudicial(dj.getNombre()));
+                    }
+
+                    if (dominio.getIdInstancia() != null) {
+                        repoInstancia.findById(dominio.getIdInstancia().longValue())
+                                .ifPresent(inst -> dominio.setNombreInstancia(inst.getDescripcion())); // O getDescripcion()
+                    }
+
+                    return dominio;
+                })
                 .collect(Collectors.toList());
 
         return Pagina.<Usuario>builder()

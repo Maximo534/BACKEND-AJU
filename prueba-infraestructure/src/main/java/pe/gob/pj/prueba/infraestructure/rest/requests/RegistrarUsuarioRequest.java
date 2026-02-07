@@ -38,6 +38,7 @@ public class RegistrarUsuarioRequest implements Serializable {
     @NotNull(message = "El distrito judicial es obligatorio")
     Integer idDistritoJudicial;
 
+    @NotNull(message = "La instancia es obligatorio")
     Integer idInstancia;
 
     String rutaFoto;

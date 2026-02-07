@@ -32,6 +32,9 @@ public class UsuarioResponse implements Serializable {
   Integer idDistritoJudicial;
   Integer idInstancia;
 
+  String nombreDistritoJudicial;
+  String nombreInstancia;
+
   String rutaFoto;
   String nomFoto;
   String activo;

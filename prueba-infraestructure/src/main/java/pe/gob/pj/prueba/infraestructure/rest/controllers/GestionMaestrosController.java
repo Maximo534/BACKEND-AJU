@@ -123,14 +123,9 @@ public class GestionMaestrosController implements GestionMaestros, GenerarHttpHe
 
     @Override
     public ResponseEntity<GlobalResponse> listarPerfiles(PeticionServicios peticion) {
-
-        String nombrePerfilToken = SecurityContextHolder.getContext().getAuthentication()
-                .getAuthorities().stream()
-                .findFirst()
-                .map(GrantedAuthority::getAuthority)
-                .orElseThrow(() -> new RuntimeException("El token no tiene un perfil asociado."));
-
-        return procesarListado(peticion, () -> useCase.listarPerfiles(peticion.getCuo(), nombrePerfilToken));
+        return procesarListado(peticion, () ->
+                useCase.listarPerfiles(peticion.getCuo(), peticion.getRol())
+        );
     }
 
     private ResponseEntity<GlobalResponse> procesarListado(PeticionServicios peticion, java.util.function.Supplier<List<?>> supplier) {

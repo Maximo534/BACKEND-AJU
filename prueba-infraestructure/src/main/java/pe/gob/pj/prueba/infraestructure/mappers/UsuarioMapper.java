@@ -55,6 +55,20 @@ public interface UsuarioMapper {
   @Mapping(target = "usuario", source = "nombreUsuario")
   UsuarioResponse toUsuarioResponse(Usuario usuario);
 
+  @Mapping(target = "id", source = "id")
+  @Mapping(target = "usuario", source = "nombreUsuario")
+  @Mapping(target = "nombreCompleto", source = "nombreCompleto")
+  @Mapping(target = "nombreDistritoJudicial", source = "nombreDistritoJudicial")
+  @Mapping(target = "nombreInstancia", source = "nombreInstancia")
+
+  @Mapping(target = "rutaFoto", ignore = true) // Ignorar deja el valor en null
+  @Mapping(target = "nomFoto", ignore = true)
+  @Mapping(target = "perfiles", expression = "java(null)")
+  @Mapping(target = "token", ignore = true)
+
+  @Mapping(target = "activo", source = "activo")
+  UsuarioResponse toResponseListado(Usuario domain);
+
   // --- PERSISTENCIA ---
   @Mapping(target = "nombreUsuario", source = "usuario")
   @Mapping(target = "usuario", source = "CAudId")

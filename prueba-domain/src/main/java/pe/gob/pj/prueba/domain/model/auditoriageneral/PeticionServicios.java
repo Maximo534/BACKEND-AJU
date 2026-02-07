@@ -13,6 +13,7 @@ import lombok.ToString;
 @ToString
 public class PeticionServicios {
 
+  String rol;
   String tipoMetodoHttp;
   String uri;
   String params;

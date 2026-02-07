@@ -26,6 +26,10 @@ public class Usuario extends Auditoria implements Serializable {
 	String email;
 	Integer idDistritoJudicial;
 	Integer idInstancia;
+
+	String nombreDistritoJudicial;
+	String nombreInstancia;
+
 	String nombreCompleto;
 	String rutaFoto;
 	String nomFoto;

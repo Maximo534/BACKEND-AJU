@@ -245,6 +245,9 @@ public class JwtAuthorizationFilter extends BasicAuthenticationFilter {
         .ofNullable(parsedToken.getBody().get(JwtPropiedades.CLAIM_ROL_APLICATIVO.getNombre()))
         .map(Object::toString).orElse(parsedToken.getBody()
             .get(JwtPropiedades.CLAIM_ROL_AUTHENTICATE.getNombre()).toString());
+
+    peticion.setRol(rolSeleccionado);
+
     if (!peticion.getUri().endsWith(URI_REFRESH_TOKEN) && validarAutorizacionUseCasePort
         .validarAccesoMetodo(peticion.getCuo(),
             AutorizacionPeticionQuery.builder().usuario(username).rol(rolSeleccionado)

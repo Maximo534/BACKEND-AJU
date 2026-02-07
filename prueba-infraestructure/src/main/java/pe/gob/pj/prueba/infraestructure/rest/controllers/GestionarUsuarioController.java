@@ -1,6 +1,7 @@
 package pe.gob.pj.prueba.infraestructure.rest.controllers;
 
 import java.util.Optional;
+import java.util.stream.Collectors;
 
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.RestController;
@@ -41,10 +42,21 @@ public class GestionarUsuarioController implements GestionarUsuario, GenerarHttp
     public ResponseEntity<GlobalResponse> listar(PeticionServicios peticion, int pagina, int tamanio, ListarUsuarioRequest filtros) {
         cargarTramaPeticion(peticion, filtros);
 
-        var res = useCase.listar(peticion.getCuo(), mapper.toQuery(filtros), pagina, tamanio);
+        var paginaDominio = useCase.listar(peticion.getCuo(), mapper.toQuery(filtros), pagina, tamanio);
+
+        var listaResponse = paginaDominio.getContenido().stream()
+                .map(mapper::toResponseListado)
+                .collect(Collectors.toList());
 
         GlobalResponse response = new GlobalResponse(peticion.getCuo());
-        response.setData(res);
+
+        response.setData(listaResponse);
+
+        response.setTotalRegistros(paginaDominio.getTotalRegistros());
+        response.setTotalPaginas(paginaDominio.getTotalPaginas());
+        response.setPaginaActual(paginaDominio.getPaginaActual());
+        response.setTamanioPagina(paginaDominio.getTamanioPagina());
+
         guardarAuditoria(Optional.ofNullable(peticion));
         return ResponseEntity.ok(response);
     }
