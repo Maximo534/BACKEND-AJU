@@ -295,9 +295,32 @@ public class UsuarioPersistenceAdapter implements UsuarioPersistencePort {
 
     @Override
     public Usuario buscarPorId(String cuo, Integer id) {
-        return repository.findById(id)
+        Usuario dominio = repository.findById(id)
                 .map(mapper::toUsuario)
                 .orElse(null);
+
+        if (dominio != null) {
+
+            var programacionOpt = programacionEjeRepository.findFirstByIdUsuarioAndActivo(dominio.getId(), "1");
+
+            if (programacionOpt.isPresent()) {
+                var prog = programacionOpt.get();
+                if (prog.getIdDistritoJudicial() != null) dominio.setIdDistritoJudicial(prog.getIdDistritoJudicial());
+                if (prog.getIdEje() != null) dominio.setIdInstancia(prog.getIdEje());
+            }
+
+            if (dominio.getIdDistritoJudicial() != null) {
+                repoDistrito.findById(dominio.getIdDistritoJudicial().longValue())
+                        .ifPresent(dj -> dominio.setNombreDistritoJudicial(dj.getNombre()));
+            }
+
+            if (dominio.getIdInstancia() != null) {
+                repoInstancia.findById(dominio.getIdInstancia().longValue())
+                        .ifPresent(inst -> dominio.setNombreInstancia(inst.getDescripcion()));
+            }
+        }
+
+        return dominio;
     }
 
     @Override
@@ -340,5 +363,37 @@ public class UsuarioPersistenceAdapter implements UsuarioPersistencePort {
     @Override
     public boolean validarJerarquia(Integer idPerfilPadre, Integer idPerfilHijo) {
         return jerarquiaRepository.existeJerarquia(idPerfilPadre, idPerfilHijo);
+    }
+
+    @Override
+    public Integer obtenerIdPerfilPorIdUsuario(Integer idUsuario) {
+        return usuarioPerfilRepository.findByUsuarioId(idUsuario).stream()
+                .filter(p -> "1".equals(p.getActivo()))
+                .findFirst()
+                .map(p -> p.getPerfil().getId())
+                .orElse(null);
+    }
+
+    @Override
+    @Transactional
+    public void actualizarClave(String cuo, Integer idUsuario, String nuevaClave) {
+        MovUsuarioEntity entity = repository.findById(idUsuario)
+                .orElseThrow(() -> new MaestroNoEncontradoException("Usuario no encontrado"));
+
+        entity.setClave(nuevaClave);
+
+        entity.setFAud(java.time.LocalDateTime.now());
+        entity.setBAud("M");
+
+        repository.save(entity);
+    }
+
+    @Override
+    public Usuario buscarPorLogin(String cuo, String login) {
+        if (login == null) return null;
+
+        return repository.findByActivoAndUsuarioIgnoreCase("1", login.trim())
+                .map(mapper::toUsuario)
+                .orElse(null);
     }
 }

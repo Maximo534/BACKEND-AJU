@@ -17,4 +17,8 @@ public interface GestionUsuarioUseCasePort {
     boolean verificarDisponibilidadLogin(String cuo, String login);
 
     void cambiarEstado(String cuo, Usuario usuario);
+
+    void resetearClave(String cuo, Integer idUsuarioObjetivo, String rolOperador, String loginOperador);
+
+    void cambiarContrasenaPropia(String cuo, String loginUsuario, String claveActual, String nuevaClave, String confirmacion);
 }

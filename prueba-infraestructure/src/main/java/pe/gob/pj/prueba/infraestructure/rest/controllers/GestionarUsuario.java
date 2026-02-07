@@ -16,6 +16,7 @@ import jakarta.validation.Valid;
 
 import pe.gob.pj.prueba.domain.common.utils.ProjectConstants;
 import pe.gob.pj.prueba.domain.model.auditoriageneral.PeticionServicios;
+import pe.gob.pj.prueba.infraestructure.rest.requests.CambiarClaveRequest;
 import pe.gob.pj.prueba.infraestructure.rest.requests.ListarUsuarioRequest;
 import pe.gob.pj.prueba.infraestructure.rest.requests.RegistrarUsuarioRequest;
 import pe.gob.pj.prueba.infraestructure.rest.responses.GlobalResponse;
@@ -95,5 +96,23 @@ public interface GestionarUsuario {
             @Parameter(description = "ID del usuario", required = true) @PathVariable Integer id,
             @Parameter(description = "Nuevo estado ('1' = Activo, '0' = Inactivo)", required = true, example = "1")
             @RequestParam("activo") String activo);
+
+    @PostMapping(value = "/resetear-clave/{id}")
+    @Operation(summary = "Resetear Contraseña", operationId = "resetearClave",
+            description = "Resetea la contraseña de un usuario al valor por defecto. Requiere rol SYSADMIN o jerarquía superior.")
+    @ApiResponse(responseCode = "200", description = "Contraseña reseteada correctamente",
+            content = @Content(schema = @Schema(implementation = GlobalResponse.class)))
+    public ResponseEntity<GlobalResponse> resetearClave(
+            @Parameter(hidden = true) @RequestAttribute(name = ProjectConstants.PETICION) PeticionServicios peticion,
+            @Parameter(description = "ID del usuario objetivo", required = true) @PathVariable Integer id);
+
+    @PostMapping(value = "/cambiar-contrasena")
+    @Operation(summary = "Cambiar Contraseña Propia", operationId = "cambiarContrasena",
+            description = "Permite al usuario logueado cambiar su propia contraseña.")
+    @ApiResponse(responseCode = "200", description = "Contraseña actualizada correctamente",
+            content = @Content(schema = @Schema(implementation = GlobalResponse.class)))
+    public ResponseEntity<GlobalResponse> cambiarContrasena(
+            @Parameter(hidden = true) @RequestAttribute(name = ProjectConstants.PETICION) PeticionServicios peticion,
+            @Valid @RequestBody CambiarClaveRequest request);
 
 }

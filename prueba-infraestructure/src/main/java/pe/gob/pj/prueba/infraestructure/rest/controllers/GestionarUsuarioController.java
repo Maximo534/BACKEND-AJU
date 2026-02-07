@@ -19,6 +19,7 @@ import pe.gob.pj.prueba.domain.port.usecase.auditoriageneral.AuditarPeticionUseC
 import pe.gob.pj.prueba.domain.port.usecase.negocio.GestionUsuarioUseCasePort;
 import pe.gob.pj.prueba.infraestructure.mappers.AuditoriaGeneralMapper;
 import pe.gob.pj.prueba.infraestructure.mappers.UsuarioMapper;
+import pe.gob.pj.prueba.infraestructure.rest.requests.CambiarClaveRequest;
 import pe.gob.pj.prueba.infraestructure.rest.requests.ListarUsuarioRequest;
 import pe.gob.pj.prueba.infraestructure.rest.requests.RegistrarUsuarioRequest;
 import pe.gob.pj.prueba.infraestructure.rest.responses.GlobalResponse;
@@ -126,6 +127,41 @@ public class GestionarUsuarioController implements GestionarUsuario, GenerarHttp
 
         GlobalResponse response = new GlobalResponse(peticion.getCuo());
         response.setDescripcion("El estado del usuario se actualizó correctamente.");
+
+        guardarAuditoria(Optional.ofNullable(peticion));
+        return ResponseEntity.ok(response);
+    }
+
+    @Override
+    public ResponseEntity<GlobalResponse> resetearClave(PeticionServicios peticion, Integer id) {
+
+        useCase.resetearClave(
+                peticion.getCuo(),
+                id,
+                peticion.getRol(),
+                peticion.getUsuarioAuth()
+        );
+
+        GlobalResponse response = new GlobalResponse(peticion.getCuo());
+        response.setDescripcion("La contraseña ha sido reseteada correctamente.");
+
+        guardarAuditoria(Optional.ofNullable(peticion));
+        return ResponseEntity.ok(response);
+    }
+
+    @Override
+    public ResponseEntity<GlobalResponse> cambiarContrasena(PeticionServicios peticion, CambiarClaveRequest request) {
+
+        useCase.cambiarContrasenaPropia(
+                peticion.getCuo(),
+                peticion.getUsuario(),
+                request.getClaveActual(),
+                request.getNuevaClave(),
+                request.getConfirmarClave()
+        );
+
+        GlobalResponse response = new GlobalResponse(peticion.getCuo());
+        response.setDescripcion("Su contraseña ha sido actualizada correctamente.");
 
         guardarAuditoria(Optional.ofNullable(peticion));
         return ResponseEntity.ok(response);

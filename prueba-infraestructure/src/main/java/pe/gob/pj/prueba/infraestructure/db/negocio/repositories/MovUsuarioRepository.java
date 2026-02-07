@@ -21,7 +21,7 @@ import pe.gob.pj.prueba.infraestructure.db.negocio.entities.MovUsuarioEntity;
 public interface MovUsuarioRepository extends JpaRepository<MovUsuarioEntity, Integer> {
 
   Optional<MovUsuarioEntity> findByActivoAndUsuario(String activo, String usuario);
-
+  Optional<MovUsuarioEntity> findByActivoAndUsuarioIgnoreCase(String activo, String usuario);
   @Query(value = "SELECT * FROM acjust.MOV_USUARIO u WHERE " +
           "(:id IS NULL OR u.N_USUARIO_ID = :id) AND " +
           "(:usuario IS NULL OR UPPER(u.X_USUARIO) LIKE UPPER(CONCAT('%', CAST(:usuario AS TEXT), '%'))) AND " +
