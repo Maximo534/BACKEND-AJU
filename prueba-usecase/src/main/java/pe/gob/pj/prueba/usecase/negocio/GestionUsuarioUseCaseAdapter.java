@@ -51,7 +51,7 @@ public class GestionUsuarioUseCaseAdapter implements GestionUsuarioUseCasePort {
             throw new UsuarioDuplicadoException("El usuario '" + usuario.getNombreUsuario() + "' ya está en uso.");
         }
 
-        String loginCreador = usuario.getUsuario();
+        String loginCreador = usuario.getNombreUsuario();
 
         //Obtener el ID del Perfil del Creador
         Integer idPerfilCreador = persistencePort.obtenerIdPerfilPorLogin(loginCreador);
