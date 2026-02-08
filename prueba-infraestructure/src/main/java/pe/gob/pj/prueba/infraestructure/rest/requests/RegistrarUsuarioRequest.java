@@ -19,6 +19,8 @@ public class RegistrarUsuarioRequest implements Serializable {
 
     @NotBlank(message = "El usuario es obligatorio")
     @Size(max = 25, message = "El usuario no puede exceder 25 caracteres")
+    @NotNull(message = "El usuario no puede ser nulo.")
+    @Size(min = 8, message = "El usuario tiene una longitud no válida [min=8].")
     String usuario;
 
     String clave;
