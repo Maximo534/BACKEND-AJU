@@ -8,7 +8,7 @@ public interface GestionUsuarioUseCasePort {
 
     Pagina<Usuario> listar(String cuo, ListarUsuarioQuery query, int pagina, int tamanio);
 
-    Usuario registrar(String cuo, Usuario usuario);
+    Usuario registrar(String cuo, Usuario usuario,String login);
 
     Usuario actualizar(String cuo, Usuario usuario);
 

@@ -42,7 +42,7 @@ public class GestionUsuarioUseCaseAdapter implements GestionUsuarioUseCasePort {
             propagation = Propagation.REQUIRES_NEW,
             readOnly = false,
             rollbackFor = {Exception.class, SQLException.class})
-    public Usuario registrar(String cuo, Usuario usuario) {
+    public Usuario registrar(String cuo, Usuario usuario, String login) {
 
         // VALIDACIÓN DE DUPLICIDAD
         boolean yaExiste = persistencePort.existeUsuarioPorLogin(cuo, usuario.getNombreUsuario());
@@ -51,10 +51,10 @@ public class GestionUsuarioUseCaseAdapter implements GestionUsuarioUseCasePort {
             throw new UsuarioDuplicadoException("El usuario '" + usuario.getNombreUsuario() + "' ya está en uso.");
         }
 
-        String loginCreador = usuario.getNombreUsuario();
+        log.info("[{}] AQUI:{}",login);
 
         //Obtener el ID del Perfil del Creador
-        Integer idPerfilCreador = persistencePort.obtenerIdPerfilPorLogin(loginCreador);
+        Integer idPerfilCreador = persistencePort.obtenerIdPerfilPorLogin(login);
 
         //Verificar permiso para cada perfil que se intenta asignar
         if (usuario.getPerfiles() != null) {

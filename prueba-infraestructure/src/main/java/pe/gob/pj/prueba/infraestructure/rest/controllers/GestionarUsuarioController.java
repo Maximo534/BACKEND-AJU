@@ -77,7 +77,7 @@ public class GestionarUsuarioController implements GestionarUsuario, GenerarHttp
     public ResponseEntity<GlobalResponse> registrar(PeticionServicios peticion, RegistrarUsuarioRequest request) {
         cargarTramaPeticion(peticion, request);
 
-        var usuarioNuevo = useCase.registrar(peticion.getCuo(), mapper.toUsuario(request, peticion));
+        var usuarioNuevo = useCase.registrar(peticion.getCuo(), mapper.toUsuario(request, peticion), peticion.getUsuario());
 
         GlobalResponse response = new GlobalResponse(peticion.getCuo());
         response.setData(mapper.toUsuarioResponse(usuarioNuevo));
