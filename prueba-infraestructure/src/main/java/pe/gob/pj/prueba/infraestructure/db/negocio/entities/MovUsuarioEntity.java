@@ -96,6 +96,9 @@ public class MovUsuarioEntity implements Serializable {
     if (this.nomFoto == null || this.nomFoto.isBlank()) {
       this.nomFoto = "-";
     }
+    if (this.sigla == null || this.sigla.isBlank()) {
+      this.sigla = "-";
+    }
     if (this.activo == null) {
       this.activo = "1";
     }
