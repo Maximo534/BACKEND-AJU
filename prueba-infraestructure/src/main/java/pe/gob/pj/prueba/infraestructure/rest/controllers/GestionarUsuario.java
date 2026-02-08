@@ -86,7 +86,7 @@ public interface GestionarUsuario {
     /***
      * PATCH /usuarios/{id}/estado : Activar o Desactivar usuario
      */
-    @PatchMapping(value = "/{id}")
+    @PostMapping(value = "/desactivar/{id}")
     @Operation(summary = "Cambiar Estado de Usuario", operationId = "cambiarEstado",
             description = "Permite activar ('1') o desactivar ('0') un usuario existente.")
     @ApiResponse(responseCode = "200", description = "Estado actualizado correctamente",
