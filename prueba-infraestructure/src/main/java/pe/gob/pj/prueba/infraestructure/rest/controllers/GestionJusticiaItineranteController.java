@@ -27,6 +27,7 @@ import pe.gob.pj.prueba.infraestructure.rest.requests.RegistrarFjiRequest;
 import pe.gob.pj.prueba.infraestructure.rest.responses.GlobalResponse;
 import pe.gob.pj.prueba.infraestructure.rest.responses.JusticiaItineranteResponse;
 
+import java.io.ByteArrayInputStream;
 import java.util.List;
 import java.util.Optional;
 import java.util.stream.Collectors;
@@ -203,6 +204,28 @@ public class GestionJusticiaItineranteController implements GestionJusticiaItine
                     .body(new InputStreamResource(recurso.getStream()));
         } catch (Exception e) {
             throw new RuntimeException(e.getMessage());
+        }
+    }
+
+    @Override
+    public ResponseEntity<Resource> exportarExcel(PeticionServicios peticion, ListarItineranteRequest filtros) {
+        cargarTramaPeticion(peticion, filtros);
+        try {
+            var query = mapper.toQuery(filtros);
+
+            byte[] excelBytes = useCase.exportarExcel(peticion.getCuo(), query);
+
+            String filename = "Reporte_Justicia_Itinerante.xlsx";
+            InputStreamResource resource = new InputStreamResource(new ByteArrayInputStream(excelBytes));
+
+            return ResponseEntity.ok()
+                    .header(HttpHeaders.CONTENT_DISPOSITION, "attachment; filename=\"" + filename + "\"")
+                    .contentType(MediaType.parseMediaType("application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"))
+                    .body(resource);
+
+        } catch (Exception e) {
+            log.error("[{}] Error exportando Excel: {}", peticion.getCuo(), e.getMessage());
+            throw new RuntimeException("Error al generar Excel: " + e.getMessage());
         }
     }
 }

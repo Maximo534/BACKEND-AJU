@@ -106,6 +106,7 @@ public interface FortalecimientoMapper {
     @Mapping(target = "activo", constant = "1")
     MovEventoDetalleEntity toEntityPart(FortalecimientoCapacidades.DetalleParticipante domain);
     @InheritInverseConfiguration(name = "toEntityPart")
+    @Mapping(target = "descripcionTipoParticipante", expression = "java(entity.getTipoParticipanteMaestro() != null ? entity.getTipoParticipanteMaestro().getDescripcion() : null)")
     FortalecimientoCapacidades.DetalleParticipante toDomainPart(MovEventoDetalleEntity entity);
 
     FortalecimientoCapacidades.DetalleTarea toDomainTarea(RegistrarFfcRequest.DetalleTareaRequest request);
@@ -138,4 +139,34 @@ public interface FortalecimientoMapper {
     @Mapping(target = "estado", source = "activo")
     @Mapping(target = "archivos", source = "archivosGuardados")
     FortalecimientoResponse toResponseDetalle(FortalecimientoCapacidades dominio);
+
+    // =========================================================
+    // CÁLCULOS POST-MAPEO
+    // =========================================================
+    @AfterMapping
+    default void calcularTotales(MovEventoFcEntity entity, @MappingTarget FortalecimientoCapacidades domain) {
+
+        // A. PARTICIPANTES
+        if (entity.getParticipantes() != null) {
+            domain.setTotalParticipantesFem(entity.getParticipantes().stream()
+                    .mapToInt(p -> p.getCantidadFemenino() != null ? p.getCantidadFemenino() : 0).sum());
+
+            domain.setTotalParticipantesMas(entity.getParticipantes().stream()
+                    .mapToInt(p -> p.getCantidadMasculino() != null ? p.getCantidadMasculino() : 0).sum());
+
+            domain.setTotalParticipantesLgtbi(entity.getParticipantes().stream()
+                    .mapToInt(p -> p.getCantidadLgtbiq() != null ? p.getCantidadLgtbiq() : 0).sum());
+        } else {
+            domain.setTotalParticipantesFem(0);
+            domain.setTotalParticipantesMas(0);
+            domain.setTotalParticipantesLgtbi(0);
+        }
+
+        // B. TAREAS
+        if (entity.getTareasRealizadas() != null) {
+            domain.setCantidadTareas(entity.getTareasRealizadas().size());
+        } else {
+            domain.setCantidadTareas(0);
+        }
+    }
 }

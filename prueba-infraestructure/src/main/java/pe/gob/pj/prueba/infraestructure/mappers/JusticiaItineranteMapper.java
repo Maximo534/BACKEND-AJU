@@ -134,6 +134,7 @@ public interface JusticiaItineranteMapper {
     JusticiaItinerante.DetalleAtendida toDomainPA(RegistrarFjiRequest.DetallePARequest r);
     MovJiPersonasAtendidasEntity toEntityPA(JusticiaItinerante.DetalleAtendida d);
     @InheritInverseConfiguration(name = "toEntityPA")
+    @Mapping(target = "descripcionVulnerabilidad", source = "tipoVulnerabilidad.descripcion")
     JusticiaItinerante.DetalleAtendida toDomainPA(MovJiPersonasAtendidasEntity e);
 
     JusticiaItinerante.DetalleCaso toDomainPCA(RegistrarFjiRequest.DetallePCARequest r);
@@ -145,6 +146,7 @@ public interface JusticiaItineranteMapper {
     @Mapping(target = "cantidadOrientaciones", source = "numOrientaciones")
     MovJiCasosAtendidosEntity toEntityPCA(JusticiaItinerante.DetalleCaso d);
     @InheritInverseConfiguration(name = "toEntityPCA")
+    @Mapping(target = "descripcionMateria", source = "materia.descripcion")
     JusticiaItinerante.DetalleCaso toDomainPCA(MovJiCasosAtendidosEntity e);
 
     JusticiaItinerante.DetalleBeneficiada toDomainPB(RegistrarFjiRequest.DetallePBRequest r);
@@ -155,6 +157,7 @@ public interface JusticiaItineranteMapper {
     JusticiaItinerante.DetalleTarea toDomainTR(RegistrarFjiRequest.DetalleTRRequest r);
     MovJiTareasRealizadasEntity toEntityTR(JusticiaItinerante.DetalleTarea d);
     @InheritInverseConfiguration(name = "toEntityTR")
+    @Mapping(target = "descripcionTarea", source = "tareaMaestra.descripcion")
     @Mapping(target = "descripcion", expression = "java(e.getTareaMaestra() != null ? e.getTareaMaestra().getDescripcion() : null)")
     JusticiaItinerante.DetalleTarea toDomainTR(MovJiTareasRealizadasEntity e);
 
@@ -181,4 +184,51 @@ public interface JusticiaItineranteMapper {
     @Mapping(target = "FRegistro", source = "FRegistro")
     @Mapping(target = "archivos", source = "archivosGuardados")
     JusticiaItineranteResponse toResponseDetalle(JusticiaItinerante dominio);
+
+
+    // =========================================================
+    // 8. CÁLCULOS POST-MAPEO (La magia ocurre aquí)
+    // =========================================================
+
+    @AfterMapping
+    default void calcularTotales(MovJusticiaItineranteEntity entity, @MappingTarget JusticiaItinerante domain) {
+
+        // 1. PERSONAS BENEFICIADAS (Suma simple)
+        if (entity.getPersonasBeneficiadas() != null) {
+            domain.setTotalBeneficiadosFem(entity.getPersonasBeneficiadas().stream().mapToInt(p -> p.getCantFemenino() != null ? p.getCantFemenino() : 0).sum());
+            domain.setTotalBeneficiadosMas(entity.getPersonasBeneficiadas().stream().mapToInt(p -> p.getCantMasculino() != null ? p.getCantMasculino() : 0).sum());
+            domain.setTotalBeneficiadosLgtbi(entity.getPersonasBeneficiadas().stream().mapToInt(p -> p.getCantLgtbiq() != null ? p.getCantLgtbiq() : 0).sum());
+        } else {
+            domain.setTotalBeneficiadosFem(0); domain.setTotalBeneficiadosMas(0); domain.setTotalBeneficiadosLgtbi(0);
+        }
+
+        // 2. PERSONAS ATENDIDAS (NUEVO - Suma simple)
+        if (entity.getPersonasAtendidas() != null) {
+            domain.setTotalAtendidosFem(entity.getPersonasAtendidas().stream().mapToInt(p -> p.getCantFemenino() != null ? p.getCantFemenino() : 0).sum());
+            domain.setTotalAtendidosMas(entity.getPersonasAtendidas().stream().mapToInt(p -> p.getCantMasculino() != null ? p.getCantMasculino() : 0).sum());
+            domain.setTotalAtendidosLgtbi(entity.getPersonasAtendidas().stream().mapToInt(p -> p.getCantLgtbiq() != null ? p.getCantLgtbiq() : 0).sum());
+        } else {
+            domain.setTotalAtendidosFem(0); domain.setTotalAtendidosMas(0); domain.setTotalAtendidosLgtbi(0);
+        }
+
+        // 3. CASOS ATENDIDOS (Suma de métricas)
+        if (entity.getCasosAtendidos() != null) {
+            domain.setTotalDemandas(entity.getCasosAtendidos().stream().mapToInt(c -> c.getCantidadDemandas() != null ? c.getCantidadDemandas() : 0).sum());
+            domain.setTotalAudiencias(entity.getCasosAtendidos().stream().mapToInt(c -> c.getCantidadAudiencias() != null ? c.getCantidadAudiencias() : 0).sum());
+            domain.setTotalSentencias(entity.getCasosAtendidos().stream().mapToInt(c -> c.getCantidadSentencias() != null ? c.getCantidadSentencias() : 0).sum());
+            domain.setTotalProcesos(entity.getCasosAtendidos().stream().mapToInt(c -> c.getCantidadProcesos() != null ? c.getCantidadProcesos() : 0).sum());
+            domain.setTotalNotificaciones(entity.getCasosAtendidos().stream().mapToInt(c -> c.getCantidadNotificaciones() != null ? c.getCantidadNotificaciones() : 0).sum());
+            domain.setTotalOrientaciones(entity.getCasosAtendidos().stream().mapToInt(c -> c.getCantidadOrientaciones() != null ? c.getCantidadOrientaciones() : 0).sum());
+        } else {
+            domain.setTotalDemandas(0); domain.setTotalAudiencias(0); domain.setTotalSentencias(0);
+            domain.setTotalProcesos(0); domain.setTotalNotificaciones(0); domain.setTotalOrientaciones(0);
+        }
+
+        // 4. TAREAS REALIZADAS (NUEVO - Conteo)
+        if (entity.getTareasRealizadas() != null) {
+            domain.setCantidadTareas(entity.getTareasRealizadas().size());
+        } else {
+            domain.setCantidadTareas(0);
+        }
+    }
 }

@@ -66,6 +66,29 @@ public class JusticiaItinerante extends Auditoria implements Serializable {
     private Long usuarioRegistroId;
     private String activo;
 
+    private Integer totalBeneficiadosFem;
+    private Integer totalBeneficiadosMas;
+    private Integer totalBeneficiadosLgtbi;
+
+    // 2. HIJA: PERSONAS ATENDIDAS (NUEVO)
+    // Se agregan para mostrar el total de atendidos desglosado por género
+    private Integer totalAtendidosFem;
+    private Integer totalAtendidosMas;
+    private Integer totalAtendidosLgtbi;
+
+    // 3. HIJA: CASOS ATENDIDOS (Ya estaba)
+    private Integer totalDemandas;
+    private Integer totalAudiencias;
+    private Integer totalSentencias;
+    private Integer totalProcesos;
+    private Integer totalNotificaciones;
+    private Integer totalOrientaciones;
+
+    // 4. HIJA: TAREAS REALIZADAS (NUEVO)
+    // Como son tareas variadas, mostraremos la cantidad total ejecutada
+    private Integer cantidadTareas;
+
+
     // --- LISTAS HIJAS (Detalles) ---
     @Builder.Default
     private List<DetalleBeneficiada> personasBeneficiadas = new ArrayList<>();
@@ -95,6 +118,7 @@ public class JusticiaItinerante extends Auditoria implements Serializable {
     @Data @Builder @NoArgsConstructor @AllArgsConstructor
     public static class DetalleAtendida implements Serializable {
         private Long tipoVulnerabilidadId;
+        private String descripcionVulnerabilidad;
         private String rangoEdad;
         private Integer cantFemenino;
         private Integer cantMasculino;
@@ -104,6 +128,7 @@ public class JusticiaItinerante extends Auditoria implements Serializable {
     @Data @Builder @NoArgsConstructor @AllArgsConstructor
     public static class DetalleCaso implements Serializable {
         private Long materiaId;
+        private String descripcionMateria;
         private Integer numDemandas;
         private Integer numAudiencias;
         private Integer numSentencias;
@@ -115,6 +140,7 @@ public class JusticiaItinerante extends Auditoria implements Serializable {
     @Data @Builder @NoArgsConstructor @AllArgsConstructor
     public static class DetalleTarea implements Serializable {
         private Long tareaId;
+        private String descripcionTarea;
         private LocalDate fechaInicio;
         private String descripcion;
     }

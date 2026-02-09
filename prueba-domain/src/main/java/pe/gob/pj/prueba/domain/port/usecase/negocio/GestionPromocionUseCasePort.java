@@ -25,4 +25,6 @@ public interface GestionPromocionUseCasePort {
     RecursoArchivo descargarAnexo(String cuo, Long idEvento) throws Exception;
     byte[] generarFichaPdf(String cuo, Long idEvento) throws Exception;
     RecursoArchivo descargarArchivoPorId(Long idArchivo) throws Exception ;
+
+    byte[] exportarExcel(String cuo, ListarPromocionQuery query) throws Exception;
 }

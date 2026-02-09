@@ -252,4 +252,32 @@ public class FortalecimientoPersistenceAdapter implements FortalecimientoPersist
             tarBd.clear();
         }
     }
+
+    @Override
+    @Transactional(readOnly = true)
+    public List<FortalecimientoCapacidades> listarParaExcel(String cuo, ListarFortalecimientoQuery query) {
+        log.info("[{}] Listando Fortalecimiento para Excel (Sin paginación)", cuo);
+
+        // 1. Obtener entidades
+        List<MovEventoFcEntity> entities = repository.listarSinPaginacion(
+                query.getSearch(),
+                query.getDistritoJudicialId(),
+                query.getTipoEvento(),
+                query.getFechaInicio(),
+                query.getFechaFin()
+        );
+
+        return entities.stream()
+                .map(entity -> {
+                    FortalecimientoCapacidades dominio = mapper.toDomain(entity);
+
+                    if (dominio.getDistritoJudicialId() != null) {
+                        repoDistrito.findById(dominio.getDistritoJudicialId())
+                                .ifPresent(dj -> dominio.setDistritoJudicialNombre(dj.getNombre()));
+                    }
+
+                    return dominio;
+                })
+                .collect(Collectors.toList());
+    }
 }

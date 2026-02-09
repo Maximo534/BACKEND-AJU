@@ -31,6 +31,22 @@ public interface MovPromocionCulturaRepository extends JpaRepository<MovPromocio
             "     UPPER(e.codigo) LIKE UPPER(CONCAT('%', :search, '%')) OR " +
             "     UPPER(e.nombreActividad) LIKE UPPER(CONCAT('%', :search, '%'))) " +
             "ORDER BY e.id DESC")
+    List<MovPromocionCulturaEntity> listarSinPaginacion(
+            @Param("search") String search,
+            @Param("distrito") Long distrito,
+            @Param("fecIni") LocalDate fecIni,
+            @Param("fecFin") LocalDate fecFin
+    );
+
+    @Query("SELECT e FROM MovPromocionCulturaEntity e " +
+            "WHERE e.activo = '1' " +
+            "AND (:distrito IS NULL OR e.distritoJudicialId = :distrito) " +
+            "AND (cast(:fecIni as date) IS NULL OR e.fechaInicio >= :fecIni) " +
+            "AND (cast(:fecFin as date) IS NULL OR e.fechaInicio <= :fecFin) " +
+            "AND (:search IS NULL OR :search = '' OR " +
+            "     UPPER(e.codigo) LIKE UPPER(CONCAT('%', :search, '%')) OR " +
+            "     UPPER(e.nombreActividad) LIKE UPPER(CONCAT('%', :search, '%'))) " +
+            "ORDER BY e.id DESC")
     Page<MovPromocionCulturaEntity> listarCompleto(
             @Param("search") String search,
             @Param("distrito") Long distrito,

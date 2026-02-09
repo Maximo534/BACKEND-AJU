@@ -151,4 +151,34 @@ public interface PromocionCulturaMapper {
     @Mapping(target = "estado", source = "activo")
     @Mapping(target = "archivos", source = "archivosGuardados")
     PromocionCulturaResponse toResponseDetalle(PromocionCultura domain);
+
+    // =========================================================
+    // CÁLCULOS POST-MAPEO (IGUAL QUE EN ITINERANTE)
+    // =========================================================
+    @AfterMapping
+    default void calcularTotales(MovPromocionCulturaEntity entity, @MappingTarget PromocionCultura domain) {
+
+        // 1. TOTALES PARTICIPANTES
+        if (entity.getPersonasBeneficiadas() != null) {
+            domain.setTotalParticipantesFem(entity.getPersonasBeneficiadas().stream()
+                    .mapToInt(p -> p.getCantidadFemenino() != null ? p.getCantidadFemenino() : 0).sum());
+
+            domain.setTotalParticipantesMas(entity.getPersonasBeneficiadas().stream()
+                    .mapToInt(p -> p.getCantidadMasculino() != null ? p.getCantidadMasculino() : 0).sum());
+
+            domain.setTotalParticipantesLgtbi(entity.getPersonasBeneficiadas().stream()
+                    .mapToInt(p -> p.getCantidadLgtbiq() != null ? p.getCantidadLgtbiq() : 0).sum());
+        } else {
+            domain.setTotalParticipantesFem(0);
+            domain.setTotalParticipantesMas(0);
+            domain.setTotalParticipantesLgtbi(0);
+        }
+
+        // 2. CANTIDAD TAREAS
+        if (entity.getTareas() != null) {
+            domain.setCantidadTareas(entity.getTareas().size());
+        } else {
+            domain.setCantidadTareas(0);
+        }
+    }
 }

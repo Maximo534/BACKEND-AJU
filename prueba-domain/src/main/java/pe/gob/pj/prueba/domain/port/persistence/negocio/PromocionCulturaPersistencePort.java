@@ -4,6 +4,8 @@ import pe.gob.pj.prueba.domain.model.common.Pagina;
 import pe.gob.pj.prueba.domain.model.negocio.PromocionCultura;
 import pe.gob.pj.prueba.domain.model.negocio.query.ListarPromocionQuery;
 
+import java.util.List;
+
 public interface PromocionCulturaPersistencePort {
     Pagina<PromocionCultura> listar(String cuo, ListarPromocionQuery query, int pagina, int tamanio);
 
@@ -14,4 +16,6 @@ public interface PromocionCulturaPersistencePort {
     PromocionCultura obtenerPorId(String cuo, Long id) ;
 
     String obtenerUltimoCodigo(String cuo, Long distritoId, String anio);
+
+    List<PromocionCultura> listarParaExcel(String cuo, ListarPromocionQuery query);
 }

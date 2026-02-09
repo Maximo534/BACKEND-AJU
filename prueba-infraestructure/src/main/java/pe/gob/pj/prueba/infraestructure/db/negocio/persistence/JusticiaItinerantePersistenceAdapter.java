@@ -74,6 +74,31 @@ public class JusticiaItinerantePersistenceAdapter implements JusticiaItineranteP
     }
 
     @Override
+    @Transactional(readOnly = true)
+    public List<JusticiaItinerante> listarParaExcel(String cuo, ListarJusticiaItineranteQuery query) {
+        log.info("[{}] Listando Justicia Itinerante para Excel (Sin paginación)", cuo);
+
+        List<MovJusticiaItineranteEntity> entities = repository.listarSinPaginacion(
+                query.getSearch(),
+                query.getDistritoJudicialId(),
+                query.getFechaInicio(),
+                query.getFechaFin()
+        );
+
+        return entities.stream()
+                .map(entity -> {
+                    JusticiaItinerante dominio = mapper.toDomain(entity);
+
+                    if (dominio.getDistritoJudicialId() != null) {
+                        repoDistrito.findById(dominio.getDistritoJudicialId())
+                                .ifPresent(dj -> dominio.setDistritoJudicialNombre(dj.getNombre()));
+                    }
+                    return dominio;
+                })
+                .collect(Collectors.toList());
+    }
+
+    @Override
     @Transactional
     public JusticiaItinerante guardar(String cuo, JusticiaItinerante dominio) {
         log.info("[{}] Guardando Justicia Itinerante: {}", cuo, dominio.getUsuario());

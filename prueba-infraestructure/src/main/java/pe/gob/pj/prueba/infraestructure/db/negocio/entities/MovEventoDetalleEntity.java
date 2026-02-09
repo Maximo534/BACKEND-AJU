@@ -10,6 +10,7 @@ import pe.gob.pj.prueba.infraestructure.common.utils.EsquemaConstants;
 import pe.gob.pj.prueba.infraestructure.common.utils.InformacionRedUtils;
 import pe.gob.pj.prueba.infraestructure.db.negocio.entities.ids.MovEventoDetalleId;
 import pe.gob.pj.prueba.infraestructure.db.negocio.entities.ids.TrimStringConverter;
+import pe.gob.pj.prueba.infraestructure.db.negocio.entities.masters.MaeTipoParticipanteEntity;
 
 import java.io.Serializable;
 import java.time.LocalDateTime;
@@ -42,6 +43,10 @@ public class MovEventoDetalleEntity implements Serializable {
 
     @Column(name = "l_activo", length = 1, nullable = false)
     String activo = Estado.ACTIVO_NUMERICO.getNombre();
+
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "n_tipo_part_id", insertable = false, updatable = false)
+    private MaeTipoParticipanteEntity tipoParticipanteMaestro;
 
     // --- RELACIÓN CON PADRE ---
     @ManyToOne(fetch = FetchType.LAZY)

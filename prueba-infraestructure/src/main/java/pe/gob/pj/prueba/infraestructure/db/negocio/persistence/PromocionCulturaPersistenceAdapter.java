@@ -248,4 +248,30 @@ public class PromocionCulturaPersistenceAdapter implements PromocionCulturaPersi
             tarBd.clear();
         }
     }
+
+    @Override
+    @Transactional(readOnly = true)
+    public List<PromocionCultura> listarParaExcel(String cuo, ListarPromocionQuery query) {
+        log.info("[{}] Listando Promoción Cultura para Excel (Sin paginación)", cuo);
+
+        List<MovPromocionCulturaEntity> entities = repository.listarSinPaginacion(
+                query.getSearch(),
+                query.getDistritoJudicialId(),
+                query.getFechaInicio(),
+                query.getFechaFin()
+        );
+
+        return entities.stream()
+                .map(entity -> {
+                    PromocionCultura dominio = mapper.toDomain(entity);
+
+                    if (dominio.getDistritoJudicialId() != null) {
+                        repoDistrito.findById(dominio.getDistritoJudicialId())
+                                .ifPresent(dj -> dominio.setDistritoJudicialNombre(dj.getNombre()));
+                    }
+
+                    return dominio;
+                })
+                .collect(Collectors.toList());
+    }
 }

@@ -78,6 +78,11 @@ public class PromocionCultura extends Auditoria implements Serializable {
     // --- Archivos ---
     List<Archivo> archivosGuardados;
 
+    Integer totalParticipantesFem;
+    Integer totalParticipantesMas;
+    Integer totalParticipantesLgtbi;
+    Integer cantidadTareas;
+
     // --- CLASES INTERNAS ---
 
     @Data

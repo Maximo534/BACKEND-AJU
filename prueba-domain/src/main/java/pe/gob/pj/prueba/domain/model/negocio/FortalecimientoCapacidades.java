@@ -71,6 +71,11 @@ public class FortalecimientoCapacidades extends Auditoria implements Serializabl
     // --- Archivos ---
     List<Archivo> archivosGuardados;
 
+    Integer totalParticipantesFem;
+    Integer totalParticipantesMas;
+    Integer totalParticipantesLgtbi;
+    Integer cantidadTareas;
+
     // --- CLASES INTERNAS ---
 
     @Data
@@ -82,6 +87,7 @@ public class FortalecimientoCapacidades extends Auditoria implements Serializabl
         static final long serialVersionUID = 1L;
 
         Long tipoParticipanteId;
+        String descripcionTipoParticipante;
         String rangoEdad;
         Integer cantidadFemenino;
         Integer cantidadMasculino;

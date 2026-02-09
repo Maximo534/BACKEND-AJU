@@ -8,6 +8,7 @@ import pe.gob.pj.prueba.infraestructure.common.enums.OperacionBaseDatos;
 import pe.gob.pj.prueba.infraestructure.common.utils.EsquemaConstants;
 import pe.gob.pj.prueba.infraestructure.common.utils.InformacionRedUtils;
 import pe.gob.pj.prueba.infraestructure.db.negocio.entities.ids.MovJiCasosAtendidosId;
+import pe.gob.pj.prueba.infraestructure.db.negocio.entities.masters.MaeMateriaEntity;
 
 import java.io.Serializable;
 import java.time.LocalDateTime;
@@ -33,6 +34,9 @@ public class MovJiCasosAtendidosEntity implements Serializable {
 
     @Column(name = "l_activo") String activo = "1";
 
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "n_materia_id", insertable = false, updatable = false)
+    private MaeMateriaEntity materia;
     // --- RELACIÓN CON PADRE (OBLIGATORIA para @MapsId) ---
     @ManyToOne(fetch = FetchType.LAZY)
     @MapsId("justiciaItineranteId")

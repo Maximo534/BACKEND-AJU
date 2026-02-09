@@ -3,7 +3,12 @@ package pe.gob.pj.prueba.infraestructure.reports;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Component;
 import pe.gob.pj.prueba.domain.model.negocio.BuenaPractica;
+import pe.gob.pj.prueba.domain.model.negocio.FortalecimientoCapacidades;
+import pe.gob.pj.prueba.domain.model.negocio.JusticiaItinerante;
+import pe.gob.pj.prueba.domain.model.negocio.PromocionCultura;
 import pe.gob.pj.prueba.domain.port.output.GenerarReportePort;
+
+import java.util.List;
 
 @Component
 @RequiredArgsConstructor
@@ -16,6 +21,9 @@ public class GenerarReporteAdapter implements GenerarReportePort {
     private final ReporteJpeService servicioJpe;
     private final ReporteLljService servicioLlj;
     private final ReporteOrientadoraJudicialService servicioOJ;
+    private final ReporteJusticiaItineranteExcelService servicioItineranteExcel;
+    private final ReportePromocionCulturaExcelService servicioPromocionExcel;
+    private final ReporteFortalecimientoExcelService servicioFortalecimientoExcel;
 
     @Override
     public byte[] generarFichaItinerante(Long idEvento) throws Exception {
@@ -50,4 +58,20 @@ public class GenerarReporteAdapter implements GenerarReportePort {
         return servicioOJ.generarFichaPdf(id);
     }
 
+
+
+    @Override
+    public byte[] generarExcelListado(List<JusticiaItinerante> lista) throws Exception {
+        return servicioItineranteExcel.generarExcelListado(lista);
+    }
+
+    @Override
+    public byte[] generarExcelPromocion(List<PromocionCultura> lista) throws Exception {
+        return servicioPromocionExcel.generarExcel(lista);
+    }
+
+    @Override
+    public byte[] generarExcelFortalecimiento(List<FortalecimientoCapacidades> lista) throws Exception {
+        return servicioFortalecimientoExcel.generarExcel(lista);
+    }
 }

@@ -27,6 +27,7 @@ import pe.gob.pj.prueba.infraestructure.rest.requests.RegistrarPromocionRequest;
 import pe.gob.pj.prueba.infraestructure.rest.responses.GlobalResponse;
 import pe.gob.pj.prueba.infraestructure.rest.responses.PromocionCulturaResponse;
 
+import java.io.ByteArrayInputStream;
 import java.util.List;
 import java.util.Optional;
 import java.util.stream.Collectors;
@@ -205,6 +206,33 @@ public class GestionPromocionCulturaController implements GestionPromocion, Gene
                     .body(new InputStreamResource(recurso.getStream()));
         } catch (Exception e) {
             throw new RuntimeException(e.getMessage());
+        }
+    }
+
+    @Override
+    public ResponseEntity<Resource> exportarExcel(PeticionServicios peticion, ListarPromocionRequest filtros) {
+        cargarTramaPeticion(peticion, filtros);
+
+        try {
+
+            var query = mapper.toQuery(filtros);
+
+            // 3. Ejecutar Caso de Uso
+            byte[] excelBytes = useCase.exportarExcel(peticion.getCuo(), query);
+
+            // 4. Configurar nombre de archivo único
+            String filename = "Reporte_Promocion_Cultura.xlsx";
+            InputStreamResource resource = new InputStreamResource(new ByteArrayInputStream(excelBytes));
+
+            // 5. Retornar archivo
+            return ResponseEntity.ok()
+                    .header(HttpHeaders.CONTENT_DISPOSITION, "attachment; filename=\"" + filename + "\"")
+                    .contentType(MediaType.parseMediaType("application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"))
+                    .body(resource);
+
+        } catch (Exception e) {
+            log.error("[{}] Error exportando Excel Promoción Cultura: {}", peticion.getCuo(), e.getMessage());
+            throw new RuntimeException("Error al generar Excel: " + e.getMessage());
         }
     }
 }

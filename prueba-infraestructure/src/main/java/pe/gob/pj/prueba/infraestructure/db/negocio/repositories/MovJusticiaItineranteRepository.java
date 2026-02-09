@@ -37,6 +37,22 @@ public interface MovJusticiaItineranteRepository extends JpaRepository<MovJustic
             Pageable pageable
     );
 
+    @Query("SELECT j FROM MovJusticiaItineranteEntity j " +
+            "WHERE j.activo = '1' " +
+            "AND (:distrito IS NULL OR j.distritoJudicialId = :distrito) " +
+            "AND (cast(:fInicio as date) IS NULL OR j.fechaInicio >= :fInicio) " +
+            "AND (cast(:fFin as date) IS NULL OR j.fechaInicio <= :fFin) " +
+            "AND (:search IS NULL OR :search = '' OR " +
+            "     UPPER(j.codigo) LIKE UPPER(CONCAT('%', :search, '%')) OR " +
+            "     UPPER(j.lugarActividad) LIKE UPPER(CONCAT('%', :search, '%'))) " +
+            "ORDER BY j.id DESC")
+    List<MovJusticiaItineranteEntity> listarSinPaginacion(
+            @Param("search") String search,
+            @Param("distrito") Long distrito,
+            @Param("fInicio") LocalDate fInicio,
+            @Param("fFin") LocalDate fFin
+    );
+
     // Obtener último código para correlativo (ej: busca '%-2026-JI' en distrito X)
     @Query(value = "SELECT c_codigo FROM acjust.mov_justicia_itinerante " +
             "WHERE c_codigo LIKE %:sufijoAnio " +

@@ -196,4 +196,18 @@ public class GestionPromocionUseCaseAdapter implements GestionPromocionUseCasePo
             }
         }
     }
+
+    @Override
+    @Transactional(transactionManager = TX_MANAGER, propagation = Propagation.REQUIRED, readOnly = true, rollbackFor = {Exception.class, SQLException.class})
+    public byte[] exportarExcel(String cuo, ListarPromocionQuery query) throws Exception {
+        log.info("[{}] Iniciando exportación Excel de Promoción Cultura...", cuo);
+
+        List<PromocionCultura> lista = persistencePort.listarParaExcel(cuo, query);
+
+        if (lista.isEmpty()) {
+            log.warn("[{}] No se encontraron registros de Promoción Cultura para exportar.", cuo);
+        }
+
+        return reportePort.generarExcelPromocion(lista);
+    }
 }

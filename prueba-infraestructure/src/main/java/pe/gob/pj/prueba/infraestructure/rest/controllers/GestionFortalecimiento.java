@@ -95,4 +95,11 @@ public interface GestionFortalecimiento {
             @Parameter(hidden = true) @RequestAttribute(name = ProjectConstants.PETICION) PeticionServicios peticion,
             @PathVariable Long id
     );
+
+    @GetMapping("/exportar-excel")
+    @Operation(summary = "Exportar Listado a Excel")
+    ResponseEntity<Resource> exportarExcel(
+            @Parameter(hidden = true) @RequestAttribute(name = ProjectConstants.PETICION) PeticionServicios peticion,
+            @ModelAttribute ListarFfcRequest filtros
+    );
 }

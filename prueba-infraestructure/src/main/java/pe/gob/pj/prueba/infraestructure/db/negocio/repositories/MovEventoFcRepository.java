@@ -42,6 +42,24 @@ public interface MovEventoFcRepository extends JpaRepository<MovEventoFcEntity, 
             @Param("fecFin") LocalDate fecFin,
             Pageable pageable);
 
+    @Query("SELECT e FROM MovEventoFcEntity e " +
+            "WHERE e.activo = '1' " +
+            "AND (:distrito IS NULL OR e.distritoJudicialId = :distrito) " +
+            "AND (:tipoEvento IS NULL OR :tipoEvento = '' OR e.tipoEvento = :tipoEvento) " +
+            "AND (cast(:fecIni as date) IS NULL OR e.fechaInicio >= :fecIni) " +
+            "AND (cast(:fecFin as date) IS NULL OR e.fechaInicio <= :fecFin) " +
+            "AND (:search IS NULL OR :search = '' OR " +
+            "     UPPER(e.codigo) LIKE UPPER(CONCAT('%', :search, '%')) OR " +
+            "     UPPER(e.nombreEvento) LIKE UPPER(CONCAT('%', :search, '%'))) " +
+            "ORDER BY e.id DESC")
+    List<MovEventoFcEntity> listarSinPaginacion(
+            @Param("search") String search,
+            @Param("distrito") Long distrito,
+            @Param("tipoEvento") String tipoEvento,
+            @Param("fecIni") LocalDate fecIni,
+            @Param("fecFin") LocalDate fecFin
+    );
+
     @Query("SELECT EXTRACT(MONTH FROM e.fechaInicio) as mes, COUNT(e) as cantidad " +
             "FROM MovJusticiaItineranteEntity e " +
             "WHERE e.activo = '1' " +

@@ -196,4 +196,19 @@ public class GestionFortalecimientoUseCaseAdapter implements GestionFortalecimie
             }
         }
     }
+
+    @Override
+    @Transactional(transactionManager = TX_MANAGER, propagation = Propagation.REQUIRED, readOnly = true)
+    public byte[] exportarExcel(String cuo, ListarFortalecimientoQuery query) throws Exception {
+        log.info("[{}] Iniciando exportación Excel de Fortalecimiento...", cuo);
+
+        List<FortalecimientoCapacidades> lista = persistencePort.listarParaExcel(cuo, query);
+
+        if (lista.isEmpty()) {
+            log.warn("[{}] No se encontraron registros para exportar.", cuo);
+        }
+
+        // Asegúrate de agregar 'generarExcelortalecimiento' en tu GenerarReportePort
+        return reportePort.generarExcelFortalecimiento(lista);
+    }
 }

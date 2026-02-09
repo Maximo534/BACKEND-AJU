@@ -173,4 +173,19 @@ public class GestionJusticiaItineranteUseCaseAdapter implements GestionJusticiaI
     public RecursoArchivo descargarArchivoPorId(Long idArchivo) throws Exception {
         return gestorArchivos.descargarPorId(idArchivo);
     }
+
+
+    @Override
+    @Transactional(transactionManager = TX_MANAGER, propagation = Propagation.REQUIRED, readOnly = true)
+    public byte[] exportarExcel(String cuo, ListarJusticiaItineranteQuery query) throws Exception {
+        log.info("[{}] Iniciando exportación Excel de Justicia Itinerante...", cuo);
+
+        List<JusticiaItinerante> lista = persistencePort.listarParaExcel(cuo, query);
+
+        if (lista.isEmpty()) {
+            log.warn("[{}] No se encontraron registros para exportar.", cuo);
+        }
+
+        return reportePort.generarExcelListado(lista);
+    }
 }

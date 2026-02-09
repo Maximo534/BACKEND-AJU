@@ -11,6 +11,7 @@ import pe.gob.pj.prueba.infraestructure.common.utils.EsquemaConstants;
 import pe.gob.pj.prueba.infraestructure.common.utils.InformacionRedUtils;
 import pe.gob.pj.prueba.infraestructure.db.negocio.entities.ids.MovJiPersonasAtendidasId;
 import pe.gob.pj.prueba.infraestructure.db.negocio.entities.ids.TrimStringConverter;
+import pe.gob.pj.prueba.infraestructure.db.negocio.entities.masters.MaeTipoVulnerabilidadEntity;
 
 import java.io.Serializable;
 import java.time.LocalDateTime;
@@ -51,6 +52,10 @@ public class MovJiPersonasAtendidasEntity implements Serializable {
 
     @Column(name = "l_activo", length = 1, nullable = false)
     String activo = Estado.ACTIVO_NUMERICO.getNombre();
+
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "n_tipo_vuln_id", insertable = false, updatable = false)
+    private MaeTipoVulnerabilidadEntity tipoVulnerabilidad;
 
     @ManyToOne(fetch = FetchType.LAZY)
     @MapsId("justiciaItineranteId")
