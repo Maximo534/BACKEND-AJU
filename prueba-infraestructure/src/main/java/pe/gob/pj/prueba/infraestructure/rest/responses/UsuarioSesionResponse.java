@@ -10,6 +10,10 @@ public class UsuarioSesionResponse implements Serializable {
     private String usuario;
     private String nombreCompleto;
     private String cargo;
-    private String sede;
+
+    private String nombreDistritoJudicial;
+    private Integer idDistritoJudicial;
+
     private String eje;
+    private Integer idEje;
 }

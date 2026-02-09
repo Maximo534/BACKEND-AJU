@@ -27,6 +27,7 @@ import pe.gob.pj.prueba.infraestructure.db.negocio.repositories.MovProgramacionE
 import pe.gob.pj.prueba.infraestructure.db.negocio.repositories.MovUsuarioPerfilRepository;
 import pe.gob.pj.prueba.infraestructure.db.negocio.repositories.MovUsuarioRepository;
 import pe.gob.pj.prueba.infraestructure.db.negocio.repositories.masters.MaeDistritoJudicialRepository;
+import pe.gob.pj.prueba.infraestructure.db.negocio.repositories.masters.MaeEjeRepository;
 import pe.gob.pj.prueba.infraestructure.db.negocio.repositories.masters.MaeInstanciaRepository;
 import pe.gob.pj.prueba.infraestructure.mappers.UsuarioMapper;
 
@@ -44,12 +45,12 @@ public class UsuarioPersistenceAdapter implements UsuarioPersistencePort {
     MaeRolJerarquiaRepository jerarquiaRepository;
     MaeDistritoJudicialRepository repoDistrito;
     MaeInstanciaRepository repoInstancia;
+    MaeEjeRepository repoEje;
 
     @Override
     public Usuario buscarPorLoginConDetalle(String cuo, String login) {
         if (login == null) return null;
 
-        // 1. Buscar Usuario Base
         MovUsuarioEntity entity = repository.findByActivoAndUsuarioIgnoreCase("1", login.trim())
                 .orElse(null);
 
@@ -57,8 +58,6 @@ public class UsuarioPersistenceAdapter implements UsuarioPersistencePort {
 
         Usuario dominio = mapper.toUsuario(entity);
 
-
-        // Buscamos el perfil activo
         var perfilOpt = usuarioPerfilRepository.findByUsuarioId(entity.getId()).stream()
                 .filter(p -> "1".equals(p.getActivo()))
                 .findFirst();
@@ -66,44 +65,46 @@ public class UsuarioPersistenceAdapter implements UsuarioPersistencePort {
         String nombrePerfil = null;
         if (perfilOpt.isPresent()) {
             nombrePerfil = perfilOpt.get().getPerfil().getNombre();
-            dominio.setNombrePerfil(nombrePerfil);
         }
 
         String cargoFinal = entity.getCargo();
         if (cargoFinal == null) cargoFinal = "-";
 
-        // CORRECCIÓN: Verificamos si el PERFIL (no el cargo) es de JUEZ
         if (nombrePerfil != null && nombrePerfil.toUpperCase().contains("JUEZ")) {
             String sigla = entity.getSigla();
             if (sigla != null && !sigla.isBlank() && !"-".equals(sigla)) {
                 cargoFinal = cargoFinal.trim() + " (" + sigla.trim() + ")";
             }
         }
-
         dominio.setCargo(cargoFinal);
 
-        // Intentamos buscar programación activa (Eje)
+        // A. Intentar buscar en Programación Eje (Tabla MOV_PROGRAMACION_EJE)
         var programacionOpt = programacionEjeRepository.findFirstByIdUsuarioAndActivo(entity.getId(), "1");
 
         if (programacionOpt.isPresent()) {
             var prog = programacionOpt.get();
+
             if (prog.getIdDistritoJudicial() != null) {
                 dominio.setIdDistritoJudicial(prog.getIdDistritoJudicial());
             }
             if (prog.getIdEje() != null) {
-                dominio.setIdInstancia(prog.getIdEje());
+                dominio.setIdEje(prog.getIdEje());
             }
         }
 
 
-        // Buscar Nombre Sede (Distrito Judicial)
         if (dominio.getIdDistritoJudicial() != null) {
             repoDistrito.findById(dominio.getIdDistritoJudicial().longValue())
                     .ifPresent(dj -> dominio.setNombreDistritoJudicial(dj.getNombre()));
         }
 
-        // Buscar Nombre Eje (Instancia)
-        if (dominio.getIdInstancia() != null) {
+
+        if (dominio.getIdEje() != null) {
+            repoEje.findById(dominio.getIdEje().longValue())
+                    .ifPresent(eje -> dominio.setNombreInstancia(eje.getDescripcion()));
+        }
+        // Si no tiene Eje, pero tiene Instancia (del usuario base), buscamos en MAE_INSTANCIA
+        else if (dominio.getIdInstancia() != null) {
             repoInstancia.findById(dominio.getIdInstancia().longValue())
                     .ifPresent(inst -> dominio.setNombreInstancia(inst.getDescripcion()));
         }

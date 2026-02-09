@@ -113,10 +113,19 @@ public interface UsuarioMapper {
   @Mapping(target = "perfiles", ignore = true)
   Usuario toUsuarioEstado(Integer id, String activo, PeticionServicios peticion);
 
+  // =========================================================
+  // MAPEO PARA DATOS DE SESIÓN
+  // =========================================================
   @Mapping(target = "usuario", source = "nombreUsuario")
   @Mapping(target = "nombreCompleto", source = "nombreCompleto")
   @Mapping(target = "cargo", source = "cargo")
-  @Mapping(target = "sede", source = "nombreDistritoJudicial")
+
+  // --- DISTRITO JUDICIAL ---
+  @Mapping(target = "nombreDistritoJudicial", source = "nombreDistritoJudicial")
+  @Mapping(target = "idDistritoJudicial", source = "idDistritoJudicial")
+
+  // --- EJE ---
   @Mapping(target = "eje", source = "nombreInstancia")
+  @Mapping(target = "idEje", source = "idEje")
   UsuarioSesionResponse toSesionResponse(Usuario domain);
 }
