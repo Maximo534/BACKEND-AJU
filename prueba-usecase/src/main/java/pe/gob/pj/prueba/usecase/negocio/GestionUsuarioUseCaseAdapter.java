@@ -180,7 +180,6 @@ public class GestionUsuarioUseCaseAdapter implements GestionUsuarioUseCasePort {
         }
 
         //VALIDAR CLAVE ACTUAL
-        // Compara la 'claveActual' (texto plano) con el Hash guardado en BD.
         if (!passwordEncoder.matches(claveActual, usuario.getClave())) {
             log.warn("[{}] Intento fallido de cambio de clave. La clave actual no coincide para el usuario: {}", cuo, loginUsuario);
             throw new IllegalArgumentException("La contraseña actual es incorrecta.");
@@ -193,5 +192,18 @@ public class GestionUsuarioUseCaseAdapter implements GestionUsuarioUseCasePort {
         persistencePort.actualizarClave(cuo, usuario.getId(), nuevoHash);
 
         log.info("[{}] El usuario {} cambió su contraseña exitosamente.", cuo, loginUsuario);
+    }
+
+    @Override
+    @Transactional(transactionManager = TX_MANAGER, propagation = Propagation.REQUIRES_NEW, rollbackFor = {Exception.class, SQLException.class})
+    public Usuario obtenerDatosSesion(String cuo, String login) {
+
+        Usuario usuario = persistencePort.buscarPorLoginConDetalle(cuo, login);
+
+        if (usuario == null) {
+            throw new MovimientoNoEncontradoException("No se encontraron datos para el usuario de la sesión.");
+        }
+
+        return usuario;
     }
 }

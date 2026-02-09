@@ -15,6 +15,7 @@ import lombok.RequiredArgsConstructor;
 import lombok.experimental.FieldDefaults;
 import lombok.extern.slf4j.Slf4j;
 import pe.gob.pj.prueba.domain.model.auditoriageneral.PeticionServicios;
+import pe.gob.pj.prueba.domain.model.negocio.Usuario;
 import pe.gob.pj.prueba.domain.port.usecase.auditoriageneral.AuditarPeticionUseCasePort;
 import pe.gob.pj.prueba.domain.port.usecase.negocio.GestionUsuarioUseCasePort;
 import pe.gob.pj.prueba.infraestructure.mappers.AuditoriaGeneralMapper;
@@ -23,6 +24,7 @@ import pe.gob.pj.prueba.infraestructure.rest.requests.CambiarClaveRequest;
 import pe.gob.pj.prueba.infraestructure.rest.requests.ListarUsuarioRequest;
 import pe.gob.pj.prueba.infraestructure.rest.requests.RegistrarUsuarioRequest;
 import pe.gob.pj.prueba.infraestructure.rest.responses.GlobalResponse;
+import pe.gob.pj.prueba.infraestructure.rest.responses.UsuarioSesionResponse;
 import pe.gob.pj.prueba.infraestructure.rest.responses.VerificarLoginResponse;
 
 @Slf4j
@@ -162,6 +164,20 @@ public class GestionarUsuarioController implements GestionarUsuario, GenerarHttp
 
         GlobalResponse response = new GlobalResponse(peticion.getCuo());
         response.setDescripcion("Su contraseña ha sido actualizada correctamente.");
+
+        guardarAuditoria(Optional.ofNullable(peticion));
+        return ResponseEntity.ok(response);
+    }
+
+    @Override
+    public ResponseEntity<GlobalResponse> obtenerPerfilSesion(PeticionServicios peticion) {
+
+        Usuario usuarioDomain = useCase.obtenerDatosSesion(peticion.getCuo(), peticion.getUsuario());
+
+        UsuarioSesionResponse data = mapper.toSesionResponse(usuarioDomain);
+
+        GlobalResponse response = new GlobalResponse(peticion.getCuo());
+        response.setData(data);
 
         guardarAuditoria(Optional.ofNullable(peticion));
         return ResponseEntity.ok(response);

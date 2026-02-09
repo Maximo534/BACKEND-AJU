@@ -115,4 +115,9 @@ public interface GestionarUsuario {
             @Parameter(hidden = true) @RequestAttribute(name = ProjectConstants.PETICION) PeticionServicios peticion,
             @Valid @RequestBody CambiarClaveRequest request);
 
+    @GetMapping(value = "/datos-sesion")
+    @Operation(summary = "Obtener Datos de Sesión", description = "Devuelve nombre, cargo (con sigla), sede y eje del usuario actual.")
+    ResponseEntity<GlobalResponse> obtenerPerfilSesion(
+            @Parameter(hidden = true) @RequestAttribute(name = ProjectConstants.PETICION) PeticionServicios peticion
+    );
 }

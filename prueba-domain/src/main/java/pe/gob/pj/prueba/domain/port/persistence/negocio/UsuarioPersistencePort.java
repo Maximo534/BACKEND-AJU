@@ -6,6 +6,7 @@ import pe.gob.pj.prueba.domain.model.negocio.query.ListarUsuarioQuery;
 
 public interface UsuarioPersistencePort {
 
+    Usuario buscarPorLoginConDetalle(String cuo, String login);
     Pagina<Usuario> listar(String cuo, ListarUsuarioQuery query, int pagina, int tamanio);
 
     Usuario registrar(String cuo, Usuario usuario);

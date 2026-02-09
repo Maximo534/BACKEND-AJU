@@ -21,4 +21,6 @@ public interface GestionUsuarioUseCasePort {
     void resetearClave(String cuo, Integer idUsuarioObjetivo, String rolOperador, String loginOperador);
 
     void cambiarContrasenaPropia(String cuo, String loginUsuario, String claveActual, String nuevaClave, String confirmacion);
+
+    Usuario obtenerDatosSesion(String cuo, String login);
 }

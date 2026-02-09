@@ -46,6 +46,72 @@ public class UsuarioPersistenceAdapter implements UsuarioPersistencePort {
     MaeInstanciaRepository repoInstancia;
 
     @Override
+    public Usuario buscarPorLoginConDetalle(String cuo, String login) {
+        if (login == null) return null;
+
+        // 1. Buscar Usuario Base
+        MovUsuarioEntity entity = repository.findByActivoAndUsuarioIgnoreCase("1", login.trim())
+                .orElse(null);
+
+        if (entity == null) return null;
+
+        Usuario dominio = mapper.toUsuario(entity);
+
+
+        // Buscamos el perfil activo
+        var perfilOpt = usuarioPerfilRepository.findByUsuarioId(entity.getId()).stream()
+                .filter(p -> "1".equals(p.getActivo()))
+                .findFirst();
+
+        String nombrePerfil = null;
+        if (perfilOpt.isPresent()) {
+            nombrePerfil = perfilOpt.get().getPerfil().getNombre();
+            dominio.setNombrePerfil(nombrePerfil);
+        }
+
+        String cargoFinal = entity.getCargo();
+        if (cargoFinal == null) cargoFinal = "-";
+
+        // CORRECCIÓN: Verificamos si el PERFIL (no el cargo) es de JUEZ
+        if (nombrePerfil != null && nombrePerfil.toUpperCase().contains("JUEZ")) {
+            String sigla = entity.getSigla();
+            if (sigla != null && !sigla.isBlank() && !"-".equals(sigla)) {
+                cargoFinal = cargoFinal.trim() + " (" + sigla.trim() + ")";
+            }
+        }
+
+        dominio.setCargo(cargoFinal);
+
+        // Intentamos buscar programación activa (Eje)
+        var programacionOpt = programacionEjeRepository.findFirstByIdUsuarioAndActivo(entity.getId(), "1");
+
+        if (programacionOpt.isPresent()) {
+            var prog = programacionOpt.get();
+            if (prog.getIdDistritoJudicial() != null) {
+                dominio.setIdDistritoJudicial(prog.getIdDistritoJudicial());
+            }
+            if (prog.getIdEje() != null) {
+                dominio.setIdInstancia(prog.getIdEje());
+            }
+        }
+
+
+        // Buscar Nombre Sede (Distrito Judicial)
+        if (dominio.getIdDistritoJudicial() != null) {
+            repoDistrito.findById(dominio.getIdDistritoJudicial().longValue())
+                    .ifPresent(dj -> dominio.setNombreDistritoJudicial(dj.getNombre()));
+        }
+
+        // Buscar Nombre Eje (Instancia)
+        if (dominio.getIdInstancia() != null) {
+            repoInstancia.findById(dominio.getIdInstancia().longValue())
+                    .ifPresent(inst -> dominio.setNombreInstancia(inst.getDescripcion()));
+        }
+
+        return dominio;
+    }
+
+    @Override
     public Pagina<Usuario> listar(String cuo, ListarUsuarioQuery query, int pagina, int tamanio) {
 
         Pageable pageable = PageRequest.of(pagina - 1, tamanio, Sort.by("n_usuario_id").descending());

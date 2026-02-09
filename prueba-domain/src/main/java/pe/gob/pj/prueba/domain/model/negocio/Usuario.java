@@ -20,7 +20,7 @@ public class Usuario extends Auditoria implements Serializable {
 
 	String nombreUsuario;
 	String clave;
-
+	String nombrePerfil;
 	String cargo;
 	String sigla;
 	String email;

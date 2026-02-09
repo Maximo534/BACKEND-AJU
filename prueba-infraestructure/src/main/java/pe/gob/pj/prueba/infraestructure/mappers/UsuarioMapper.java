@@ -9,6 +9,7 @@ import pe.gob.pj.prueba.infraestructure.db.negocio.entities.MovUsuarioEntity;
 import pe.gob.pj.prueba.infraestructure.rest.requests.ListarUsuarioRequest;
 import pe.gob.pj.prueba.infraestructure.rest.requests.RegistrarUsuarioRequest;
 import pe.gob.pj.prueba.infraestructure.rest.responses.UsuarioResponse;
+import pe.gob.pj.prueba.infraestructure.rest.responses.UsuarioSesionResponse;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -111,4 +112,11 @@ public interface UsuarioMapper {
   @Mapping(target = "clave", ignore = true)
   @Mapping(target = "perfiles", ignore = true)
   Usuario toUsuarioEstado(Integer id, String activo, PeticionServicios peticion);
+
+  @Mapping(target = "usuario", source = "nombreUsuario")
+  @Mapping(target = "nombreCompleto", source = "nombreCompleto")
+  @Mapping(target = "cargo", source = "cargo")
+  @Mapping(target = "sede", source = "nombreDistritoJudicial")
+  @Mapping(target = "eje", source = "nombreInstancia")
+  UsuarioSesionResponse toSesionResponse(Usuario domain);
 }
