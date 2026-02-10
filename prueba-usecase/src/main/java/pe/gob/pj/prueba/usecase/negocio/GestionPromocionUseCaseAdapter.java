@@ -37,8 +37,35 @@ public class GestionPromocionUseCaseAdapter implements GestionPromocionUseCasePo
 
     @Override
     @Transactional(transactionManager = TX_MANAGER, propagation = Propagation.REQUIRES_NEW, readOnly = true, rollbackFor = {Exception.class, SQLException.class})
-    public Pagina<PromocionCultura> listar(String cuo, ListarPromocionQuery query, int pagina, int tamanio) {
+    public Pagina<PromocionCultura> listar(String cuo, ListarPromocionQuery query, int pagina, int tamanio, String rolUsuario, String loginUsuario) {
+
+        if (rolUsuario != null && rolUsuario.toUpperCase().contains("JUEZ")) {
+            query.setUsuarioRegistroLogin(loginUsuario);
+        } else {
+            query.setUsuarioRegistroLogin(null);
+        }
+
         return persistencePort.listar(cuo, query, pagina, tamanio);
+    }
+
+    @Override
+    @Transactional(transactionManager = TX_MANAGER, propagation = Propagation.REQUIRED, readOnly = true, rollbackFor = {Exception.class, SQLException.class})
+    public byte[] exportarExcel(String cuo, ListarPromocionQuery query, String rolUsuario, String loginUsuario) throws Exception {
+        log.info("[{}] Iniciando exportación Excel de Promoción Cultura...", cuo);
+
+        if (rolUsuario != null && rolUsuario.toUpperCase().contains("JUEZ")) {
+            query.setUsuarioRegistroLogin(loginUsuario);
+        } else {
+            query.setUsuarioRegistroLogin(null);
+        }
+
+        List<PromocionCultura> lista = persistencePort.listarParaExcel(cuo, query);
+
+        if (lista.isEmpty()) {
+            log.warn("[{}] No se encontraron registros de Promoción Cultura para exportar.", cuo);
+        }
+
+        return reportePort.generarExcelPromocion(lista);
     }
 
     @Override
@@ -197,17 +224,4 @@ public class GestionPromocionUseCaseAdapter implements GestionPromocionUseCasePo
         }
     }
 
-    @Override
-    @Transactional(transactionManager = TX_MANAGER, propagation = Propagation.REQUIRED, readOnly = true, rollbackFor = {Exception.class, SQLException.class})
-    public byte[] exportarExcel(String cuo, ListarPromocionQuery query) throws Exception {
-        log.info("[{}] Iniciando exportación Excel de Promoción Cultura...", cuo);
-
-        List<PromocionCultura> lista = persistencePort.listarParaExcel(cuo, query);
-
-        if (lista.isEmpty()) {
-            log.warn("[{}] No se encontraron registros de Promoción Cultura para exportar.", cuo);
-        }
-
-        return reportePort.generarExcelPromocion(lista);
-    }
 }

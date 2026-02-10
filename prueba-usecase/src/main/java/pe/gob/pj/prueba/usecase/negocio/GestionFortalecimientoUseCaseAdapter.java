@@ -37,8 +37,35 @@ public class GestionFortalecimientoUseCaseAdapter implements GestionFortalecimie
 
     @Override
     @Transactional(transactionManager = TX_MANAGER, propagation = Propagation.REQUIRES_NEW, readOnly = true, rollbackFor = {Exception.class, SQLException.class})
-    public Pagina<FortalecimientoCapacidades> listar(String cuo, ListarFortalecimientoQuery query, int pagina, int tamanio) {
+    public Pagina<FortalecimientoCapacidades> listar(String cuo, ListarFortalecimientoQuery query, int pagina, int tamanio, String rolUsuario, String loginUsuario) {
+
+        if (rolUsuario != null && rolUsuario.toUpperCase().contains("JUEZ")) {
+            query.setUsuarioRegistroLogin(loginUsuario);
+        } else {
+            query.setUsuarioRegistroLogin(null);
+        }
+
         return persistencePort.listar(cuo, query, pagina, tamanio);
+    }
+
+    @Override
+    @Transactional(transactionManager = TX_MANAGER, propagation = Propagation.REQUIRED, readOnly = true)
+    public byte[] exportarExcel(String cuo, ListarFortalecimientoQuery query, String rolUsuario, String loginUsuario) throws Exception {
+        log.info("[{}] Iniciando exportación Excel de Fortalecimiento...", cuo);
+
+        if (rolUsuario != null && rolUsuario.toUpperCase().contains("JUEZ")) {
+            query.setUsuarioRegistroLogin(loginUsuario);
+        } else {
+            query.setUsuarioRegistroLogin(null);
+        }
+
+        List<FortalecimientoCapacidades> lista = persistencePort.listarParaExcel(cuo, query);
+
+        if (lista.isEmpty()) {
+            log.warn("[{}] No se encontraron registros para exportar.", cuo);
+        }
+
+        return reportePort.generarExcelFortalecimiento(lista);
     }
 
     @Override
@@ -197,18 +224,4 @@ public class GestionFortalecimientoUseCaseAdapter implements GestionFortalecimie
         }
     }
 
-    @Override
-    @Transactional(transactionManager = TX_MANAGER, propagation = Propagation.REQUIRED, readOnly = true)
-    public byte[] exportarExcel(String cuo, ListarFortalecimientoQuery query) throws Exception {
-        log.info("[{}] Iniciando exportación Excel de Fortalecimiento...", cuo);
-
-        List<FortalecimientoCapacidades> lista = persistencePort.listarParaExcel(cuo, query);
-
-        if (lista.isEmpty()) {
-            log.warn("[{}] No se encontraron registros para exportar.", cuo);
-        }
-
-        // Asegúrate de agregar 'generarExcelortalecimiento' en tu GenerarReportePort
-        return reportePort.generarExcelFortalecimiento(lista);
-    }
 }

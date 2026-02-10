@@ -36,11 +36,37 @@ public class GestionJusticiaItineranteUseCaseAdapter implements GestionJusticiaI
     static final String TX_MANAGER = "txManagerNegocio";
 
     @Override
-    @Transactional(transactionManager = TX_MANAGER, propagation = Propagation.REQUIRES_NEW, readOnly = true, rollbackFor = {Exception.class, SQLException.class})
-    public Pagina<JusticiaItinerante> listar(String cuo, ListarJusticiaItineranteQuery query, int pagina, int tamanio) {
+    @Transactional(transactionManager = TX_MANAGER, propagation = Propagation.REQUIRES_NEW, readOnly = true)
+    public Pagina<JusticiaItinerante> listar(String cuo, ListarJusticiaItineranteQuery query, int pagina, int tamanio, String rolUsuario, String loginUsuario) {
+
+        if (rolUsuario != null && rolUsuario.toUpperCase().contains("JUEZ")) {
+            query.setUsuarioRegistroLogin(loginUsuario);
+        } else {
+            query.setUsuarioRegistroLogin(null);
+        }
+
         return persistencePort.listar(cuo, query, pagina, tamanio);
     }
 
+    @Override
+    @Transactional(transactionManager = TX_MANAGER, propagation = Propagation.REQUIRED, readOnly = true)
+    public byte[] exportarExcel(String cuo, ListarJusticiaItineranteQuery query, String rolUsuario, String loginUsuario) throws Exception {
+        log.info("[{}] Iniciando exportación Excel...", cuo);
+
+        if (rolUsuario != null && rolUsuario.toUpperCase().contains("JUEZ")) {
+            query.setUsuarioRegistroLogin(loginUsuario);
+        } else {
+            query.setUsuarioRegistroLogin(null);
+        }
+
+        List<JusticiaItinerante> lista = persistencePort.listarParaExcel(cuo, query);
+
+        if (lista.isEmpty()) {
+            log.warn("[{}] No se encontraron registros.", cuo);
+        }
+
+        return reportePort.generarExcelListado(lista);
+    }
     @Override
     @Transactional(transactionManager = TX_MANAGER, propagation = Propagation.REQUIRES_NEW, rollbackFor = {Exception.class, SQLException.class})
     public JusticiaItinerante registrar(String cuo, JusticiaItinerante dominio, MultipartFile anexo, List<MultipartFile> videos, List<MultipartFile> fotos) throws Exception {
@@ -174,18 +200,4 @@ public class GestionJusticiaItineranteUseCaseAdapter implements GestionJusticiaI
         return gestorArchivos.descargarPorId(idArchivo);
     }
 
-
-    @Override
-    @Transactional(transactionManager = TX_MANAGER, propagation = Propagation.REQUIRED, readOnly = true)
-    public byte[] exportarExcel(String cuo, ListarJusticiaItineranteQuery query) throws Exception {
-        log.info("[{}] Iniciando exportación Excel de Justicia Itinerante...", cuo);
-
-        List<JusticiaItinerante> lista = persistencePort.listarParaExcel(cuo, query);
-
-        if (lista.isEmpty()) {
-            log.warn("[{}] No se encontraron registros para exportar.", cuo);
-        }
-
-        return reportePort.generarExcelListado(lista);
-    }
 }

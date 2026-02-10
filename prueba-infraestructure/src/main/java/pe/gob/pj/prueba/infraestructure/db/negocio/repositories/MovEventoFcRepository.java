@@ -30,6 +30,7 @@ public interface MovEventoFcRepository extends JpaRepository<MovEventoFcEntity, 
             "AND (:tipo IS NULL OR e.tipoEvento = :tipo) " +
             "AND (cast(:fecIni as date) IS NULL OR e.fechaInicio >= :fecIni) " +
             "AND (cast(:fecFin as date) IS NULL OR e.fechaInicio <= :fecFin) " +
+            "AND (:usuarioId IS NULL OR e.usuarioRegistroId = :usuarioId) " +
             "AND (:search IS NULL OR :search = '' OR " +
             "     UPPER(e.codigo) LIKE UPPER(CONCAT('%', :search, '%')) OR " +
             "     UPPER(e.nombreEvento) LIKE UPPER(CONCAT('%', :search, '%'))) " +
@@ -40,6 +41,7 @@ public interface MovEventoFcRepository extends JpaRepository<MovEventoFcEntity, 
             @Param("tipo") String tipo,
             @Param("fecIni") LocalDate fecIni,
             @Param("fecFin") LocalDate fecFin,
+            @Param("usuarioId") Long usuarioId,
             Pageable pageable);
 
     @Query("SELECT e FROM MovEventoFcEntity e " +
@@ -48,6 +50,7 @@ public interface MovEventoFcRepository extends JpaRepository<MovEventoFcEntity, 
             "AND (:tipoEvento IS NULL OR :tipoEvento = '' OR e.tipoEvento = :tipoEvento) " +
             "AND (cast(:fecIni as date) IS NULL OR e.fechaInicio >= :fecIni) " +
             "AND (cast(:fecFin as date) IS NULL OR e.fechaInicio <= :fecFin) " +
+            "AND (:usuarioId IS NULL OR e.usuarioRegistroId = :usuarioId) " +
             "AND (:search IS NULL OR :search = '' OR " +
             "     UPPER(e.codigo) LIKE UPPER(CONCAT('%', :search, '%')) OR " +
             "     UPPER(e.nombreEvento) LIKE UPPER(CONCAT('%', :search, '%'))) " +
@@ -57,7 +60,8 @@ public interface MovEventoFcRepository extends JpaRepository<MovEventoFcEntity, 
             @Param("distrito") Long distrito,
             @Param("tipoEvento") String tipoEvento,
             @Param("fecIni") LocalDate fecIni,
-            @Param("fecFin") LocalDate fecFin
+            @Param("fecFin") LocalDate fecFin,
+            @Param("usuarioId") Long usuarioId
     );
 
     @Query("SELECT EXTRACT(MONTH FROM e.fechaInicio) as mes, COUNT(e) as cantidad " +

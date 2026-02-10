@@ -16,6 +16,7 @@ import pe.gob.pj.prueba.domain.model.negocio.query.ListarFortalecimientoQuery;
 import pe.gob.pj.prueba.domain.port.persistence.negocio.FortalecimientoPersistencePort;
 import pe.gob.pj.prueba.infraestructure.db.negocio.entities.MovArchivoEntity;
 import pe.gob.pj.prueba.infraestructure.db.negocio.entities.MovEventoFcEntity;
+import pe.gob.pj.prueba.infraestructure.db.negocio.entities.MovUsuarioEntity;
 import pe.gob.pj.prueba.infraestructure.db.negocio.repositories.MovArchivosRepository;
 import pe.gob.pj.prueba.infraestructure.db.negocio.repositories.MovEventoFcRepository;
 import pe.gob.pj.prueba.infraestructure.db.negocio.repositories.MovUsuarioRepository;
@@ -43,12 +44,23 @@ public class FortalecimientoPersistenceAdapter implements FortalecimientoPersist
     public Pagina<FortalecimientoCapacidades> listar(String cuo, ListarFortalecimientoQuery query, int pagina, int tamanio) {
         Pageable pageable = PageRequest.of(pagina - 1, tamanio);
 
+        Long usuarioId = null;
+        if (query.getUsuarioRegistroLogin() != null && !query.getUsuarioRegistroLogin().isBlank()) {
+            MovUsuarioEntity usuario = usuarioRepository.findByActivoAndUsuario("1", query.getUsuarioRegistroLogin())
+                    .orElse(null);
+
+            if (usuario != null) {
+                usuarioId = usuario.getId().longValue();
+            }
+        }
+
         var pageResult = repository.listarCompleto(
                 query.getSearch(),
                 query.getDistritoJudicialId(),
                 query.getTipoEvento(),
                 query.getFechaInicio(),
                 query.getFechaFin(),
+                usuarioId,
                 pageable
         );
 
@@ -56,7 +68,6 @@ public class FortalecimientoPersistenceAdapter implements FortalecimientoPersist
                 .map(entity -> {
                     FortalecimientoCapacidades dominio = mapper.toDomain(entity);
 
-                    // Lógica optimizada: Solo nombre de corte, NO archivos
                     if (dominio.getDistritoJudicialId() != null) {
                         repoDistrito.findById(dominio.getDistritoJudicialId())
                                 .ifPresent(dj -> dominio.setDistritoJudicialNombre(dj.getNombre()));
@@ -73,6 +84,44 @@ public class FortalecimientoPersistenceAdapter implements FortalecimientoPersist
                 .paginaActual(pagina)
                 .tamanioPagina(tamanio)
                 .build();
+    }
+
+    @Override
+    @Transactional(readOnly = true)
+    public List<FortalecimientoCapacidades> listarParaExcel(String cuo, ListarFortalecimientoQuery query) {
+        log.info("[{}] Listando Fortalecimiento para Excel (Sin paginación)", cuo);
+
+        Long usuarioId = null;
+        if (query.getUsuarioRegistroLogin() != null && !query.getUsuarioRegistroLogin().isBlank()) {
+            MovUsuarioEntity usuario = usuarioRepository.findByActivoAndUsuario("1", query.getUsuarioRegistroLogin())
+                    .orElse(null);
+
+            if (usuario != null) {
+                usuarioId = usuario.getId().longValue();
+            }
+        }
+
+        List<MovEventoFcEntity> entities = repository.listarSinPaginacion(
+                query.getSearch(),
+                query.getDistritoJudicialId(),
+                query.getTipoEvento(),
+                query.getFechaInicio(),
+                query.getFechaFin(),
+                usuarioId
+        );
+
+        return entities.stream()
+                .map(entity -> {
+                    FortalecimientoCapacidades dominio = mapper.toDomain(entity);
+
+                    if (dominio.getDistritoJudicialId() != null) {
+                        repoDistrito.findById(dominio.getDistritoJudicialId())
+                                .ifPresent(dj -> dominio.setDistritoJudicialNombre(dj.getNombre()));
+                    }
+
+                    return dominio;
+                })
+                .collect(Collectors.toList());
     }
 
     @Override
@@ -253,31 +302,4 @@ public class FortalecimientoPersistenceAdapter implements FortalecimientoPersist
         }
     }
 
-    @Override
-    @Transactional(readOnly = true)
-    public List<FortalecimientoCapacidades> listarParaExcel(String cuo, ListarFortalecimientoQuery query) {
-        log.info("[{}] Listando Fortalecimiento para Excel (Sin paginación)", cuo);
-
-        // 1. Obtener entidades
-        List<MovEventoFcEntity> entities = repository.listarSinPaginacion(
-                query.getSearch(),
-                query.getDistritoJudicialId(),
-                query.getTipoEvento(),
-                query.getFechaInicio(),
-                query.getFechaFin()
-        );
-
-        return entities.stream()
-                .map(entity -> {
-                    FortalecimientoCapacidades dominio = mapper.toDomain(entity);
-
-                    if (dominio.getDistritoJudicialId() != null) {
-                        repoDistrito.findById(dominio.getDistritoJudicialId())
-                                .ifPresent(dj -> dominio.setDistritoJudicialNombre(dj.getNombre()));
-                    }
-
-                    return dominio;
-                })
-                .collect(Collectors.toList());
-    }
 }

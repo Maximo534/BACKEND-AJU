@@ -17,4 +17,6 @@ public class ListarFortalecimientoQuery {
     String tipoEvento;
     LocalDate fechaInicio;
     LocalDate fechaFin;
+
+    String usuarioRegistroLogin;
 }

@@ -16,6 +16,7 @@ import pe.gob.pj.prueba.domain.model.negocio.query.ListarPromocionQuery;
 import pe.gob.pj.prueba.domain.port.persistence.negocio.PromocionCulturaPersistencePort;
 import pe.gob.pj.prueba.infraestructure.db.negocio.entities.MovArchivoEntity;
 import pe.gob.pj.prueba.infraestructure.db.negocio.entities.MovPromocionCulturaEntity;
+import pe.gob.pj.prueba.infraestructure.db.negocio.entities.MovUsuarioEntity;
 import pe.gob.pj.prueba.infraestructure.db.negocio.repositories.MovArchivosRepository;
 import pe.gob.pj.prueba.infraestructure.db.negocio.repositories.MovPromocionCulturaRepository;
 import pe.gob.pj.prueba.infraestructure.db.negocio.repositories.MovUsuarioRepository;
@@ -43,23 +44,31 @@ public class PromocionCulturaPersistenceAdapter implements PromocionCulturaPersi
     public Pagina<PromocionCultura> listar(String cuo, ListarPromocionQuery query, int pagina, int tamanio) {
         Pageable pageable = PageRequest.of(pagina - 1, tamanio);
 
+        Long usuarioId = null;
+        if (query.getUsuarioRegistroLogin() != null && !query.getUsuarioRegistroLogin().isBlank()) {
+            MovUsuarioEntity usuario = usuarioRepository.findByActivoAndUsuario("1", query.getUsuarioRegistroLogin())
+                    .orElse(null);
+            if (usuario != null) {
+                usuarioId = usuario.getId().longValue();
+            }
+        }
+
         var pageResult = repository.listarCompleto(
                 query.getSearch(),
                 query.getDistritoJudicialId(),
                 query.getFechaInicio(),
                 query.getFechaFin(),
+                usuarioId,
                 pageable
         );
 
         List<PromocionCultura> contenido = pageResult.getContent().stream()
                 .map(entity -> {
                     PromocionCultura dominio = mapper.toDomain(entity);
-
                     if (dominio.getDistritoJudicialId() != null) {
                         repoDistrito.findById(dominio.getDistritoJudicialId())
                                 .ifPresent(dj -> dominio.setDistritoJudicialNombre(dj.getNombre()));
                     }
-
                     return dominio;
                 })
                 .collect(Collectors.toList());
@@ -71,6 +80,40 @@ public class PromocionCulturaPersistenceAdapter implements PromocionCulturaPersi
                 .paginaActual(pagina)
                 .tamanioPagina(tamanio)
                 .build();
+    }
+
+    @Override
+    @Transactional(readOnly = true)
+    public List<PromocionCultura> listarParaExcel(String cuo, ListarPromocionQuery query) {
+        log.info("[{}] Listando Promoción Cultura para Excel (Sin paginación)", cuo);
+
+        Long usuarioId = null;
+        if (query.getUsuarioRegistroLogin() != null && !query.getUsuarioRegistroLogin().isBlank()) {
+            MovUsuarioEntity usuario = usuarioRepository.findByActivoAndUsuario("1", query.getUsuarioRegistroLogin())
+                    .orElse(null);
+            if (usuario != null) {
+                usuarioId = usuario.getId().longValue();
+            }
+        }
+
+        List<MovPromocionCulturaEntity> entities = repository.listarSinPaginacion(
+                query.getSearch(),
+                query.getDistritoJudicialId(),
+                query.getFechaInicio(),
+                query.getFechaFin(),
+                usuarioId
+        );
+
+        return entities.stream()
+                .map(entity -> {
+                    PromocionCultura dominio = mapper.toDomain(entity);
+                    if (dominio.getDistritoJudicialId() != null) {
+                        repoDistrito.findById(dominio.getDistritoJudicialId())
+                                .ifPresent(dj -> dominio.setDistritoJudicialNombre(dj.getNombre()));
+                    }
+                    return dominio;
+                })
+                .collect(Collectors.toList());
     }
 
     @Override
@@ -249,29 +292,4 @@ public class PromocionCulturaPersistenceAdapter implements PromocionCulturaPersi
         }
     }
 
-    @Override
-    @Transactional(readOnly = true)
-    public List<PromocionCultura> listarParaExcel(String cuo, ListarPromocionQuery query) {
-        log.info("[{}] Listando Promoción Cultura para Excel (Sin paginación)", cuo);
-
-        List<MovPromocionCulturaEntity> entities = repository.listarSinPaginacion(
-                query.getSearch(),
-                query.getDistritoJudicialId(),
-                query.getFechaInicio(),
-                query.getFechaFin()
-        );
-
-        return entities.stream()
-                .map(entity -> {
-                    PromocionCultura dominio = mapper.toDomain(entity);
-
-                    if (dominio.getDistritoJudicialId() != null) {
-                        repoDistrito.findById(dominio.getDistritoJudicialId())
-                                .ifPresent(dj -> dominio.setDistritoJudicialNombre(dj.getNombre()));
-                    }
-
-                    return dominio;
-                })
-                .collect(Collectors.toList());
-    }
 }

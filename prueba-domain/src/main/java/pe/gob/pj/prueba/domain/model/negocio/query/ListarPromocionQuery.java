@@ -16,4 +16,6 @@ public class ListarPromocionQuery {
     Long distritoJudicialId;
     LocalDate fechaInicio;
     LocalDate fechaFin;
+
+    String usuarioRegistroLogin;
 }

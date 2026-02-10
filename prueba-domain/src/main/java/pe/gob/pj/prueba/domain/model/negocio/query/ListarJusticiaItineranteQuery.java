@@ -15,4 +15,6 @@ public class ListarJusticiaItineranteQuery {
     Long distritoJudicialId;
     LocalDate fechaInicio;
     LocalDate fechaFin;
+
+    String usuarioRegistroLogin;
 }

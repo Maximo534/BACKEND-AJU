@@ -16,6 +16,7 @@ import pe.gob.pj.prueba.domain.model.negocio.query.ListarJusticiaItineranteQuery
 import pe.gob.pj.prueba.domain.port.persistence.negocio.JusticiaItinerantePersistencePort;
 import pe.gob.pj.prueba.infraestructure.db.negocio.entities.MovArchivoEntity;
 import pe.gob.pj.prueba.infraestructure.db.negocio.entities.MovJusticiaItineranteEntity;
+import pe.gob.pj.prueba.infraestructure.db.negocio.entities.MovUsuarioEntity;
 import pe.gob.pj.prueba.infraestructure.db.negocio.repositories.MovArchivosRepository;
 import pe.gob.pj.prueba.infraestructure.db.negocio.repositories.MovJusticiaItineranteRepository;
 import pe.gob.pj.prueba.infraestructure.db.negocio.repositories.MovUsuarioRepository;
@@ -43,11 +44,22 @@ public class JusticiaItinerantePersistenceAdapter implements JusticiaItineranteP
     public Pagina<JusticiaItinerante> listar(String cuo, ListarJusticiaItineranteQuery query, int pagina, int tamanio) {
         Pageable pageable = PageRequest.of(pagina - 1, tamanio);
 
+        Long usuarioId = null;
+        if (query.getUsuarioRegistroLogin() != null && !query.getUsuarioRegistroLogin().isBlank()) {
+            MovUsuarioEntity usuario = usuarioRepository.findByActivoAndUsuario("1", query.getUsuarioRegistroLogin())
+                    .orElse(null);
+
+            if (usuario != null) {
+                usuarioId = usuario.getId().longValue();
+            }
+        }
+
         var pageResult = repository.listarCompleto(
                 query.getSearch(),
                 query.getDistritoJudicialId(),
                 query.getFechaInicio(),
                 query.getFechaFin(),
+                usuarioId,
                 pageable
         );
 
@@ -78,11 +90,22 @@ public class JusticiaItinerantePersistenceAdapter implements JusticiaItineranteP
     public List<JusticiaItinerante> listarParaExcel(String cuo, ListarJusticiaItineranteQuery query) {
         log.info("[{}] Listando Justicia Itinerante para Excel (Sin paginación)", cuo);
 
+        Long usuarioId = null;
+        if (query.getUsuarioRegistroLogin() != null && !query.getUsuarioRegistroLogin().isBlank()) {
+            MovUsuarioEntity usuario = usuarioRepository.findByActivoAndUsuario("1", query.getUsuarioRegistroLogin())
+                    .orElse(null);
+
+            if (usuario != null) {
+                usuarioId = usuario.getId().longValue();
+            }
+        }
+
         List<MovJusticiaItineranteEntity> entities = repository.listarSinPaginacion(
                 query.getSearch(),
                 query.getDistritoJudicialId(),
                 query.getFechaInicio(),
-                query.getFechaFin()
+                query.getFechaFin(),
+                usuarioId
         );
 
         return entities.stream()

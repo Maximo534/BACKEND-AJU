@@ -10,7 +10,7 @@ import java.util.List;
 
 public interface GestionPromocionUseCasePort {
 
-    Pagina<PromocionCultura> listar(String cuo, ListarPromocionQuery query, int pagina, int tamanio);
+    Pagina<PromocionCultura> listar(String cuo, ListarPromocionQuery query, int pagina, int tamanio, String rolUsuario, String loginUsuario);
 
     PromocionCultura registrar(String cuo, PromocionCultura dominio, MultipartFile anexo, List<MultipartFile> videos, List<MultipartFile> fotos) throws Exception;
 
@@ -26,5 +26,5 @@ public interface GestionPromocionUseCasePort {
     byte[] generarFichaPdf(String cuo, Long idEvento) throws Exception;
     RecursoArchivo descargarArchivoPorId(Long idArchivo) throws Exception ;
 
-    byte[] exportarExcel(String cuo, ListarPromocionQuery query) throws Exception;
+    byte[] exportarExcel(String cuo, ListarPromocionQuery query, String rolUsuario, String loginUsuario) throws Exception;
 }

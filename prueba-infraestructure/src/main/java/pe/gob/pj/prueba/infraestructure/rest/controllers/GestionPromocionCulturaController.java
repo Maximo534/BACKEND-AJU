@@ -51,7 +51,14 @@ public class GestionPromocionCulturaController implements GestionPromocion, Gene
         cargarTramaPeticion(peticion, filtros);
 
         var query = mapper.toQuery(filtros);
-        var paginaDominio = useCase.listar(peticion.getCuo(), query, pagina, tamanio);
+        var paginaDominio = useCase.listar(
+                peticion.getCuo(),
+                query,
+                pagina,
+                tamanio,
+                peticion.getRol(),
+                peticion.getUsuario()
+        );
 
         List<PromocionCulturaResponse> listaResponse = paginaDominio.getContenido().stream()
                 .map(mapper::toResponseListado)
@@ -218,7 +225,12 @@ public class GestionPromocionCulturaController implements GestionPromocion, Gene
             var query = mapper.toQuery(filtros);
 
             // 3. Ejecutar Caso de Uso
-            byte[] excelBytes = useCase.exportarExcel(peticion.getCuo(), query);
+            byte[] excelBytes = useCase.exportarExcel(
+                    peticion.getCuo(),
+                    query,
+                    peticion.getRol(),
+                    peticion.getUsuario()
+            );
 
             // 4. Configurar nombre de archivo único
             String filename = "Reporte_Promocion_Cultura.xlsx";

@@ -19,12 +19,12 @@ public interface MovJusticiaItineranteRepository extends JpaRepository<MovJustic
 
     Optional<MovJusticiaItineranteEntity> findByIdAndActivo(Long id, String activo);
 
-    // Búsqueda Dinámica
     @Query("SELECT j FROM MovJusticiaItineranteEntity j " +
             "WHERE j.activo = '1' " +
             "AND (:distrito IS NULL OR j.distritoJudicialId = :distrito) " +
             "AND (cast(:fInicio as date) IS NULL OR j.fechaInicio >= :fInicio) " +
             "AND (cast(:fFin as date) IS NULL OR j.fechaInicio <= :fFin) " +
+            "AND (:usuarioId IS NULL OR j.usuarioRegistroId = :usuarioId) " +
             "AND (:search IS NULL OR :search = '' OR " +
             "     UPPER(j.codigo) LIKE UPPER(CONCAT('%', :search, '%')) OR " +
             "     UPPER(j.lugarActividad) LIKE UPPER(CONCAT('%', :search, '%'))) " +
@@ -34,6 +34,7 @@ public interface MovJusticiaItineranteRepository extends JpaRepository<MovJustic
             @Param("distrito") Long distrito,
             @Param("fInicio") LocalDate fInicio,
             @Param("fFin") LocalDate fFin,
+            @Param("usuarioId") Long usuarioId,
             Pageable pageable
     );
 
@@ -42,6 +43,7 @@ public interface MovJusticiaItineranteRepository extends JpaRepository<MovJustic
             "AND (:distrito IS NULL OR j.distritoJudicialId = :distrito) " +
             "AND (cast(:fInicio as date) IS NULL OR j.fechaInicio >= :fInicio) " +
             "AND (cast(:fFin as date) IS NULL OR j.fechaInicio <= :fFin) " +
+            "AND (:usuarioId IS NULL OR j.usuarioRegistroId = :usuarioId) " +
             "AND (:search IS NULL OR :search = '' OR " +
             "     UPPER(j.codigo) LIKE UPPER(CONCAT('%', :search, '%')) OR " +
             "     UPPER(j.lugarActividad) LIKE UPPER(CONCAT('%', :search, '%'))) " +
@@ -50,7 +52,8 @@ public interface MovJusticiaItineranteRepository extends JpaRepository<MovJustic
             @Param("search") String search,
             @Param("distrito") Long distrito,
             @Param("fInicio") LocalDate fInicio,
-            @Param("fFin") LocalDate fFin
+            @Param("fFin") LocalDate fFin,
+            @Param("usuarioId") Long usuarioId
     );
 
     // Obtener último código para correlativo (ej: busca '%-2026-JI' en distrito X)

@@ -51,7 +51,14 @@ public class GestionFortalecimientoController implements GestionFortalecimiento,
         cargarTramaPeticion(peticion, filtros);
 
         var query = mapper.toQuery(filtros);
-        var paginaDominio = useCase.listar(peticion.getCuo(), query, pagina, tamanio);
+        var paginaDominio = useCase.listar(
+                peticion.getCuo(),
+                query,
+                pagina,
+                tamanio,
+                peticion.getRol(),
+                peticion.getUsuario()
+        );
 
         List<FortalecimientoResponse> listaResponse = paginaDominio.getContenido().stream()
                 .map(mapper::toResponseListado)
@@ -217,7 +224,12 @@ public class GestionFortalecimientoController implements GestionFortalecimiento,
         try {
             var query = mapper.toQuery(filtros);
 
-            byte[] excelBytes = useCase.exportarExcel(peticion.getCuo(), query);
+            byte[] excelBytes = useCase.exportarExcel(
+                    peticion.getCuo(),
+                    query,
+                    peticion.getRol(),
+                    peticion.getUsuario()
+            );
 
             String filename = "Reporte_Fortalecimiento.xlsx";
             InputStreamResource resource = new InputStreamResource(new ByteArrayInputStream(excelBytes));

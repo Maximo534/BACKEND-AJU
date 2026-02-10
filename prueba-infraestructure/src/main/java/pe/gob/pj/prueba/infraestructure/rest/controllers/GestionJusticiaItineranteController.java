@@ -51,7 +51,14 @@ public class GestionJusticiaItineranteController implements GestionJusticiaItine
         cargarTramaPeticion(peticion, filtros);
 
         var query = mapper.toQuery(filtros);
-        var paginaDominio = useCase.listar(peticion.getCuo(), query, pagina, tamanio);
+        var paginaDominio = useCase.listar(
+                peticion.getCuo(),
+                query,
+                pagina,
+                tamanio,
+                peticion.getRol(),
+                peticion.getUsuario()
+        );
 
         List<JusticiaItineranteResponse> listaResponse = paginaDominio.getContenido().stream()
                 .map(mapper::toResponseListado)
@@ -213,7 +220,12 @@ public class GestionJusticiaItineranteController implements GestionJusticiaItine
         try {
             var query = mapper.toQuery(filtros);
 
-            byte[] excelBytes = useCase.exportarExcel(peticion.getCuo(), query);
+            byte[] excelBytes = useCase.exportarExcel(
+                    peticion.getCuo(),
+                    query,
+                    peticion.getRol(),
+                    peticion.getUsuario()
+            );
 
             String filename = "Reporte_Justicia_Itinerante.xlsx";
             InputStreamResource resource = new InputStreamResource(new ByteArrayInputStream(excelBytes));
