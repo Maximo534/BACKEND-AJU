@@ -65,7 +65,7 @@ public interface MovEventoFcRepository extends JpaRepository<MovEventoFcEntity, 
     );
 
     @Query("SELECT EXTRACT(MONTH FROM e.fechaInicio) as mes, COUNT(e) as cantidad " +
-            "FROM MovJusticiaItineranteEntity e " +
+            "FROM MovEventoFcEntity e " +
             "WHERE e.activo = '1' " +
             "AND EXTRACT(YEAR FROM e.fechaInicio) = :anio " +
             "AND e.cAudId = :usuario " +

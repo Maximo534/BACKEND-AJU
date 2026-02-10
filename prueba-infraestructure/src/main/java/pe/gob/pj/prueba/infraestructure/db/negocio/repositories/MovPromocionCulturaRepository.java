@@ -59,7 +59,7 @@ public interface MovPromocionCulturaRepository extends JpaRepository<MovPromocio
             Pageable pageable);
 
     @Query("SELECT EXTRACT(MONTH FROM e.fechaInicio) as mes, COUNT(e) as cantidad " +
-            "FROM MovJusticiaItineranteEntity e " +
+            "FROM MovPromocionCulturaEntity e " +
             "WHERE e.activo = '1' " +
             "AND EXTRACT(YEAR FROM e.fechaInicio) = :anio " +
             "AND e.cAudId = :usuario " +
