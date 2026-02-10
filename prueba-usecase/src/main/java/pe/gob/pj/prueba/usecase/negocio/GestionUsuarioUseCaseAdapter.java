@@ -64,7 +64,7 @@ public class GestionUsuarioUseCaseAdapter implements GestionUsuarioUseCasePort {
                 boolean esJerarquiaValida = persistencePort.validarJerarquia(idPerfilCreador, perfilNuevo.getIdPerfil());
                 if (!esJerarquiaValida) {
                     throw new AccesoDenegadoException(
-                            "Su perfil no tiene permisos para crear usuarios con el rol ID: " + perfilNuevo.getIdPerfil());
+                            "El perfil "+ idPerfilCreador+" no tiene permisos para crear usuarios con el rol ID: " + perfilNuevo.getIdPerfil());
                 }
             }
         }

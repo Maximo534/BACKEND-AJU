@@ -48,7 +48,6 @@ public class RegistrarUsuarioRequest implements Serializable {
     @NotNull(message = "El perfil es obligatorio")
     Integer idPerfil;
 
-    @NotNull(message = "El eje es obligatorio")
     Integer idEje;
 
     String formatoRespuesta;

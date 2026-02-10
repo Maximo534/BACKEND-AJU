@@ -22,10 +22,7 @@ import pe.gob.pj.prueba.infraestructure.db.negocio.entities.MaePerfilEntity;
 import pe.gob.pj.prueba.infraestructure.db.negocio.entities.MovProgramacionEjeEntity;
 import pe.gob.pj.prueba.infraestructure.db.negocio.entities.MovUsuarioEntity;
 import pe.gob.pj.prueba.infraestructure.db.negocio.entities.MovUsuarioPerfilEntity;
-import pe.gob.pj.prueba.infraestructure.db.negocio.repositories.MaeRolJerarquiaRepository;
-import pe.gob.pj.prueba.infraestructure.db.negocio.repositories.MovProgramacionEjeRepository;
-import pe.gob.pj.prueba.infraestructure.db.negocio.repositories.MovUsuarioPerfilRepository;
-import pe.gob.pj.prueba.infraestructure.db.negocio.repositories.MovUsuarioRepository;
+import pe.gob.pj.prueba.infraestructure.db.negocio.repositories.*;
 import pe.gob.pj.prueba.infraestructure.db.negocio.repositories.masters.MaeDistritoJudicialRepository;
 import pe.gob.pj.prueba.infraestructure.db.negocio.repositories.masters.MaeEjeRepository;
 import pe.gob.pj.prueba.infraestructure.db.negocio.repositories.masters.MaeInstanciaRepository;
@@ -46,6 +43,7 @@ public class UsuarioPersistenceAdapter implements UsuarioPersistencePort {
     MaeDistritoJudicialRepository repoDistrito;
     MaeInstanciaRepository repoInstancia;
     MaeEjeRepository repoEje;
+    MaePerfilRepository repoPerfil;
 
     @Override
     public Usuario buscarPorLoginConDetalle(String cuo, String login) {
@@ -171,42 +169,54 @@ public class UsuarioPersistenceAdapter implements UsuarioPersistencePort {
     @Transactional
     public Usuario registrar(String cuo, Usuario usuario) {
 
-        // Guardar Usuario (Padre)
+        boolean esJuez = false;
+
+        if (usuario.getPerfiles() != null && !usuario.getPerfiles().isEmpty()) {
+            for (var p : usuario.getPerfiles()) {
+                var perfilDb = repoPerfil.findById(p.getIdPerfil())
+                        .orElseThrow(() -> new MaestroNoEncontradoException("El perfil seleccionado (ID: " + p.getIdPerfil() + ") no existe."));
+
+                if (perfilDb.getNombre() != null && perfilDb.getNombre().toUpperCase().contains("JUEZ")) {
+                    esJuez = true;
+                    break;
+                }
+            }
+        }
+
+        // SI ES JUEZ Y NO TIENE EJE -> ERROR (No se guarda nada)
+        if (esJuez && (usuario.getIdEje() == null || usuario.getIdEje() <= 0)) {
+            throw new IllegalArgumentException("Para registrar un usuario con perfil de JUEZ, es obligatorio seleccionar un Eje.");
+        }
+
+        // GUARDAR USUARIO (Padre)
         MovUsuarioEntity entity = mapper.toEntity(usuario);
         MovUsuarioEntity savedUser = repository.save(entity);
 
-        // Guardar Perfil (Hijo)
+        // GUARDAR PERFILES (Hijos)
         if (usuario.getPerfiles() != null && !usuario.getPerfiles().isEmpty()) {
-
             var perfilesEntity = usuario.getPerfiles().stream().map(p -> {
                 MovUsuarioPerfilEntity relacion = new MovUsuarioPerfilEntity();
-
-                // Relación con Usuario
                 relacion.setUsuario(savedUser);
 
-                // Relación con Perfil
                 MaePerfilEntity perfilMaestro = new MaePerfilEntity();
                 perfilMaestro.setId(p.getIdPerfil());
                 relacion.setPerfil(perfilMaestro);
 
-                // Auditoría Completa
                 relacion.setActivo("1");
                 relacion.setCAudId(usuario.getUsuario());
                 relacion.setCAudIp(usuario.getNumeroIp());
                 relacion.setCAudPc(usuario.getNombrePc());
                 relacion.setCAudMcAddr(usuario.getDireccionMac());
                 relacion.setCAudIdRed(usuario.getRed());
-
                 return relacion;
             }).collect(Collectors.toList());
 
             usuarioPerfilRepository.saveAll(perfilesEntity);
         }
-        //GUARDAR ASIGNACIÓN DE EJE
-        if (usuario.getIdEje() != null) {
 
+        // GUARDAR PROGRAMACIÓN EJE (Solo si es Juez y pasó la validación)
+        if (esJuez) {
             MovProgramacionEjeEntity progEje = new MovProgramacionEjeEntity();
-
             progEje.setIdUsuario(savedUser.getId());
             progEje.setIdEje(usuario.getIdEje());
             progEje.setIdDistritoJudicial(usuario.getIdDistritoJudicial());
@@ -214,6 +224,7 @@ public class UsuarioPersistenceAdapter implements UsuarioPersistencePort {
 
             progEje.setActivo("1");
             progEje.setFRegistro(java.time.LocalDateTime.now());
+
             progEje.setCAudId(usuario.getUsuario());
             progEje.setCAudIp(usuario.getNumeroIp());
             progEje.setCAudPc(usuario.getNombrePc());
