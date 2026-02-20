@@ -39,9 +39,3 @@ seguridad:
     requerida: N
 
 
-ftp:
-  ip: "127.0.0.1"        # IP Local
-  puerto: 21
-  usuario: "ftp_user"       # Usuario cualquiera para que no falle al iniciar
-  clave: "1924"      # Clave cualquiera
-  ruta-base: "/evidencias"

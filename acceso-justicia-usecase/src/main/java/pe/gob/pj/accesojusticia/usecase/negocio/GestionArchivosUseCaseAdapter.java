@@ -34,7 +34,7 @@ public class GestionArchivosUseCaseAdapter implements GestionArchivosUseCasePort
     @Value("${ftp.puerto}") private Integer ftpPuerto;
     @Value("${ftp.usuario}") private String ftpUsuario;
     @Value("${ftp.clave}") private String ftpClave;
-    @Value("${ftp.ruta-base:/evidencias}") private String ftpRutaBase;
+    @Value("${ftp.ruta-base}") private String ftpRutaBase;
 
     @Override
     public void subirArchivo(MultipartFile file, String distritoId, String tipo, String modulo,
