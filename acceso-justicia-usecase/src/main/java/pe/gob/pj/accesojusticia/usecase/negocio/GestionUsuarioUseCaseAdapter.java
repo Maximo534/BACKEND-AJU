@@ -13,6 +13,7 @@ import pe.gob.pj.accesojusticia.domain.exceptions.negocio.AccesoDenegadoExceptio
 import pe.gob.pj.accesojusticia.domain.exceptions.negocio.MovimientoNoEncontradoException;
 import pe.gob.pj.accesojusticia.domain.exceptions.negocio.UsuarioDuplicadoException;
 import pe.gob.pj.accesojusticia.domain.model.common.Pagina;
+import pe.gob.pj.accesojusticia.domain.model.negocio.PerfilUsuario;
 import pe.gob.pj.accesojusticia.domain.model.negocio.Usuario;
 import pe.gob.pj.accesojusticia.domain.model.negocio.query.ListarUsuarioQuery;
 import pe.gob.pj.accesojusticia.domain.port.persistence.negocio.UsuarioPersistencePort;
@@ -38,42 +39,67 @@ public class GestionUsuarioUseCaseAdapter implements GestionUsuarioUseCasePort {
         return persistencePort.listar(cuo, query, pagina, tamanio);
     }
     @Override
-    @Transactional(transactionManager = TX_MANAGER,
-            propagation = Propagation.REQUIRES_NEW,
-            readOnly = false,
-            rollbackFor = {Exception.class, SQLException.class})
+    @Transactional(transactionManager = TX_MANAGER, propagation = Propagation.REQUIRES_NEW, rollbackFor = {Exception.class, SQLException.class})
     public Usuario registrar(String cuo, Usuario usuario, String login) {
 
-        // VALIDACIÓN DE DUPLICIDAD
         boolean yaExiste = persistencePort.existeUsuarioPorLogin(cuo, usuario.getNombreUsuario());
 
         if (yaExiste) {
             throw new UsuarioDuplicadoException("El usuario '" + usuario.getNombreUsuario() + "' ya está en uso.");
         }
 
-        log.info("[{}] AQUI:{}",login);
+        log.info("[{}] Iniciando registro de usuario. Creador: {}", cuo, login);
 
-        //Obtener el ID del Perfil del Creador
-        Integer idPerfilCreador = persistencePort.obtenerIdPerfilPorLogin(login);
+        Usuario creador = persistencePort.buscarPorLoginConDetalle(cuo, login);
 
-        //Verificar permiso para cada perfil que se intenta asignar
-        if (usuario.getPerfiles() != null) {
-            for (var perfilNuevo : usuario.getPerfiles()) {
+        if (creador == null) {
+            throw new MovimientoNoEncontradoException("No se encontró el usuario en sesión.");
+        }
+        usuario.setIdUsuarioReg(creador.getId());
 
-                // Consultamos: ¿El perfil 5 (Distrital) puede crear el perfil 3 (Juez)?
-                boolean esJerarquiaValida = persistencePort.validarJerarquia(idPerfilCreador, perfilNuevo.getIdPerfil());
-                if (!esJerarquiaValida) {
-                    throw new AccesoDenegadoException(
-                            "El perfil "+ idPerfilCreador+" no tiene permisos para crear usuarios con el rol ID: " + perfilNuevo.getIdPerfil());
-                }
+        Integer idPerfilCreador = creador.getPerfiles().stream()
+                .findFirst()
+                .map(PerfilUsuario::getIdPerfil)
+                .orElseThrow(() -> new AccesoDenegadoException("El usuario creador no tiene un perfil asignado."));
+
+        String rolCreador = creador.getPerfiles().stream()
+                .findFirst()
+                .map(PerfilUsuario::getRol)
+                .orElse("");
+
+        // Si el que crea es Administrador Distrital, el nuevo usuario no debe tener instancia
+        if ("ADMDAJUPJ".equals(rolCreador)) {
+            usuario.setIdInstancia(null);
+        } else {
+            if (usuario.getIdInstancia() == null) {
+                throw new IllegalArgumentException("La instancia es obligatoria para realizar este registro.");
             }
         }
 
-        // REGLAS DE NEGOCIO
+        Integer idPerfilNuevo = usuario.getPerfiles().stream()
+                .findFirst()
+                .map(PerfilUsuario::getIdPerfil)
+                .orElseThrow(() -> new IllegalArgumentException("El nuevo usuario debe tener un perfil válido asignado."));
+        String rolNuevoUsuario = persistencePort.obtenerRolPorIdPerfil(idPerfilNuevo);
+
+        if ("JUZAJUPJ".equals(rolNuevoUsuario)) {
+            if (usuario.getSigla() == null || usuario.getSigla().trim().isEmpty()) {
+                throw new IllegalArgumentException("La sigla es obligatoria para registrar un usuario con el rol de Juez (JUZAJUPJ).");
+            }
+        }
+
+        if (usuario.getPerfiles() != null) {
+            for (var perfilNuevo : usuario.getPerfiles()) {
+                boolean esJerarquiaValida = persistencePort.validarJerarquia(idPerfilCreador, perfilNuevo.getIdPerfil());
+                if (!esJerarquiaValida) {
+                    throw new AccesoDenegadoException(
+                            "El perfil " + idPerfilCreador + " no tiene permisos para crear usuarios con el rol ID: " + perfilNuevo.getIdPerfil());
+                }
+            }
+        }
         usuario.setId(null);
         usuario.setActivo("1");
         usuario.setClave("$2a$12$nk2Lr/n7D2ozTptLiWuF.uwg5QLTV8/2DMFAPBMgmUr1zfogYkjgy");
-
         return persistencePort.registrar(cuo, usuario);
     }
 

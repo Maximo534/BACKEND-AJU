@@ -20,7 +20,7 @@ public interface UsuarioPersistencePort {
     void cambiarEstado(String cuo, Usuario usuario);
 
     Integer obtenerIdPerfilPorLogin(String login);
-
+    String obtenerRolPorIdPerfil(Integer idPerfil);
     // Valida si el padre puede crear al hijo
     boolean validarJerarquia(Integer idPerfilPadre, Integer idPerfilHijo);
 

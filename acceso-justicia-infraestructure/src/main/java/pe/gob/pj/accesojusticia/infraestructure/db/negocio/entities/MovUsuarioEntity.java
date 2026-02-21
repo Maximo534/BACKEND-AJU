@@ -62,6 +62,9 @@ public class MovUsuarioEntity implements Serializable {
 
   @Column(name = "X_NOM_FOTO")
   String nomFoto;
+
+  @Column(name = "N_USUARIO_REG_ID")
+  Integer idUsuarioReg;
   // ------------------------------------
 
   @OneToMany(mappedBy = "usuario", fetch = FetchType.LAZY)

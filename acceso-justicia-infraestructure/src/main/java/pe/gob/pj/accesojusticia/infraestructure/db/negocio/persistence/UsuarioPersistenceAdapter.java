@@ -15,6 +15,7 @@ import lombok.experimental.FieldDefaults;
 import lombok.extern.slf4j.Slf4j;
 import pe.gob.pj.accesojusticia.domain.exceptions.negocio.MaestroNoEncontradoException; // IMPORTANTE
 import pe.gob.pj.accesojusticia.domain.model.common.Pagina;
+import pe.gob.pj.accesojusticia.domain.model.negocio.PerfilUsuario;
 import pe.gob.pj.accesojusticia.domain.model.negocio.Usuario;
 import pe.gob.pj.accesojusticia.domain.model.negocio.query.ListarUsuarioQuery;
 import pe.gob.pj.accesojusticia.domain.port.persistence.negocio.UsuarioPersistencePort;
@@ -56,7 +57,23 @@ public class UsuarioPersistenceAdapter implements UsuarioPersistencePort {
         if (entity == null) return null;
 
         Usuario dominio = mapper.toUsuario(entity);
+        List<MovUsuarioPerfilEntity> listaPerfilesBd = usuarioPerfilRepository.findByUsuarioId(entity.getId());
 
+        List<PerfilUsuario> perfilesDominio = listaPerfilesBd.stream()
+                .filter(p -> "1".equals(p.getActivo()))
+                .map(p -> {
+                    PerfilUsuario perfilPlano = new PerfilUsuario();
+                    perfilPlano.setId(p.getId());
+                    perfilPlano.setIdPerfil(p.getPerfil().getId());
+                    perfilPlano.setNombre(p.getPerfil().getNombre());
+                    perfilPlano.setRol(p.getPerfil().getRol());
+                    return perfilPlano;
+                })
+                .collect(Collectors.toList());
+
+        // Inyectamos la lista llena a tu objeto de dominio
+        dominio.setPerfiles(perfilesDominio);
+        // -------------------------------------
         var perfilOpt = usuarioPerfilRepository.findByUsuarioId(entity.getId()).stream()
                 .filter(p -> "1".equals(p.getActivo()))
                 .findFirst();
@@ -123,6 +140,8 @@ public class UsuarioPersistenceAdapter implements UsuarioPersistencePort {
                 query.usuario(),
                 query.nombreCompleto(),
                 query.activo(),
+                query.idUsuarioSesion(),
+                query.rolUsuarioSesion(),
                 pageable
         );
 
@@ -191,6 +210,7 @@ public class UsuarioPersistenceAdapter implements UsuarioPersistencePort {
 
         // GUARDAR USUARIO (Padre)
         MovUsuarioEntity entity = mapper.toEntity(usuario);
+        entity.setIdUsuarioReg(usuario.getIdUsuarioReg());
         MovUsuarioEntity savedUser = repository.save(entity);
 
         // GUARDAR PERFILES (Hijos)
@@ -430,15 +450,18 @@ public class UsuarioPersistenceAdapter implements UsuarioPersistencePort {
                 .orElseThrow(() -> new MaestroNoEncontradoException("El usuario creador no existe o no está activo."));
 
         // Buscamos su perfil activo
-        //Si un usuario tiene múltiples perfiles, aquí tomamos el primero activo.
-        // Lo ideal sería que el ID del perfil viniera en el objeto 'usuario' desde el Controller/Token.
         return usuarioPerfilRepository.findByUsuarioId(usuario.getId()).stream()
                 .filter(p -> "1".equals(p.getActivo()))
                 .findFirst()
                 .map(p -> p.getPerfil().getId())
                 .orElseThrow(() -> new MaestroNoEncontradoException("El usuario creador no tiene un perfil activo para realizar esta acción."));
     }
-
+    @Override
+    public String obtenerRolPorIdPerfil(Integer idPerfil) {
+        return repoPerfil.findById(idPerfil)
+                .map(pe.gob.pj.accesojusticia.infraestructure.db.negocio.entities.MaePerfilEntity::getRol)
+                .orElse("");
+    }
     @Override
     public boolean validarJerarquia(Integer idPerfilPadre, Integer idPerfilHijo) {
         return jerarquiaRepository.existeJerarquia(idPerfilPadre, idPerfilHijo);

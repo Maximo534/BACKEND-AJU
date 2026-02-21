@@ -18,4 +18,6 @@ public class ListarUsuarioQuery {
     String usuario;
     String nombreCompleto;
     String activo;
+    Integer idUsuarioSesion;
+    String rolUsuarioSesion;
 }

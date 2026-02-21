@@ -35,6 +35,7 @@ public class Usuario extends Auditoria implements Serializable {
 	String nomFoto;
 	String activo;
 	Integer idEje;
+	Integer idUsuarioReg;
 
 	List<PerfilUsuario> perfiles = new ArrayList<>();
 }

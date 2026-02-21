@@ -26,13 +26,16 @@ public interface MovUsuarioRepository extends JpaRepository<MovUsuarioEntity, In
           "(:id IS NULL OR u.N_USUARIO_ID = :id) AND " +
           "(:usuario IS NULL OR UPPER(u.X_USUARIO) LIKE UPPER(CONCAT('%', CAST(:usuario AS TEXT), '%'))) AND " +
           "(:nombreCompleto IS NULL OR UPPER(u.X_NOMBRE_COMPLETO) LIKE UPPER(CONCAT('%', CAST(:nombreCompleto AS TEXT), '%'))) AND " +
-          "(:activo IS NULL OR u.L_ACTIVO = :activo)",
+          "(:activo IS NULL OR u.L_ACTIVO = :activo) AND " +
+          // ---> NUESTRA REGLA DE NEGOCIO <---
+          "(:rolUsuarioSesion = 'ADMAJUPJ' OR u.N_USUARIO_REG_ID = :idUsuarioSesion)",
 
           countQuery = "SELECT count(*) FROM acjust.MOV_USUARIO u WHERE " +
                   "(:id IS NULL OR u.N_USUARIO_ID = :id) AND " +
                   "(:usuario IS NULL OR UPPER(u.X_USUARIO) LIKE UPPER(CONCAT('%', CAST(:usuario AS TEXT), '%'))) AND " +
                   "(:nombreCompleto IS NULL OR UPPER(u.X_NOMBRE_COMPLETO) LIKE UPPER(CONCAT('%', CAST(:nombreCompleto AS TEXT), '%'))) AND " +
-                  "(:activo IS NULL OR u.L_ACTIVO = :activo)",
+                  "(:activo IS NULL OR u.L_ACTIVO = :activo) AND " +
+                  "(:rolUsuarioSesion = 'ADMAJUPJ' OR u.N_USUARIO_REG_ID = :idUsuarioSesion)",
 
           nativeQuery = true)
   Page<MovUsuarioEntity> listar(
@@ -40,6 +43,8 @@ public interface MovUsuarioRepository extends JpaRepository<MovUsuarioEntity, In
           @Param("usuario") String usuario,
           @Param("nombreCompleto") String nombreCompleto,
           @Param("activo") String activo,
+          @Param("idUsuarioSesion") Integer idUsuarioSesion,  // Pasamos el id del creador
+          @Param("rolUsuarioSesion") String rolUsuarioSesion, // Pasamos su rol
           Pageable pageable);
 
   boolean existsByUsuario(String nombreUsuario);

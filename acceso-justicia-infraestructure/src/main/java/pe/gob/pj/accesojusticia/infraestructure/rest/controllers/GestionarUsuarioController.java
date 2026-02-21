@@ -45,25 +45,33 @@ public class GestionarUsuarioController implements GestionarUsuario, GenerarHttp
     public ResponseEntity<GlobalResponse> listar(PeticionServicios peticion, int pagina, int tamanio, ListarUsuarioRequest filtros) {
         cargarTramaPeticion(peticion, filtros);
 
-        var paginaDominio = useCase.listar(peticion.getCuo(), mapper.toQuery(filtros), pagina, tamanio);
+        var query = mapper.toQuery(filtros);
 
+        Usuario usuarioActual = useCase.obtenerDatosSesion(peticion.getCuo(), peticion.getUsuario());
+
+        // Inyectar los datos de sesión en el Query para que la capa de base de datos sepa cómo filtrar
+        query.idUsuarioSesion(usuarioActual.getId());
+        query.rolUsuarioSesion(peticion.getRol());
+
+        // Llamar al caso de uso pasándole el query ya enriquecido
+        var paginaDominio = useCase.listar(peticion.getCuo(), query, pagina, tamanio);
+
+        // Mapear la respuesta de dominio a los DTOs de salida
         var listaResponse = paginaDominio.getContenido().stream()
                 .map(mapper::toResponseListado)
                 .collect(Collectors.toList());
 
         GlobalResponse response = new GlobalResponse(peticion.getCuo());
-
         response.setData(listaResponse);
-
         response.setTotalRegistros(paginaDominio.getTotalRegistros());
         response.setTotalPaginas(paginaDominio.getTotalPaginas());
         response.setPaginaActual(paginaDominio.getPaginaActual());
         response.setTamanioPagina(paginaDominio.getTamanioPagina());
 
         guardarAuditoria(Optional.ofNullable(peticion));
+
         return ResponseEntity.ok(response);
     }
-
     @Override
     public ResponseEntity<GlobalResponse> obtenerPorId(PeticionServicios peticion, Integer id) {
         var usuario = useCase.buscarPorId(peticion.getCuo(), id);
