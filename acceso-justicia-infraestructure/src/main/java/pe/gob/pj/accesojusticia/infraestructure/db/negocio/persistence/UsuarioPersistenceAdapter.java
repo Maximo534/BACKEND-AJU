@@ -207,23 +207,27 @@ public class UsuarioPersistenceAdapter implements UsuarioPersistencePort {
     @Transactional
     public Usuario registrar(String cuo, Usuario usuario) {
 
-        boolean esJuez = false;
+        boolean requiereEje = false;
+        String rolNuevoUsuario = "";
 
         if (usuario.getPerfiles() != null && !usuario.getPerfiles().isEmpty()) {
             for (var p : usuario.getPerfiles()) {
                 var perfilDb = repoPerfil.findById(p.getIdPerfil())
                         .orElseThrow(() -> new MaestroNoEncontradoException("El perfil seleccionado (ID: " + p.getIdPerfil() + ") no existe."));
 
-                if (perfilDb.getNombre() != null && perfilDb.getNombre().toUpperCase().contains("JUEZ")) {
-                    esJuez = true;
+                rolNuevoUsuario = perfilDb.getRol();
+
+                // Si es Juez o Secretario Técnico, el Eje es obligatorio
+                if ("JUZAJUPJ".equals(rolNuevoUsuario) || "SCTAJUPJ".equals(rolNuevoUsuario)) {
+                    requiereEje = true;
                     break;
                 }
             }
         }
 
-        // SI ES JUEZ Y NO TIENE EJE -> ERROR (No se guarda nada)
-        if (esJuez && (usuario.getIdEje() == null || usuario.getIdEje() <= 0)) {
-            throw new IllegalArgumentException("Para registrar un usuario con perfil de JUEZ, es obligatorio seleccionar un Eje.");
+        // SI REQUIERE EJE Y NO LO TIENE -> ERROR (No se guarda nada en BD)
+        if (requiereEje && (usuario.getIdEje() == null || usuario.getIdEje() <= 0)) {
+            throw new IllegalArgumentException("Para registrar un usuario con perfil de Juez o Secretario Técnico, es obligatorio seleccionar un Eje.");
         }
 
         // GUARDAR USUARIO (Padre)
@@ -253,8 +257,8 @@ public class UsuarioPersistenceAdapter implements UsuarioPersistencePort {
             usuarioPerfilRepository.saveAll(perfilesEntity);
         }
 
-        // GUARDAR PROGRAMACIÓN EJE (Solo si es Juez y pasó la validación)
-        if (esJuez) {
+        // GUARDAR PROGRAMACIÓN EJE
+        if (requiereEje) {
             MovProgramacionEjeEntity progEje = new MovProgramacionEjeEntity();
             progEje.setIdUsuario(savedUser.getId());
             progEje.setIdEje(usuario.getIdEje());
@@ -264,6 +268,7 @@ public class UsuarioPersistenceAdapter implements UsuarioPersistencePort {
             progEje.setActivo("1");
             progEje.setFRegistro(java.time.LocalDateTime.now());
 
+            // Auditoría
             progEje.setCAudId(usuario.getUsuario());
             progEje.setCAudIp(usuario.getNumeroIp());
             progEje.setCAudPc(usuario.getNombrePc());
