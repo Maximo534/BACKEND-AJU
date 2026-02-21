@@ -42,6 +42,12 @@ public class GestionarMaestrosUseCaseAdapter implements GestionarMaestrosUseCase
 
     @Override
     @Transactional(transactionManager = TX_MANAGER, propagation = Propagation.REQUIRES_NEW, readOnly = true, rollbackFor = {Exception.class, SQLException.class})
+    public DistritoJudicial obtenerDistritoJudicialPorId(String cuo, Long id) {
+        return persistencePort.obtenerDistritoJudicialPorId(cuo, id);
+    }
+
+    @Override
+    @Transactional(transactionManager = TX_MANAGER, propagation = Propagation.REQUIRES_NEW, readOnly = true, rollbackFor = {Exception.class, SQLException.class})
     public List<DistritoJudicial> listarDistritosJudiciales(String cuo) {
         return persistencePort.listarDistritosJudiciales(cuo);
     }

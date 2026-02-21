@@ -14,6 +14,7 @@ public interface MaestrosPersistencePort {
     List<Tarea> listarTareasPorIndicador(String cuo, Long idIndicador);
 
     // --- ORGANIZACIÓN JUDICIAL ---
+    DistritoJudicial obtenerDistritoJudicialPorId(String cuo, Long id);
     List<DistritoJudicial> listarDistritosJudiciales(String cuo);
     List<Sede> listarSedesPorCorte(String cuo, Long idCorte);
     List<Instancia> listarInstanciasPorSede(String cuo, Long idSede);

@@ -61,7 +61,12 @@ public class MaestrosPersistenceAdapter implements MaestrosPersistencePort {
     public List<Tarea> listarTareasPorIndicador(String cuo, Long idIndicador) {
         return repoTarea.findByIndicadorIdAndActivo(idIndicador, "1").stream().map(this::toDomain).collect(Collectors.toList());
     }
-
+    @Override
+    public DistritoJudicial obtenerDistritoJudicialPorId(String cuo, Long id) {
+        return repoDistritoJud.findById(id)
+                .map(this::toDomain)
+                .orElseThrow(() -> new MovimientoNoEncontradoException("No se encontró el Distrito Judicial con el ID proporcionado."));
+    }
     @Override
     public List<DistritoJudicial> listarDistritosJudiciales(String cuo) {
         return repoDistritoJud.findAll().stream().map(this::toDomain).collect(Collectors.toList());

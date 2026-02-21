@@ -52,7 +52,16 @@ public class GestionMaestrosController implements GestionMaestros, GenerarHttpHe
     }
 
     // --- ORGANIZACIÓN JUDICIAL ---
+    @Override
+    public ResponseEntity<GlobalResponse> obtenerDistritoJudicialPorId(PeticionServicios peticion, Long id) {
+        var distrito = useCase.obtenerDistritoJudicialPorId(peticion.getCuo(), id);
 
+        GlobalResponse res = new GlobalResponse(peticion.getCuo());
+        res.setData(distrito);
+        guardarAuditoria(Optional.ofNullable(peticion));
+
+        return ResponseEntity.ok(res);
+    }
     @Override
     public ResponseEntity<GlobalResponse> listarDistritosJudiciales(PeticionServicios peticion) {
         return procesarListado(peticion, () -> useCase.listarDistritosJudiciales(peticion.getCuo()));

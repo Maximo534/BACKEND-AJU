@@ -13,7 +13,7 @@ public class UsuarioSesionResponse implements Serializable {
 
     private String nombreDistritoJudicial;
     private Integer idDistritoJudicial;
-
+    private String sede;
     private String eje;
     private Integer idEje;
 }

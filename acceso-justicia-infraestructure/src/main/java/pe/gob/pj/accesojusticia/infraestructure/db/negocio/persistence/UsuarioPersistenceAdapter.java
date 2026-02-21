@@ -28,6 +28,7 @@ import pe.gob.pj.accesojusticia.infraestructure.db.negocio.repositories.*;
 import pe.gob.pj.accesojusticia.infraestructure.db.negocio.repositories.masters.MaeDistritoJudicialRepository;
 import pe.gob.pj.accesojusticia.infraestructure.db.negocio.repositories.masters.MaeEjeRepository;
 import pe.gob.pj.accesojusticia.infraestructure.db.negocio.repositories.masters.MaeInstanciaRepository;
+import pe.gob.pj.accesojusticia.infraestructure.db.negocio.repositories.masters.MaeSedeRepository;
 import pe.gob.pj.accesojusticia.infraestructure.mappers.UsuarioMapper;
 
 @Slf4j
@@ -46,7 +47,7 @@ public class UsuarioPersistenceAdapter implements UsuarioPersistencePort {
     MaeInstanciaRepository repoInstancia;
     MaeEjeRepository repoEje;
     MaePerfilRepository repoPerfil;
-
+    MaeSedeRepository repoSede;
     @Override
     public Usuario buscarPorLoginConDetalle(String cuo, String login) {
         if (login == null) return null;
@@ -74,7 +75,7 @@ public class UsuarioPersistenceAdapter implements UsuarioPersistencePort {
         // Inyectamos la lista llena a tu objeto de dominio
         dominio.setPerfiles(perfilesDominio);
         // -------------------------------------
-        var perfilOpt = usuarioPerfilRepository.findByUsuarioId(entity.getId()).stream()
+        var perfilOpt = listaPerfilesBd.stream()
                 .filter(p -> "1".equals(p.getActivo()))
                 .findFirst();
 
@@ -108,21 +109,38 @@ public class UsuarioPersistenceAdapter implements UsuarioPersistencePort {
             }
         }
 
-
+        // B. Obtener el nombre del Distrito Judicial
         if (dominio.getIdDistritoJudicial() != null) {
             repoDistrito.findById(dominio.getIdDistritoJudicial().longValue())
                     .ifPresent(dj -> dominio.setNombreDistritoJudicial(dj.getNombre()));
         }
 
-
+        // C. Obtener el nombre del Eje o Instancia (Y la sede desde la instancia si aplica)
         if (dominio.getIdEje() != null) {
             repoEje.findById(dominio.getIdEje().longValue())
                     .ifPresent(eje -> dominio.setNombreInstancia(eje.getDescripcion()));
-        }
-        // Si no tiene Eje, pero tiene Instancia (del usuario base), buscamos en MAE_INSTANCIA
-        else if (dominio.getIdInstancia() != null) {
+        } else if (dominio.getIdInstancia() != null) {
             repoInstancia.findById(dominio.getIdInstancia().longValue())
-                    .ifPresent(inst -> dominio.setNombreInstancia(inst.getDescripcion()));
+                    .ifPresent(inst -> {
+                        dominio.setNombreInstancia(inst.getDescripcion());
+
+                        // Si la instancia tiene Sede, la asignamos aquí
+                        if (inst.getSedeId() != null) {
+                            repoSede.findById(inst.getSedeId().longValue())
+                                    .ifPresent(sede -> dominio.setNombreSede(sede.getDescripcion()));
+                        }
+                    });
+        }
+
+        if (dominio.getNombreSede() == null && dominio.getIdDistritoJudicial() != null) {
+            List<pe.gob.pj.accesojusticia.infraestructure.db.negocio.entities.masters.MaeSedeEntity> sedesDistrito =
+                    repoSede.findByDistritoJudicialIdAndActivo(dominio.getIdDistritoJudicial().longValue(), "1");
+
+            if (!sedesDistrito.isEmpty()) {
+                dominio.setNombreSede(sedesDistrito.get(0).getDescripcion());
+            } else {
+                dominio.setNombreSede("SEDE CENTRAL");
+            }
         }
 
         return dominio;

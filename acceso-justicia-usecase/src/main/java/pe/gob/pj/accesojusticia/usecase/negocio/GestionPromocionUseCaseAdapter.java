@@ -39,7 +39,7 @@ public class GestionPromocionUseCaseAdapter implements GestionPromocionUseCasePo
     @Transactional(transactionManager = TX_MANAGER, propagation = Propagation.REQUIRES_NEW, readOnly = true, rollbackFor = {Exception.class, SQLException.class})
     public Pagina<PromocionCultura> listar(String cuo, ListarPromocionQuery query, int pagina, int tamanio, String rolUsuario, String loginUsuario) {
 
-        if (rolUsuario != null && rolUsuario.toUpperCase().contains("JUEZ")) {
+        if ("JUZAJUPJ".equals(rolUsuario) || "SCTAJUPJ".equals(rolUsuario)) {
             query.setUsuarioRegistroLogin(loginUsuario);
         } else {
             query.setUsuarioRegistroLogin(null);
@@ -53,7 +53,7 @@ public class GestionPromocionUseCaseAdapter implements GestionPromocionUseCasePo
     public byte[] exportarExcel(String cuo, ListarPromocionQuery query, String rolUsuario, String loginUsuario) throws Exception {
         log.info("[{}] Iniciando exportación Excel de Promoción Cultura...", cuo);
 
-        if (rolUsuario != null && rolUsuario.toUpperCase().contains("JUEZ")) {
+        if ("JUZAJUPJ".equals(rolUsuario) || "SCTAJUPJ".equals(rolUsuario)) {
             query.setUsuarioRegistroLogin(loginUsuario);
         } else {
             query.setUsuarioRegistroLogin(null);

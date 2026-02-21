@@ -39,7 +39,7 @@ public class GestionFortalecimientoUseCaseAdapter implements GestionFortalecimie
     @Transactional(transactionManager = TX_MANAGER, propagation = Propagation.REQUIRES_NEW, readOnly = true, rollbackFor = {Exception.class, SQLException.class})
     public Pagina<FortalecimientoCapacidades> listar(String cuo, ListarFortalecimientoQuery query, int pagina, int tamanio, String rolUsuario, String loginUsuario) {
 
-        if (rolUsuario != null && rolUsuario.toUpperCase().contains("JUEZ")) {
+        if ("JUZAJUPJ".equals(rolUsuario) || "SCTAJUPJ".equals(rolUsuario)) {
             query.setUsuarioRegistroLogin(loginUsuario);
         } else {
             query.setUsuarioRegistroLogin(null);
@@ -53,7 +53,7 @@ public class GestionFortalecimientoUseCaseAdapter implements GestionFortalecimie
     public byte[] exportarExcel(String cuo, ListarFortalecimientoQuery query, String rolUsuario, String loginUsuario) throws Exception {
         log.info("[{}] Iniciando exportación Excel de Fortalecimiento...", cuo);
 
-        if (rolUsuario != null && rolUsuario.toUpperCase().contains("JUEZ")) {
+        if ("JUZAJUPJ".equals(rolUsuario) || "SCTAJUPJ".equals(rolUsuario)) {
             query.setUsuarioRegistroLogin(loginUsuario);
         } else {
             query.setUsuarioRegistroLogin(null);
@@ -62,7 +62,7 @@ public class GestionFortalecimientoUseCaseAdapter implements GestionFortalecimie
         List<FortalecimientoCapacidades> lista = persistencePort.listarParaExcel(cuo, query);
 
         if (lista.isEmpty()) {
-            log.warn("[{}] No se encontraron registros para exportar.", cuo);
+            log.warn("[{}] No se encontraron registros de Fortalecimiento para exportar.", cuo);
         }
 
         return reportePort.generarExcelFortalecimiento(lista);

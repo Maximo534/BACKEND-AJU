@@ -39,12 +39,11 @@ public class GestionJusticiaItineranteUseCaseAdapter implements GestionJusticiaI
     @Transactional(transactionManager = TX_MANAGER, propagation = Propagation.REQUIRES_NEW, readOnly = true)
     public Pagina<JusticiaItinerante> listar(String cuo, ListarJusticiaItineranteQuery query, int pagina, int tamanio, String rolUsuario, String loginUsuario) {
 
-        if (rolUsuario != null && rolUsuario.toUpperCase().contains("JUEZ")) {
+        if ("JUZAJUPJ".equals(rolUsuario) || "SCTAJUPJ".equals(rolUsuario)) {
             query.setUsuarioRegistroLogin(loginUsuario);
         } else {
             query.setUsuarioRegistroLogin(null);
         }
-
         return persistencePort.listar(cuo, query, pagina, tamanio);
     }
 
@@ -53,7 +52,7 @@ public class GestionJusticiaItineranteUseCaseAdapter implements GestionJusticiaI
     public byte[] exportarExcel(String cuo, ListarJusticiaItineranteQuery query, String rolUsuario, String loginUsuario) throws Exception {
         log.info("[{}] Iniciando exportación Excel...", cuo);
 
-        if (rolUsuario != null && rolUsuario.toUpperCase().contains("JUEZ")) {
+        if ("JUZAJUPJ".equals(rolUsuario) || "SCTAJUPJ".equals(rolUsuario)) {
             query.setUsuarioRegistroLogin(loginUsuario);
         } else {
             query.setUsuarioRegistroLogin(null);

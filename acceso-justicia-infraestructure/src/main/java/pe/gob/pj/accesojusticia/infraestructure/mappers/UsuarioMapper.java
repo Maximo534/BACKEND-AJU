@@ -123,7 +123,8 @@ public interface UsuarioMapper {
   // --- DISTRITO JUDICIAL ---
   @Mapping(target = "nombreDistritoJudicial", source = "nombreDistritoJudicial")
   @Mapping(target = "idDistritoJudicial", source = "idDistritoJudicial")
-
+// --- SEDE ---
+  @Mapping(target = "sede", source = "nombreSede")
   // --- EJE ---
   @Mapping(target = "eje", source = "nombreInstancia")
   @Mapping(target = "idEje", source = "idEje")

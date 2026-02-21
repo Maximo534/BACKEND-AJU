@@ -29,13 +29,13 @@ public class Usuario extends Auditoria implements Serializable {
 
 	String nombreDistritoJudicial;
 	String nombreInstancia;
-
 	String nombreCompleto;
 	String rutaFoto;
 	String nomFoto;
 	String activo;
 	Integer idEje;
 	Integer idUsuarioReg;
+	String nombreSede;
 
 	List<PerfilUsuario> perfiles = new ArrayList<>();
 }

@@ -50,6 +50,14 @@ public interface GestionMaestros {
             @PathVariable Long idIndicador
     );
 
+    @GetMapping("/distritos-judiciales/{id}")
+    @Operation(summary = "Obtener Distrito Judicial por ID")
+    @ApiResponse(responseCode = "200", content = @Content(schema = @Schema(implementation = GlobalResponse.class)))
+    ResponseEntity<GlobalResponse> obtenerDistritoJudicialPorId(
+            @Parameter(hidden = true) @RequestAttribute(name = ProjectConstants.PETICION) PeticionServicios peticion,
+            @PathVariable Long id
+    );
+
     // --- ORGANIZACIÓN JUDICIAL ---
     @GetMapping("/distritos-judiciales")
     @Operation(summary = "Listar Distritos Judiciales")
