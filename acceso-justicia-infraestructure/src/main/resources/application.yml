@@ -1,0 +1,41 @@
+spring:
+  config:
+    import: "classpath:acceso-justicia-api.yml"
+  jpa:
+    properties:
+      hibernate:
+        dialect: org.hibernate.dialect.PostgreSQLDialect
+        "[transaction.coordinator_class]": jta
+        "[jta.platform]": org.hibernate.service.jta.platform.internal.JBossAppServerJtaPlatform
+    open-in-view: false
+  servlet:
+    multipart:
+      max-file-size: 200GB
+      max-request-size: 250GB
+
+
+springdoc:
+  api-docs:
+    enabled: true
+    path: /v3/api-docs
+  swagger-ui:
+    enabled: true
+    path: /swagger-ui.html
+    url: /v3/api-docs
+  paths-to-match: /**
+
+
+logging:
+  level:
+    "[org.springframework.web]": ERROR
+    "[org.springdoc]": ERROR
+    "[org.springframework.security]": ERROR
+    "[org.springframework.data]": ERROR
+    "[org.hibernate.SQL]": ERROR
+    "[org.hibernate.type.descriptor.sql]": ERROR
+
+seguridad:
+  auditoria:
+    requerida: N
+
+

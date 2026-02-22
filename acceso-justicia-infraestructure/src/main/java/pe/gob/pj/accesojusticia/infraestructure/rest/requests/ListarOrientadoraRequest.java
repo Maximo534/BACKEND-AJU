@@ -1,0 +1,22 @@
+package pe.gob.pj.accesojusticia.infraestructure.rest.requests;
+
+import lombok.AccessLevel;
+import lombok.Data;
+import lombok.experimental.FieldDefaults;
+
+import java.io.Serializable;
+import java.time.LocalDate;
+
+@Data
+@FieldDefaults(level = AccessLevel.PRIVATE)
+public class ListarOrientadoraRequest implements Serializable {
+
+    static final long serialVersionUID = 1L;
+
+    String search;
+
+    Long distritoJudicialId;
+
+    LocalDate fechaInicio;
+    LocalDate fechaFin;
+}

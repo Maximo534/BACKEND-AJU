@@ -8,11 +8,11 @@
 		<version>3.5.4</version>
 	</parent>
 
-	<groupId>pe.gob.pj.prueba</groupId>
-	<artifactId>prueba-api-rest</artifactId>
+	<groupId>pe.gob.pj.accesojusticia</groupId>
+	<artifactId>acceso-justicia-api-rest</artifactId>
 	<version>1.0.0</version>
 	<packaging>pom</packaging>
-	<name>Prueba API REST</name>
+	<name>Acceso Justicia API REST</name>
 
 	<properties>
 		<project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
@@ -204,8 +204,8 @@
 	</dependencyManagement>
 
 	<modules>
-		<module>prueba-infraestructure</module>
-		<module>prueba-usecase</module>
-		<module>prueba-domain</module>
+		<module>acceso-justicia-infraestructure</module>
+		<module>acceso-justicia-usecase</module>
+		<module>acceso-justicia-domain</module>
 	</modules>
 </project>
