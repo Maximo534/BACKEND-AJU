@@ -10,6 +10,7 @@ import org.springframework.transaction.annotation.Transactional;
 import pe.gob.pj.accesojusticia.infraestructure.db.negocio.entities.MovEventoDetalleEntity;
 import pe.gob.pj.accesojusticia.infraestructure.db.negocio.entities.MovEventoFcEntity;
 import pe.gob.pj.accesojusticia.infraestructure.db.negocio.entities.MovEventoTareaEntity;
+import pe.gob.pj.accesojusticia.infraestructure.db.negocio.repositories.MovUsuarioRepository;
 import pe.gob.pj.accesojusticia.infraestructure.db.negocio.repositories.masters.*;
 import pe.gob.pj.accesojusticia.infraestructure.db.negocio.entities.*;
 import pe.gob.pj.accesojusticia.infraestructure.db.negocio.entities.masters.MaeTareaEntity;
@@ -29,6 +30,7 @@ import java.util.stream.Collectors;
 public class ReporteFortalecimientoService {
 
     private final MovEventoFcRepository repository;
+    private final MovUsuarioRepository usuarioRepo;
 
     private final MaeDistritoJudicialRepository repoDistritoJud;
     private final MaeEjeRepository repoEje;
@@ -211,8 +213,12 @@ public class ReporteFortalecimientoService {
             // --- PIE ---
             // PHP: Fecha de Registro del Evento: ... Registrado por: ...
             String fReg = entity.getFRegistro() != null ? entity.getFRegistro().format(fmt) : "";
-            String uReg = val(entity.getCAudId());
-
+            String uReg = "No identificado";
+            if (entity.getUsuarioRegistroId() != null) {
+                uReg = usuarioRepo.findById(entity.getUsuarioRegistroId().intValue())
+                        .map(MovUsuarioEntity::getNombreCompleto)
+                        .orElse("Usuario no encontrado");
+            }
             PdfPTable tPie = new PdfPTable(2);
             tPie.setWidthPercentage(100);
             PdfPCell cFec = new PdfPCell(new Phrase("Fecha de Registro del Evento: " + fReg, FONT_NORMAL_8));

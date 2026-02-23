@@ -8,6 +8,7 @@ import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import pe.gob.pj.accesojusticia.infraestructure.db.negocio.entities.*;
+import pe.gob.pj.accesojusticia.infraestructure.db.negocio.repositories.MovUsuarioRepository;
 import pe.gob.pj.accesojusticia.infraestructure.db.negocio.repositories.masters.*;
 import pe.gob.pj.accesojusticia.infraestructure.db.negocio.entities.*;
 import pe.gob.pj.accesojusticia.infraestructure.db.negocio.entities.masters.MaeTareaEntity;
@@ -28,6 +29,7 @@ import java.util.stream.Collectors;
 public class ReporteJusticiaItineranteService {
 
     private final MovJusticiaItineranteRepository repository;
+    private final MovUsuarioRepository usuarioRepo;
 
     // --- REPOSITORIOS MAESTROS ---
     private final MaeDistritoJudicialRepository repoDistritoJud;
@@ -220,7 +222,12 @@ public class ReporteJusticiaItineranteService {
             // --- PIE Y FIRMA ---
             String fReg = entity.getFRegistro() != null ? entity.getFRegistro().format(fmt) : "";
 
-            String uReg = val(entity.getCAudId());
+            String uReg = "No identificado";
+            if (entity.getUsuarioRegistroId() != null) {
+                uReg = usuarioRepo.findById(entity.getUsuarioRegistroId().intValue())
+                        .map(MovUsuarioEntity::getNombreCompleto)
+                        .orElse("Usuario no encontrado");
+            }
 
             agregarFila(document, "Fecha de registro", ": " + fReg);
             agregarFila(document, "Registrado por", ": " + uReg);

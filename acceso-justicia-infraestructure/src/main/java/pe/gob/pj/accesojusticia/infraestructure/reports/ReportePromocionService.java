@@ -10,8 +10,10 @@ import org.springframework.transaction.annotation.Transactional;
 import pe.gob.pj.accesojusticia.infraestructure.db.negocio.entities.MovPromCulturaDetalleEntity;
 import pe.gob.pj.accesojusticia.infraestructure.db.negocio.entities.MovPromCulturaTareaEntity;
 import pe.gob.pj.accesojusticia.infraestructure.db.negocio.entities.MovPromocionCulturaEntity;
+import pe.gob.pj.accesojusticia.infraestructure.db.negocio.entities.MovUsuarioEntity;
 import pe.gob.pj.accesojusticia.infraestructure.db.negocio.entities.masters.MaeTareaEntity;
 import pe.gob.pj.accesojusticia.infraestructure.db.negocio.repositories.MovPromocionCulturaRepository;
+import pe.gob.pj.accesojusticia.infraestructure.db.negocio.repositories.MovUsuarioRepository;
 import pe.gob.pj.accesojusticia.infraestructure.db.negocio.repositories.masters.*;
 import pe.gob.pj.accesojusticia.infraestructure.db.negocio.repositories.masters.*;
 
@@ -29,6 +31,7 @@ import java.util.stream.Collectors;
 public class ReportePromocionService {
 
     private final MovPromocionCulturaRepository repository;
+    private final MovUsuarioRepository usuarioRepo;
 
     // --- REPOSITORIOS MAESTROS ---
     private final MaeDistritoJudicialRepository repoDistritoJud;
@@ -209,7 +212,12 @@ public class ReportePromocionService {
 
             // --- PIE Y FIRMA ---
             String fReg = entity.getFRegistro() != null ? entity.getFRegistro().format(fmt) : "";
-            String uReg = val(entity.getCAudId());
+            String uReg = "No identificado";
+            if (entity.getUsuarioRegistroId() != null) {
+                uReg = usuarioRepo.findById(entity.getUsuarioRegistroId().intValue())
+                        .map(MovUsuarioEntity::getNombreCompleto)
+                        .orElse("Usuario no encontrado");
+            }
 
             PdfPTable tPie = new PdfPTable(2);
             tPie.setWidthPercentage(100);
