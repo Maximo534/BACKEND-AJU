@@ -11,12 +11,15 @@ import lombok.extern.slf4j.Slf4j;
 import pe.gob.pj.accesojusticia.domain.model.auditoriageneral.PeticionServicios;
 import pe.gob.pj.accesojusticia.domain.model.negocio.query.IniciarSesionQuery;
 import pe.gob.pj.accesojusticia.domain.port.usecase.negocio.ConsultarOpcionesPerfilUseCasePort;
+import pe.gob.pj.accesojusticia.domain.port.usecase.negocio.GestorSesionUseCasePort;
 import pe.gob.pj.accesojusticia.domain.port.usecase.negocio.IniciarSesionUseCasePort;
 import pe.gob.pj.accesojusticia.infraestructure.common.utils.JwtUtils;
 import pe.gob.pj.accesojusticia.infraestructure.mappers.OpcionMapper;
 import pe.gob.pj.accesojusticia.infraestructure.mappers.UsuarioMapper;
+import pe.gob.pj.accesojusticia.infraestructure.rest.requests.CerrarSesionRequest;
 import pe.gob.pj.accesojusticia.infraestructure.rest.requests.LoginRequest;
 import pe.gob.pj.accesojusticia.infraestructure.rest.requests.ObtenerOpcionesRequest;
+import pe.gob.pj.accesojusticia.infraestructure.rest.responses.GlobalResponse;
 import pe.gob.pj.accesojusticia.infraestructure.rest.responses.IniciarSesionResponse;
 import pe.gob.pj.accesojusticia.infraestructure.rest.responses.ObtenerPerfilOpcionesResponse;
 import pe.gob.pj.accesojusticia.infraestructure.rest.responses.PerfilUsuarioResponse;
@@ -32,7 +35,7 @@ public class AccesoController implements Acceso, GenerarHttpHeader {
   UsuarioMapper usuarioMapper;
   OpcionMapper opcionMapper;
   JwtUtils jwtUtils;
-
+  GestorSesionUseCasePort gestorSesionUseCasePort;
   @Override
   public ResponseEntity<IniciarSesionResponse> iniciarSesion(PeticionServicios peticion,
       @Valid LoginRequest request) {
@@ -48,9 +51,9 @@ public class AccesoController implements Acceso, GenerarHttpHeader {
         jwtUtils.generarNuevoToken(peticion.getCuo(), peticion.getJwt(), request.getUsuario(),
             usuario.getPerfiles().stream().map(PerfilUsuarioResponse::getRol).toList(),
             peticion.getIpPublica()));
-
+    Long idSesionGenerada = gestorSesionUseCasePort.registrarIngreso(peticion.getCuo(), usuario.getId(), peticion);
     return ResponseEntity.ok().headers(getHttpHeader(request.getFormatoRespuesta()))
-        .body(new IniciarSesionResponse(peticion.getCuo(), usuario));
+        .body(new IniciarSesionResponse(peticion.getCuo(), idSesionGenerada, usuario));
   }
 
   @Override
@@ -66,5 +69,17 @@ public class AccesoController implements Acceso, GenerarHttpHeader {
     return ResponseEntity.ok().headers(getHttpHeader(request.getFormatoRespuesta()))
         .body(new ObtenerPerfilOpcionesResponse(peticion.getCuo(), opciones));
   }
+  @Override
+  public ResponseEntity<GlobalResponse> cerrarSesion(PeticionServicios peticion, @Valid CerrarSesionRequest request) {
 
+    log.info("{} Iniciando proceso de cierre de sesion para el ID: {}", peticion.getCuo(), request.getIdSesion());
+
+    gestorSesionUseCasePort.registrarSalida(peticion.getCuo(), request.getIdSesion(), peticion);
+
+    GlobalResponse response = new GlobalResponse(peticion.getCuo());
+    response.setCodigo("0000");
+    response.setDescripcion("Sesión cerrada correctamente.");
+
+    return ResponseEntity.ok().body(response);
+  }
 }

@@ -13,11 +13,12 @@ import lombok.experimental.FieldDefaults;
 public class IniciarSesionResponse extends GlobalResponse implements Serializable {
 
   static final long serialVersionUID = 1L;
-  
+  Long idSesion;
   UsuarioResponse data;
   
-  public IniciarSesionResponse(String cuo, UsuarioResponse data) {
+  public IniciarSesionResponse(String cuo, Long idSesion, UsuarioResponse data) {
     super(cuo);
+    this.idSesion = idSesion;
     this.data = data;
   }
 

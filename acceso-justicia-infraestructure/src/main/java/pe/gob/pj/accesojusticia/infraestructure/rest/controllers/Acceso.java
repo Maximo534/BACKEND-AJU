@@ -16,8 +16,10 @@ import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 import pe.gob.pj.accesojusticia.domain.common.utils.ProjectConstants;
 import pe.gob.pj.accesojusticia.domain.model.auditoriageneral.PeticionServicios;
+import pe.gob.pj.accesojusticia.infraestructure.rest.requests.CerrarSesionRequest;
 import pe.gob.pj.accesojusticia.infraestructure.rest.requests.LoginRequest;
 import pe.gob.pj.accesojusticia.infraestructure.rest.requests.ObtenerOpcionesRequest;
+import pe.gob.pj.accesojusticia.infraestructure.rest.responses.GlobalResponse;
 import pe.gob.pj.accesojusticia.infraestructure.rest.responses.ObtenerPerfilOpcionesResponse;
 import pe.gob.pj.accesojusticia.infraestructure.rest.responses.ErrorResponse;
 import pe.gob.pj.accesojusticia.infraestructure.rest.responses.IniciarSesionResponse;
@@ -57,4 +59,17 @@ public interface Acceso {
       @Parameter(hidden = true) @RequestAttribute(
           name = ProjectConstants.PETICION) PeticionServicios peticion,
       @Valid @RequestBody ObtenerOpcionesRequest perfil);
+
+  @PostMapping(value = "cerrar-sesion", consumes = MediaType.APPLICATION_JSON_VALUE)
+  @Operation(summary = "Cerrar sesión del usuario", operationId = "cerrarSesion",
+          description = "Registra la fecha y hora de salida de la sesión del usuario en el sistema")
+  @ApiResponse(responseCode = "200", description = "Sesión cerrada correctamente",
+          content = @Content(schema = @Schema(implementation = GlobalResponse.class)))
+  @ApiResponse(responseCode = "401", description = "El cliente no se autentico de manera correcta",
+          content = @Content(schema = @Schema(implementation = ErrorResponse.class)))
+  @ApiResponse(responseCode = "500", description = "Error interno del servidor",
+          content = @Content(schema = @Schema(implementation = ErrorResponse.class)))
+  public ResponseEntity<GlobalResponse> cerrarSesion(
+          @Parameter(hidden = true) @RequestAttribute(name = ProjectConstants.PETICION) PeticionServicios peticion,
+          @Valid @RequestBody CerrarSesionRequest request);
 }
