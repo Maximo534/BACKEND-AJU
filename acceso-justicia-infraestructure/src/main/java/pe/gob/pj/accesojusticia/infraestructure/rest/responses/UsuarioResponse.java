@@ -17,7 +17,7 @@ import lombok.experimental.FieldDefaults;
 public class UsuarioResponse implements Serializable {
 
   static final long serialVersionUID = 1L;
-
+  Long idSesion;
   // --- Identificadores ---
   Integer id;
   String usuario;

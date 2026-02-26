@@ -52,8 +52,9 @@ public class AccesoController implements Acceso, GenerarHttpHeader {
             usuario.getPerfiles().stream().map(PerfilUsuarioResponse::getRol).toList(),
             peticion.getIpPublica()));
     Long idSesionGenerada = gestorSesionUseCasePort.registrarIngreso(peticion.getCuo(), usuario.getId(), peticion);
+    usuario.setIdSesion(idSesionGenerada);
     return ResponseEntity.ok().headers(getHttpHeader(request.getFormatoRespuesta()))
-        .body(new IniciarSesionResponse(peticion.getCuo(), idSesionGenerada, usuario));
+        .body(new IniciarSesionResponse(peticion.getCuo(), usuario));
   }
 
   @Override
