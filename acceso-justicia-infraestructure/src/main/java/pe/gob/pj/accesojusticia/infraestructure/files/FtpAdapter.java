@@ -1,5 +1,6 @@
 package pe.gob.pj.accesojusticia.infraestructure.files;
 
+import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
@@ -71,105 +72,51 @@ public class FtpAdapter implements FtpPort {
     // }
   }
 
-  @Override
-  public boolean uploadFileFTP(String cuo, String srcFtpPDF, InputStream inputStream, String desc)
-          throws Exception {
-    boolean result = false;
-
-    ftp.setFileType(FTP.BINARY_FILE_TYPE);
-    ftp.enterLocalPassiveMode();
-
-    int reply = ftp.getReplyCode();
-    if (FTPReply.isPositiveCompletion(reply)) {
-
-      // --- CORRECCIÓN PARA WINDOWS ---
-      // 1. Normalizamos la ruta para que siempre use "/" (incluso en Windows)
-      String rutaNormalizada = srcFtpPDF.replace("\\", "/");
-
-      // 2. Extraemos la carpeta padre manualmente (sin usar java.io.File)
-      String ftpDirPath = "";
-      if (rutaNormalizada.contains("/")) {
-        ftpDirPath = rutaNormalizada.substring(0, rutaNormalizada.lastIndexOf("/"));
-      }
-
-      // 3. Aseguramos iniciar desde la raíz
-      ftp.changeWorkingDirectory("/");
-
-      // 4. Recorremos carpeta por carpeta
-      for (String dir : ftpDirPath.split("/")) {
-        if (!dir.isEmpty()) {
-          // Intentamos entrar, si falla, creamos
-          if (!ftp.changeWorkingDirectory(dir)) {
-            if (!ftp.makeDirectory(dir)) {
-              throw new IOException("No se puede crear el directorio '" + dir + "'. error='"
-                      + ftp.getReplyString() + "'");
-            }
-            if (!ftp.changeWorkingDirectory(dir)) {
-              throw new IOException("No se puede cambiar al directorio recién creado '" + dir
-                      + "'. error='" + ftp.getReplyString() + "'");
-            }
-          }
-        }
-      }
-
-      // 5. Guardamos el archivo (usando solo el nombre final, pues ya estamos en la carpeta)
-      String nombreArchivo = rutaNormalizada.substring(rutaNormalizada.lastIndexOf("/") + 1);
-      OutputStream outputStream = ftp.storeFileStream(nombreArchivo);
-
-      if (outputStream != null) {
-        byte[] bytesIn = new byte[4096];
-        int read = 0;
-        while ((read = inputStream.read(bytesIn)) != -1) {
-          outputStream.write(bytesIn, 0, read);
-        }
-        inputStream.close();
-        outputStream.close();
-
-        result = ftp.completePendingCommand();
-        log.info("{} Se guardo el archivo {} de manera correcta.", cuo, srcFtpPDF);
-      } else {
-        log.info(
-                "{} No se pudo guardar el documento {}. La ubicación no se encontró",
-                cuo, srcFtpPDF);
-      }
-
-    } else {
-      log.info("{} No se pudo validar la conexión al FTP, para subir el documento {}", cuo,
-              srcFtpPDF);
-      ftp.disconnect();
-    }
-
-    return result;
-  }
-
 //  @Override
 //  public boolean uploadFileFTP(String cuo, String srcFtpPDF, InputStream inputStream, String desc)
-//      throws Exception {
-//    // Long tiempoInicial = System.currentTimeMillis();
+//          throws Exception {
 //    boolean result = false;
-//    // try {
+//
 //    ftp.setFileType(FTP.BINARY_FILE_TYPE);
 //    ftp.enterLocalPassiveMode();
+//
 //    int reply = ftp.getReplyCode();
 //    if (FTPReply.isPositiveCompletion(reply)) {
-//      // Crear directorio, en caso es necesario
-//      File fileFtp = new File(srcFtpPDF);
-//      String ftpDirPath = fileFtp.getParent();
+//
+//      // --- CORRECCIÓN PARA WINDOWS ---
+//      // 1. Normalizamos la ruta para que siempre use "/" (incluso en Windows)
+//      String rutaNormalizada = srcFtpPDF.replace("\\", "/");
+//
+//      // 2. Extraemos la carpeta padre manualmente (sin usar java.io.File)
+//      String ftpDirPath = "";
+//      if (rutaNormalizada.contains("/")) {
+//        ftpDirPath = rutaNormalizada.substring(0, rutaNormalizada.lastIndexOf("/"));
+//      }
+//
+//      // 3. Aseguramos iniciar desde la raíz
+//      ftp.changeWorkingDirectory("/");
+//
+//      // 4. Recorremos carpeta por carpeta
 //      for (String dir : ftpDirPath.split("/")) {
 //        if (!dir.isEmpty()) {
+//          // Intentamos entrar, si falla, creamos
 //          if (!ftp.changeWorkingDirectory(dir)) {
 //            if (!ftp.makeDirectory(dir)) {
-//              throw new IOException("No se puede crear el directorio '" + dir + "'.  error='"
-//                  + ftp.getReplyString() + "'");
+//              throw new IOException("No se puede crear el directorio '" + dir + "'. error='"
+//                      + ftp.getReplyString() + "'");
 //            }
 //            if (!ftp.changeWorkingDirectory(dir)) {
 //              throw new IOException("No se puede cambiar al directorio recién creado '" + dir
-//                  + "'.  error='" + ftp.getReplyString() + "'");
+//                      + "'. error='" + ftp.getReplyString() + "'");
 //            }
 //          }
 //        }
 //      }
-//      OutputStream outputStream = ftp.storeFileStream(srcFtpPDF);
+//
+//      // 5. Guardamos el archivo (usando solo el nombre final, pues ya estamos en la carpeta)
+//      String nombreArchivo = rutaNormalizada.substring(rutaNormalizada.lastIndexOf("/") + 1);
+//      OutputStream outputStream = ftp.storeFileStream(nombreArchivo);
+//
 //      if (outputStream != null) {
 //        byte[] bytesIn = new byte[4096];
 //        int read = 0;
@@ -183,24 +130,78 @@ public class FtpAdapter implements FtpPort {
 //        log.info("{} Se guardo el archivo {} de manera correcta.", cuo, srcFtpPDF);
 //      } else {
 //        log.info(
-//            "{} No se pudo guardar el documento {}. La ubiación en donde se quiere guardar no se encontró",
-//            cuo, srcFtpPDF);
+//                "{} No se pudo guardar el documento {}. La ubicación no se encontró",
+//                cuo, srcFtpPDF);
 //      }
 //
 //    } else {
-//      log.info("{}  No se pudo validar la conexión al FTP, para subir el documento {}", cuo,
-//          srcFtpPDF);
+//      log.info("{} No se pudo validar la conexión al FTP, para subir el documento {}", cuo,
+//              srcFtpPDF);
 //      ftp.disconnect();
 //    }
 //
-//    // } catch (IOException e) {
-//    // log.error("{} No se pudo subir el archivo {}", cuo, srcFtpPDF);
-//    // e.printStackTrace();
-//    // } catch (Exception ex) {
-//    // log.error("{} Ocurrió un error inesperado al subir el archivo {}", cuo, srcFtpPDF);
-//    // }
 //    return result;
 //  }
+
+  @Override
+  public boolean uploadFileFTP(String cuo, String srcFtpPDF, InputStream inputStream, String desc)
+      throws Exception {
+    // Long tiempoInicial = System.currentTimeMillis();
+    boolean result = false;
+    // try {
+    ftp.setFileType(FTP.BINARY_FILE_TYPE);
+    ftp.enterLocalPassiveMode();
+    int reply = ftp.getReplyCode();
+    if (FTPReply.isPositiveCompletion(reply)) {
+      // Crear directorio, en caso es necesario
+      File fileFtp = new File(srcFtpPDF);
+      String ftpDirPath = fileFtp.getParent();
+      for (String dir : ftpDirPath.split("/")) {
+        if (!dir.isEmpty()) {
+          if (!ftp.changeWorkingDirectory(dir)) {
+            if (!ftp.makeDirectory(dir)) {
+              throw new IOException("No se puede crear el directorio '" + dir + "'.  error='"
+                  + ftp.getReplyString() + "'");
+            }
+            if (!ftp.changeWorkingDirectory(dir)) {
+              throw new IOException("No se puede cambiar al directorio recién creado '" + dir
+                  + "'.  error='" + ftp.getReplyString() + "'");
+            }
+          }
+        }
+      }
+      OutputStream outputStream = ftp.storeFileStream(srcFtpPDF);
+      if (outputStream != null) {
+        byte[] bytesIn = new byte[4096];
+        int read = 0;
+        while ((read = inputStream.read(bytesIn)) != -1) {
+          outputStream.write(bytesIn, 0, read);
+        }
+        inputStream.close();
+        outputStream.close();
+
+        result = ftp.completePendingCommand();
+        log.info("{} Se guardo el archivo {} de manera correcta.", cuo, srcFtpPDF);
+      } else {
+        log.info(
+            "{} No se pudo guardar el documento {}. La ubiación en donde se quiere guardar no se encontró",
+            cuo, srcFtpPDF);
+      }
+
+    } else {
+      log.info("{}  No se pudo validar la conexión al FTP, para subir el documento {}", cuo,
+          srcFtpPDF);
+      ftp.disconnect();
+    }
+
+    // } catch (IOException e) {
+    // log.error("{} No se pudo subir el archivo {}", cuo, srcFtpPDF);
+    // e.printStackTrace();
+    // } catch (Exception ex) {
+    // log.error("{} Ocurrió un error inesperado al subir el archivo {}", cuo, srcFtpPDF);
+    // }
+    return result;
+  }
 
   @Override
   public byte[] downloadFileBytes(String cuo, String ruta) throws Exception {
